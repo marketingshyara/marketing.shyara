@@ -14,6 +14,7 @@ import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import TermsOfService from "./pages/legal/TermsOfService";
 import RefundPolicy from "./pages/legal/RefundPolicy";
 import ServiceDeliveryPolicy from "./pages/legal/ServiceDeliveryPolicy";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/services" element={<Services />} />
