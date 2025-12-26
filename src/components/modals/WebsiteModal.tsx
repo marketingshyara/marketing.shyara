@@ -48,7 +48,7 @@ const offerings = [
 export function WebsiteModal({ open, onOpenChange }: WebsiteModalProps) {
   const openWhatsApp = (message: string) => {
     window.open(
-      `https://wa.me/919999999999?text=${encodeURIComponent(`Hi, I'd like to ${message}.`)}`,
+      `https://wa.me/919584661610?text=${encodeURIComponent(`Hi, I'd like to ${message}.`)}`,
       "_blank"
     );
   };

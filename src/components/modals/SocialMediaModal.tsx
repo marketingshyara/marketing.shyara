@@ -59,7 +59,7 @@ export function SocialMediaModal({ open, onOpenChange }: SocialMediaModalProps) 
       ? `Hi, I'm interested in the ${plan} plan for Social Media Management.`
       : "Hi, I'd like to discuss Social Media Management services.";
     window.open(
-      `https://wa.me/919999999999?text=${encodeURIComponent(message)}`,
+      `https://wa.me/919584661610?text=${encodeURIComponent(message)}`,
       "_blank"
     );
   };

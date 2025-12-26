@@ -29,7 +29,7 @@ export default function Contact() {
 
   const openWhatsApp = () => {
     window.open(
-      "https://wa.me/919999999999?text=Hi%2C%20I%27d%20like%20to%20discuss%20your%20services.",
+      "https://wa.me/919584661610?text=Hi%2C%20I%27d%20like%20to%20discuss%20your%20services.",
       "_blank"
     );
   };
@@ -49,7 +49,7 @@ Email: ${formData.email}
 Phone: ${formData.phone || "Not provided"}`;
 
     window.open(
-      `https://wa.me/919999999999?text=${encodeURIComponent(message)}`,
+      `https://wa.me/919584661610?text=${encodeURIComponent(message)}`,
       "_blank"
     );
 
@@ -184,13 +184,13 @@ Phone: ${formData.phone || "Not provided"}`;
                 </Button>
 
                 <a 
-                  href="mailto:contact@shyaramarketing.com"
+                  href="mailto:marketing.shyara@gmail.com"
                   className="flex items-center w-full justify-start h-auto py-4 px-6 rounded-lg border border-border bg-card hover:bg-secondary transition-colors"
                 >
                   <Mail className="h-6 w-6 mr-4 text-accent" />
                   <div className="text-left">
                     <div className="font-semibold text-foreground">Email</div>
-                    <div className="text-sm text-muted-foreground">contact@shyaramarketing.com</div>
+                    <div className="text-sm text-muted-foreground">marketing.shyara@gmail.com</div>
                   </div>
                 </a>
               </div>
