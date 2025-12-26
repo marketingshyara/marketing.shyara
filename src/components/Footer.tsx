@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import shyaraLogo from "@/assets/shyara-logo.png";
 
 export function Footer() {
   return (
@@ -8,7 +9,11 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <Link to="/" className="flex items-center mb-4">
-              <span className="text-xl font-bold text-foreground">Shyara</span>
+              <img 
+                src={shyaraLogo} 
+                alt="Shyara" 
+                className="h-6 dark:invert" 
+              />
               <span className="text-xl font-bold text-accent">Marketing</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
