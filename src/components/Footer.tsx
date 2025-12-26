@@ -9,12 +9,14 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <Link to="/" className="flex items-center mb-4">
-              <img 
-                src={shyaraLogo} 
-                alt="Shyara" 
-                className="h-24 dark:invert" 
-              />
-              <span className="text-3xl font-bold text-accent">Marketing</span>
+              <div className="h-9 overflow-hidden">
+                <img 
+                  src={shyaraLogo} 
+                  alt="Shyara" 
+                  className="h-9 w-auto scale-[2.5] dark:invert" 
+                />
+              </div>
+              <span className="text-xl font-bold text-accent -ml-1">Marketing</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
               We help businesses grow through social media, advertising, websites, and apps — 
