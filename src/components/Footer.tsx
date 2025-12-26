@@ -12,9 +12,9 @@ export function Footer() {
               <img 
                 src={shyaraLogo} 
                 alt="Shyara" 
-                className="h-8 w-auto dark:invert" 
+                className="h-16 w-auto dark:invert" 
               />
-              <span className="text-xl font-bold text-accent -ml-1">Marketing</span>
+              <span className="text-2xl font-bold text-accent -ml-2">Marketing</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
               We help businesses grow through social media, advertising, websites, and apps — 
