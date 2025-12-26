@@ -28,14 +28,14 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center">
-          <div className="h-10 overflow-hidden">
+          <div className="h-8 w-20 overflow-hidden flex items-center justify-center">
             <img 
               src={shyaraLogo} 
               alt="Shyara" 
-              className="h-10 w-auto scale-[2.5] dark:invert" 
+              className="h-20 w-auto dark:invert" 
             />
           </div>
-          <span className="text-xl font-bold text-accent -ml-1">Marketing</span>
+          <span className="text-xl font-bold text-accent">Marketing</span>
         </Link>
 
         {/* Desktop Navigation */}
