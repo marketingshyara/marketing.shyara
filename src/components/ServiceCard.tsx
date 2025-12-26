@@ -25,7 +25,7 @@ export function ServiceCard({ title, description, icon: Icon, onViewDetails }: S
         <Button 
           variant="outline" 
           onClick={onViewDetails}
-          className="w-full group-hover:border-accent group-hover:text-accent transition-colors"
+          className="w-full group-hover:border-accent group-hover:text-accent hover:!bg-accent hover:!text-accent-foreground transition-colors"
         >
           View Details
         </Button>
