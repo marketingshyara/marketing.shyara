@@ -31,9 +31,9 @@ export function Header() {
           <img 
             src={shyaraLogo} 
             alt="Shyara" 
-            className="h-7 dark:invert" 
+            className="h-14 dark:invert" 
           />
-          <span className="text-xl font-bold text-accent">Marketing</span>
+          <span className="text-2xl font-bold text-accent">Marketing</span>
         </Link>
 
         {/* Desktop Navigation */}
