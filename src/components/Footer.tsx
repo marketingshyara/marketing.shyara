@@ -75,8 +75,23 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-border mt-8 pt-8 text-center">
-          <p className="text-sm text-muted-foreground">
+        {/* Legal Links */}
+        <div className="border-t border-border mt-8 pt-8">
+          <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-4">
+            <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-accent transition-colors">
+              Privacy Policy
+            </Link>
+            <Link to="/terms-of-service" className="text-sm text-muted-foreground hover:text-accent transition-colors">
+              Terms of Service
+            </Link>
+            <Link to="/refund-policy" className="text-sm text-muted-foreground hover:text-accent transition-colors">
+              Refund & Cancellation Policy
+            </Link>
+            <Link to="/service-delivery-policy" className="text-sm text-muted-foreground hover:text-accent transition-colors">
+              Service Delivery Policy
+            </Link>
+          </div>
+          <p className="text-sm text-muted-foreground text-center">
             © {new Date().getFullYear()} Shyara Marketing. All rights reserved.
           </p>
         </div>

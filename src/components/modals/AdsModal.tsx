@@ -21,7 +21,7 @@ export function AdsModal({ open, onOpenChange }: AdsModalProps) {
       ? `Hi, I'd like to ${topic} for my business.`
       : "Hi, I'd like to discuss Ads Campaign Management.";
     window.open(
-      `https://wa.me/919999999999?text=${encodeURIComponent(message)}`,
+      `https://wa.me/919584661610?text=${encodeURIComponent(message)}`,
       "_blank"
     );
   };
