@@ -14,7 +14,7 @@ export function Footer() {
                 alt="Shyara" 
                 className="h-24 w-auto dark:invert" 
               />
-              <span className="text-3xl font-bold text-accent ml-2">Marketing</span>
+              <span className="text-3xl font-bold text-accent ml-1">Marketing</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
               We help businesses grow through social media, advertising, websites, and apps — 
