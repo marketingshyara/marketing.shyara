@@ -8,6 +8,7 @@ export default function ServiceDeliveryPolicy() {
         title="Service Delivery Policy"
         description="Learn how Shyara Marketing delivers digital marketing and technology services including timelines, delivery methods, and support."
         canonical="/service-delivery-policy"
+        keywords="service delivery, digital service delivery, online marketing delivery, Shyara Marketing delivery"
       />
       <section className="py-16 lg:py-20">
         <div className="container">

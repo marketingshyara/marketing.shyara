@@ -38,8 +38,10 @@ export default function Offers() {
   return (
     <Layout>
       <SEO 
-        title="Special Offers | Shyara Marketing"
-        description="Exclusive offers on digital marketing services. Get professional websites, social media management, and more at discounted prices."
+        title="Special Offers"
+        description="Exclusive offers on digital marketing services. Get professional websites, social media management, and more at discounted prices. Restaurant website starting at ₹2999."
+        canonical="/offers"
+        keywords="restaurant website offer, cheap website India, SEO optimized website, affordable web design, website development discount, digital marketing offers"
       />
 
       {/* Hero Section */}

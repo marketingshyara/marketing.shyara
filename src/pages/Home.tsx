@@ -57,6 +57,7 @@ export default function Home() {
         title="Digital Marketing & Technology Services"
         description="Shyara Marketing helps businesses grow through social media management, advertising campaigns, website development, and app development with clarity, consistency, and measurable results."
         canonical="/"
+        keywords="digital marketing India, social media management, website development, app development, advertising campaigns, Shyara Marketing, digital marketing agency, online marketing services"
       />
       {/* Hero Section */}
       <section className="relative py-20 lg:py-32 overflow-hidden">

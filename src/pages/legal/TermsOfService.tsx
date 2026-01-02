@@ -8,6 +8,7 @@ export default function TermsOfService() {
         title="Terms of Service"
         description="Read the terms and conditions for using Shyara Marketing services including social media management, advertising, website, and app development."
         canonical="/terms-of-service"
+        keywords="terms of service, service agreement, Shyara Marketing terms, terms and conditions"
       />
       <section className="py-16 lg:py-20">
         <div className="container">

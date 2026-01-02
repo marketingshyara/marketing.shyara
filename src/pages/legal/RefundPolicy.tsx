@@ -8,6 +8,7 @@ export default function RefundPolicy() {
         title="Refund & Cancellation Policy"
         description="Understand Shyara Marketing's refund and cancellation policy for digital marketing and technology services, subscriptions, and one-time engagements."
         canonical="/refund-policy"
+        keywords="refund policy, cancellation policy, payment terms, Shyara Marketing refund"
       />
       <section className="py-16 lg:py-20">
         <div className="container">

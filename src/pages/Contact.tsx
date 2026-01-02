@@ -66,6 +66,7 @@ Phone: ${formData.phone || "Not provided"}`;
         title="Contact Us"
         description="Get in touch with Shyara Marketing. Share your requirements and let us help you choose the right digital marketing and technology solution for your business."
         canonical="/contact"
+        keywords="contact digital marketing agency, hire marketing company, get quote website development, digital marketing consultation, Shyara Marketing contact"
       />
       {/* Hero Section */}
       <section className="py-16 lg:py-24">

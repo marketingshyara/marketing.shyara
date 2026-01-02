@@ -32,6 +32,7 @@ export default function About() {
         title="About Us"
         description="Shyara Marketing is a digital marketing and technology services brand under Shyara Tech Solutions (OPC) Pvt. Ltd., built on trust, clarity, and execution."
         canonical="/about"
+        keywords="Shyara Tech Solutions, digital marketing agency India, marketing company, technology services, about Shyara Marketing, digital agency"
       />
       {/* Hero Section */}
       <section className="py-16 lg:py-24">

@@ -44,6 +44,7 @@ export default function Services() {
         title="Services"
         description="Explore our comprehensive digital services including social media management, advertising campaign management, website development, and app development tailored to your business needs."
         canonical="/services"
+        keywords="digital marketing services, social media management service, ad campaign management, website development company, app development agency, digital advertising, SEO services India"
       />
       {/* Hero Section */}
       <section className="py-16 lg:py-24">
