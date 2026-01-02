@@ -8,6 +8,7 @@ export default function PrivacyPolicy() {
         title="Privacy Policy"
         description="Learn how Shyara Marketing collects, uses, and protects your personal information. We are committed to safeguarding your privacy."
         canonical="/privacy-policy"
+        keywords="privacy policy, data protection, Shyara Marketing privacy, personal information protection"
       />
       <section className="py-16 lg:py-20">
         <div className="container">
