@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Share2, Target, Globe, Smartphone, ArrowRight } from "lucide-react";
 import { Layout } from "@/components/Layout";
@@ -9,6 +8,7 @@ import { AdsModal } from "@/components/modals/AdsModal";
 import { WebsiteModal } from "@/components/modals/WebsiteModal";
 import { AppModal } from "@/components/modals/AppModal";
 import { Button } from "@/components/ui/button";
+import { useModalWithHistory } from "@/hooks/use-modal-history";
 
 const services = [
   {
@@ -38,7 +38,7 @@ const services = [
 ];
 
 export default function Home() {
-  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const { openModal, isModalOpen, createOnOpenChange } = useModalWithHistory();
 
   const openWhatsApp = () => {
     window.open(
@@ -116,7 +116,7 @@ export default function Home() {
                   title={service.title}
                   description={service.description}
                   icon={service.icon}
-                  onViewDetails={() => setActiveModal(service.id)}
+                  onViewDetails={() => openModal(service.id)}
                 />
               </div>
             ))}
@@ -180,20 +180,20 @@ export default function Home() {
 
       {/* Modals */}
       <SocialMediaModal 
-        open={activeModal === "social-media"} 
-        onOpenChange={(open) => !open && setActiveModal(null)} 
+        open={isModalOpen("social-media")} 
+        onOpenChange={createOnOpenChange("social-media")} 
       />
       <AdsModal 
-        open={activeModal === "ads"} 
-        onOpenChange={(open) => !open && setActiveModal(null)} 
+        open={isModalOpen("ads")} 
+        onOpenChange={createOnOpenChange("ads")} 
       />
       <WebsiteModal 
-        open={activeModal === "website"} 
-        onOpenChange={(open) => !open && setActiveModal(null)} 
+        open={isModalOpen("website")} 
+        onOpenChange={createOnOpenChange("website")} 
       />
       <AppModal 
-        open={activeModal === "app"} 
-        onOpenChange={(open) => !open && setActiveModal(null)} 
+        open={isModalOpen("app")} 
+        onOpenChange={createOnOpenChange("app")} 
       />
     </Layout>
   );
