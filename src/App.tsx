@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { HelmetProvider } from "react-helmet-async";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
+import Samples from "./pages/Samples";
 import Offers from "./pages/Offers";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -31,6 +32,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/services" element={<Services />} />
+              <Route path="/samples" element={<Samples />} />
               <Route path="/offers" element={<Offers />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />

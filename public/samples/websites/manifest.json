@@ -1,0 +1,11 @@
+{
+  "samples": [
+    {
+      "id": "sample-demo",
+      "name": "Demo Landing Page",
+      "description": "A modern landing page with gradient hero, feature cards, and responsive design.",
+      "folder": "sample-demo",
+      "file": "index.html"
+    }
+  ]
+}

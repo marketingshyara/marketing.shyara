@@ -9,6 +9,7 @@ import shyaraLogo from "@/assets/shyara-logo.png";
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
+  { href: "/samples", label: "Samples" },
   { href: "/offers", label: "Offers" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
