@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "serve -s dist -l 10000"
+    "start": "serve -c serve.json -l 10000"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
