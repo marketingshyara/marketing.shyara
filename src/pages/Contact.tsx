@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MessageCircle, Mail, ArrowRight } from "lucide-react";
+import { MessageCircle, Mail, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const services = [
@@ -37,17 +37,35 @@ export default function Contact() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate required fields
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      toast({
+        title: "Missing details",
+        description: "Please fill in all the required fields before sending.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    // Build WhatsApp message from form data
-    const message = `Hi, I'm ${formData.name}.
+    // Build a well-formatted WhatsApp message from form data
+    const lines = [
+      `Hello, I'm *${formData.name.trim()}*.`,
+      ``,
+      `*Service Interested In:* ${formData.service || "General Inquiry"}`,
+      ``,
+      `*Message:*`,
+      formData.message.trim(),
+      ``,
+      `--- Contact Details ---`,
+      `*Email:* ${formData.email.trim()}`,
+    ];
 
-I'm interested in: ${formData.service || "your services"}
+    if (formData.phone.trim()) {
+      lines.push(`*Phone:* ${formData.phone.trim()}`);
+    }
 
-${formData.message}
-
-Contact me at:
-Email: ${formData.email}
-Phone: ${formData.phone || "Not provided"}`;
+    const message = lines.join("\n");
 
     window.open(
       `https://wa.me/919584661610?text=${encodeURIComponent(message)}`,
@@ -55,8 +73,17 @@ Phone: ${formData.phone || "Not provided"}`;
     );
 
     toast({
-      title: "Opening WhatsApp",
-      description: "Your message has been prepared. Send it via WhatsApp to reach us.",
+      title: "Redirecting to WhatsApp",
+      description: "Your message is ready - just hit send on WhatsApp!",
+    });
+
+    // Reset form after submission
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      service: "",
+      message: "",
     });
   };
 
@@ -76,7 +103,7 @@ Phone: ${formData.phone || "Not provided"}`;
               Get in Touch
             </h1>
             <p className="text-lg text-muted-foreground">
-              Share your requirements — we'll help you choose the right solution.
+              Fill in your details below and we'll connect with you on WhatsApp instantly.
             </p>
           </div>
         </div>
@@ -159,11 +186,15 @@ Phone: ${formData.phone || "Not provided"}`;
 
                 <Button 
                   type="submit" 
-                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                  className="w-full bg-[#25D366] hover:bg-[#1fb855] text-white"
                 >
-                  Send Message
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <MessageCircle className="mr-2 h-5 w-5" />
+                  Send via WhatsApp
+                  <Send className="ml-2 h-4 w-4" />
                 </Button>
+                <p className="text-xs text-center text-muted-foreground mt-3">
+                  You'll be redirected to WhatsApp with your message pre-filled. Just tap send!
+                </p>
               </form>
             </div>
 
