@@ -13,6 +13,13 @@
       "description": "A mystical astrology website with cosmic design, services showcase, and consultation booking.",
       "folder": "astrologer-sample",
       "file": "index.html"
+    },
+    {
+      "id": "restaurant-sample-2",
+      "name": "Botanical Restaurant Website",
+      "description": "A nature-inspired restaurant website with botanical design, seasonal menu, and organic dining experience.",
+      "folder": "restaurant-sample-2",
+      "file": "index.html"
     }
   ]
 }
