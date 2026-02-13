@@ -6,6 +6,13 @@
       "description": "A premium restaurant website with animated sections, gallery, menu, and contact form.",
       "folder": "restaurant-sample",
       "file": "index.html"
+    },
+    {
+      "id": "astrologer-sample",
+      "name": "Astrologer Website",
+      "description": "A mystical astrology website with cosmic design, services showcase, and consultation booking.",
+      "folder": "astrologer-sample",
+      "file": "index.html"
     }
   ]
 }
