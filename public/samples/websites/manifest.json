@@ -1,10 +1,10 @@
 {
   "samples": [
     {
-      "id": "sample-demo",
-      "name": "Demo Landing Page",
-      "description": "A modern landing page with gradient hero, feature cards, and responsive design.",
-      "folder": "sample-demo",
+      "id": "restaurant-sample",
+      "name": "Restaurant Website",
+      "description": "A premium restaurant website with animated sections, gallery, menu, and contact form.",
+      "folder": "restaurant-sample",
       "file": "index.html"
     }
   ]
