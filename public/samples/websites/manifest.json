@@ -20,6 +20,13 @@
       "description": "A nature-inspired restaurant website with botanical design, seasonal menu, and organic dining experience.",
       "folder": "restaurant-sample-2",
       "file": "index.html"
+    },
+    {
+      "id": "clinic-sample",
+      "name": "Clinic Website",
+      "description": "A professional clinic website with doctor profiles, services, patient portal, and appointment booking.",
+      "folder": "clinic-sample",
+      "file": "index.html"
     }
   ]
 }
