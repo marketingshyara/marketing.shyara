@@ -1,9 +1,9 @@
 import { Camera, Globe } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { ServiceCard } from "@/components/ServiceCard";
 import { SMMSamplesModal } from "@/components/modals/SMMSamplesModal";
-import { WebsiteSamplesModal } from "@/components/modals/WebsiteSamplesModal";
 import { useModalWithHistory } from "@/hooks/use-modal-history";
 
 const sampleCategories = [
@@ -12,17 +12,29 @@ const sampleCategories = [
     title: "Social Media Samples",
     description: "Browse through our portfolio of engaging social media content - from scroll-stopping images to viral-ready reels.",
     icon: Camera,
+    type: "modal" as const,
   },
   {
     id: "website-samples",
     title: "Website Samples",
     description: "Explore our collection of professionally designed websites with live previews you can interact with.",
     icon: Globe,
+    type: "link" as const,
+    href: "/samples/websites",
   },
 ];
 
 export default function Samples() {
   const { openModal, isModalOpen, createOnOpenChange } = useModalWithHistory();
+  const navigate = useNavigate();
+
+  const handleViewDetails = (category: typeof sampleCategories[0]) => {
+    if (category.type === "link" && category.href) {
+      navigate(category.href);
+    } else {
+      openModal(category.id);
+    }
+  };
 
   return (
     <Layout>
@@ -63,7 +75,7 @@ export default function Samples() {
                   title={category.title}
                   description={category.description}
                   icon={category.icon}
-                  onViewDetails={() => openModal(category.id)}
+                  onViewDetails={() => handleViewDetails(category)}
                 />
               </div>
             ))}
@@ -75,10 +87,6 @@ export default function Samples() {
       <SMMSamplesModal 
         open={isModalOpen("smm-samples")} 
         onOpenChange={createOnOpenChange("smm-samples")} 
-      />
-      <WebsiteSamplesModal 
-        open={isModalOpen("website-samples")} 
-        onOpenChange={createOnOpenChange("website-samples")} 
       />
     </Layout>
   );

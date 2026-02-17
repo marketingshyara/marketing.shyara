@@ -21,14 +21,22 @@ export interface DriveApiResponse {
 }
 
 // Types for Website samples
+export interface SampleCategory {
+  id: string;
+  name: string;
+  icon: string;
+}
+
 export interface WebsiteSample {
   id: string;
   name: string;
   description: string;
   folder: string;
   file: string;
+  category: string;
 }
 
 export interface WebsitesManifest {
+  categories: SampleCategory[];
   samples: WebsiteSample[];
 }

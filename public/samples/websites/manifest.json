@@ -1,32 +1,41 @@
 {
+  "categories": [
+    { "id": "restaurants", "name": "Restaurants", "icon": "UtensilsCrossed" },
+    { "id": "clinics", "name": "Clinics", "icon": "Stethoscope" },
+    { "id": "astrology", "name": "Astrology", "icon": "Stars" }
+  ],
   "samples": [
     {
       "id": "restaurant-sample",
       "name": "Restaurant Website",
       "description": "A premium restaurant website with animated sections, gallery, menu, and contact form.",
       "folder": "restaurant-sample",
-      "file": "index.html"
+      "file": "index.html",
+      "category": "restaurants"
     },
     {
       "id": "astrologer-sample",
       "name": "Astrologer Website",
       "description": "A mystical astrology website with cosmic design, services showcase, and consultation booking.",
       "folder": "astrologer-sample",
-      "file": "index.html"
+      "file": "index.html",
+      "category": "astrology"
     },
     {
       "id": "restaurant-sample-2",
       "name": "Botanical Restaurant Website",
       "description": "A nature-inspired restaurant website with botanical design, seasonal menu, and organic dining experience.",
       "folder": "restaurant-sample-2",
-      "file": "index.html"
+      "file": "index.html",
+      "category": "restaurants"
     },
     {
       "id": "clinic-sample",
       "name": "Clinic Website",
       "description": "A professional clinic website with doctor profiles, services, patient portal, and appointment booking.",
       "folder": "clinic-sample",
-      "file": "index.html"
+      "file": "index.html",
+      "category": "clinics"
     }
   ]
 }
