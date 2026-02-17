@@ -51,7 +51,7 @@ function useWebsiteManifest() {
 // Sample card with iframe preview
 function WebsiteSampleCard({ sample }: { sample: WebsiteSample }) {
   const [iframeLoaded, setIframeLoaded] = useState(false);
-  const sampleUrl = `/samples/websites/${sample.folder}/${sample.file}`;
+  const sampleUrl = `/samples/websites/${sample.folder}/`;
 
   const openInNewTab = () => {
     window.open(sampleUrl, "_blank");
