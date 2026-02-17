@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
@@ -112,7 +112,7 @@ function ShareButton({ category }: { category?: string }) {
 
   const handleShare = async () => {
     const url = category
-      ? `${window.location.origin}/samples/websites/${category}`
+      ? `${window.location.origin}/samples/websites?category=${category}`
       : `${window.location.origin}/samples/websites`;
 
     try {
@@ -155,11 +155,11 @@ function ShareButton({ category }: { category?: string }) {
 }
 
 export default function WebsiteSamplesPage() {
-  const { category } = useParams<{ category?: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { categories, samples, loading } = useWebsiteManifest();
 
-  const activeCategory = category || null;
+  const activeCategory = searchParams.get("category") || null;
 
   const filteredSamples = activeCategory
     ? samples.filter((s) => s.category === activeCategory)
@@ -182,7 +182,7 @@ export default function WebsiteSamplesPage() {
       <SEO
         title={pageTitle}
         description={pageDescription}
-        canonical={activeCategory ? `/samples/websites/${activeCategory}` : "/samples/websites"}
+        canonical={activeCategory ? `/samples/websites?category=${activeCategory}` : "/samples/websites"}
         keywords="website samples, web design portfolio, website examples, professional websites"
       />
 
@@ -227,7 +227,7 @@ export default function WebsiteSamplesPage() {
                 return (
                   <button
                     key={cat.id}
-                    onClick={() => navigate(`/samples/websites/${cat.id}`)}
+                    onClick={() => navigate(`/samples/websites?category=${cat.id}`)}
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       activeCategory === cat.id
                         ? "bg-accent text-accent-foreground"
