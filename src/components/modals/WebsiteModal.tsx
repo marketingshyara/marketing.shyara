@@ -17,7 +17,7 @@ const offerings = [
       "Wedding or event website",
     ],
     cta: "Enquire on WhatsApp",
-    ctaMessage: "enquire about a Basic Website",
+    ctaMessage: "Hi Shyara Marketing, I need a Basic Website for my business (portfolio / local business / consultant type). Can you share the pricing and timeline?",
   },
   {
     name: "E-commerce / Booking Website",
@@ -29,7 +29,7 @@ const offerings = [
       "Yoga or fitness class booking",
     ],
     cta: "Enquire on WhatsApp",
-    ctaMessage: "enquire about an E-commerce Website",
+    ctaMessage: "Hi Shyara Marketing, I need an E-commerce / Booking Website with online payments or appointment scheduling. Can we discuss the features, pricing, and timeline?",
   },
   {
     name: "Custom Website",
@@ -41,14 +41,14 @@ const offerings = [
       "Healthcare or construction project portal",
     ],
     cta: "Get Quote on WhatsApp",
-    ctaMessage: "get a quote for a Custom Website",
+    ctaMessage: "Hi Shyara Marketing, I'm looking for a Custom Website with advanced features. I'd like to discuss my requirements and get a quote. When can we talk?",
   },
 ];
 
 export function WebsiteModal({ open, onOpenChange }: WebsiteModalProps) {
   const openWhatsApp = (message: string) => {
     window.open(
-      `https://wa.me/919584661610?text=${encodeURIComponent(`Hi, I'd like to ${message}.`)}`,
+      `https://wa.me/919584661610?text=${encodeURIComponent(message)}`,
       "_blank"
     );
   };

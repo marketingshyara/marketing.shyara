@@ -16,10 +16,10 @@ const services = [
 ];
 
 export function AdsModal({ open, onOpenChange }: AdsModalProps) {
-  const openWhatsApp = (topic?: string) => {
-    const message = topic 
-      ? `Hi, I'd like to ${topic} for my business.`
-      : "Hi, I'd like to discuss Ads Campaign Management.";
+  const openWhatsApp = (type: "enquire" | "discuss") => {
+    const message = type === "enquire"
+      ? "Hi Shyara Marketing, I'm interested in your Ad Campaign Management service (20% management fee model). I'd like to know more about how you can run ads for my business."
+      : "Hi Shyara Marketing, I already have a business I'd like to run ads for. Can we set up a call to discuss my ad budget, goals, and campaign strategy?";
     window.open(
       `https://wa.me/919584661610?text=${encodeURIComponent(message)}`,
       "_blank"
@@ -88,14 +88,14 @@ export function AdsModal({ open, onOpenChange }: AdsModalProps) {
 
         <div className="flex flex-col sm:flex-row gap-3 mt-6">
           <Button 
-            onClick={() => openWhatsApp("enquire about Ad Management")}
+            onClick={() => openWhatsApp("enquire")}
             className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
           >
             Enquire on WhatsApp
           </Button>
           <Button 
             variant="outline" 
-            onClick={() => openWhatsApp("discuss my ad campaign")}
+            onClick={() => openWhatsApp("discuss")}
             className="flex-1"
           >
             Discuss Campaign

@@ -6,7 +6,7 @@ import { MessageCircle, Mail, Clock, ArrowRight } from "lucide-react";
 export default function Contact() {
   const openWhatsApp = () => {
     window.open(
-      "https://wa.me/919584661610?text=Hi%2C%20I%27d%20like%20to%20discuss%20your%20services.",
+      "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%27m%20reaching%20out%20from%20your%20website.%20I%27d%20like%20to%20discuss%20a%20project%20for%20my%20business.%20Please%20let%20me%20know%20a%20good%20time%20to%20connect.",
       "_blank"
     );
   };

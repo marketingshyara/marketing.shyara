@@ -40,9 +40,16 @@ const services = [
 export default function Home() {
   const { openModal, isModalOpen, createOnOpenChange } = useModalWithHistory();
 
-  const openWhatsApp = () => {
+  const openWhatsAppHero = () => {
     window.open(
-      "https://wa.me/919584661610?text=Hi%2C%20I%27m%20interested%20in%20your%20services.",
+      "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%20visited%20your%20website%20and%20I%27m%20looking%20for%20digital%20marketing%20%2F%20technology%20services%20for%20my%20business.%20Can%20we%20discuss%3F",
+      "_blank"
+    );
+  };
+
+  const openWhatsAppCTA = () => {
+    window.open(
+      "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%27ve%20gone%20through%20your%20services%20and%20I%27d%20like%20to%20discuss%20how%20you%20can%20help%20grow%20my%20business.%20When%20can%20we%20talk%3F",
       "_blank"
     );
   };
@@ -75,7 +82,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in opacity-0" style={{ animationDelay: "0.2s" }}>
               <Button 
                 size="lg" 
-                onClick={openWhatsApp}
+                onClick={openWhatsAppHero}
                 className="bg-accent hover:bg-accent/90 text-accent-foreground"
               >
                 Talk to Us
@@ -168,7 +175,7 @@ export default function Home() {
             </p>
             <Button 
               size="lg" 
-              onClick={openWhatsApp}
+              onClick={openWhatsAppCTA}
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
             >
               Start a Conversation

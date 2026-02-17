@@ -19,7 +19,7 @@ const offerings = [
       "Community or blog app",
     ],
     cta: "Enquire on WhatsApp",
-    ctaMessage: "enquire about a Basic App",
+    ctaMessage: "Hi Shyara Marketing, I need a Basic App for my business (business profile / menu / booking / content type). Can you share the pricing and timeline?",
   },
   {
     name: "Custom App",
@@ -34,14 +34,14 @@ const offerings = [
       "On-demand service app",
     ],
     cta: "Get Quote on WhatsApp",
-    ctaMessage: "get a quote for a Custom App",
+    ctaMessage: "Hi Shyara Marketing, I'm looking for a Custom App with advanced features and integrations. I'd like to discuss my requirements and get a quote. When can we talk?",
   },
 ];
 
 export function AppModal({ open, onOpenChange }: AppModalProps) {
   const openWhatsApp = (message: string) => {
     window.open(
-      `https://wa.me/919584661610?text=${encodeURIComponent(`Hi, I'd like to ${message}.`)}`,
+      `https://wa.me/919584661610?text=${encodeURIComponent(message)}`,
       "_blank"
     );
   };

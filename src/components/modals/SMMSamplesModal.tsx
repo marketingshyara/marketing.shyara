@@ -247,7 +247,7 @@ export function SMMSamplesModal({ open, onOpenChange }: SMMSamplesModalProps) {
               variant="outline" 
               onClick={() => {
                 window.open(
-                  "https://wa.me/919584661610?text=Hi%2C%20I%27d%20like%20to%20discuss%20Social%20Media%20Management%20services.",
+                  "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%20just%20checked%20out%20your%20social%20media%20samples%20and%20I%20love%20the%20quality.%20I%20want%20similar%20content%20for%20my%20brand.%20Can%20we%20discuss%20which%20plan%20would%20work%20best%3F",
                   "_blank"
                 );
               }}

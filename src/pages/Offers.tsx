@@ -23,14 +23,14 @@ const offers = [
       "Menu Display with Categories",
     ],
     highlight: "AI-Ready SEO",
-    ctaMessage: "enquire about Restaurant Website offer starting at ₹2999",
+    ctaMessage: "Hi Shyara Marketing, I saw the Restaurant Website offer at ₹2,999 on your website. I'm interested - could you share more details and next steps?",
   },
 ];
 
 export default function Offers() {
   const openWhatsApp = (message: string) => {
     window.open(
-      `https://wa.me/919584661610?text=${encodeURIComponent(`Hi, I'd like to ${message}.`)}`,
+      `https://wa.me/919584661610?text=${encodeURIComponent(message)}`,
       "_blank"
     );
   };

@@ -55,10 +55,11 @@ const plans = [
 ];
 
 export function SocialMediaModal({ open, onOpenChange }: SocialMediaModalProps) {
-  const openWhatsApp = (plan?: string) => {
-    const message = plan 
-      ? `Hi, I'm interested in the ${plan} plan for Social Media Management.`
-      : "Hi, I'd like to discuss Social Media Management services.";
+  const openWhatsApp = (planName?: string) => {
+    const planData = planName ? plans.find(p => p.name === planName) : null;
+    const message = planData 
+      ? `Hi Shyara Marketing, I'd like to go ahead with the *${planData.name} Plan* (${planData.price}/month) for Social Media Management. Please share the next steps.`
+      : "Hi Shyara Marketing, I need a custom Social Media Management plan for my business. Can we discuss the requirements and pricing?";
     window.open(
       `https://wa.me/919584661610?text=${encodeURIComponent(message)}`,
       "_blank"

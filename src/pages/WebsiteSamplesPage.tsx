@@ -93,7 +93,7 @@ function WebsiteSampleCard({ sample }: { sample: WebsiteSample }) {
             size="sm"
             className="bg-[#25D366] hover:bg-[#1fb855] text-white"
             onClick={() => {
-              const msg = `Hi, I'd like a website similar to "${sample.name}". Can we discuss?`;
+              const msg = `Hi Shyara Marketing, I just viewed the "${sample.name}" sample on your website and I'd like something similar for my business. Can we discuss the scope, timeline, and pricing?`;
               window.open(`https://wa.me/919584661610?text=${encodeURIComponent(msg)}`, "_blank");
             }}
           >
@@ -293,7 +293,7 @@ export default function WebsiteSamplesPage() {
               className="bg-accent hover:bg-accent/90 text-accent-foreground"
               onClick={() => {
                 window.open(
-                  "https://wa.me/919584661610?text=Hi%2C%20I%27d%20like%20to%20discuss%20Website%20Development%20services.",
+                  "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%27ve%20gone%20through%20your%20website%20samples%20and%20I%27m%20interested%20in%20getting%20a%20website%20built%20for%20my%20business.%20Can%20we%20discuss%20what%20would%20work%20best%20for%20me%3F",
                   "_blank"
                 );
               }}

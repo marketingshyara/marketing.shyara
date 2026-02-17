@@ -21,7 +21,7 @@ export function Header() {
 
   const openWhatsApp = () => {
     window.open(
-      "https://wa.me/919584661610?text=Hi%2C%20I%27m%20interested%20in%20your%20services.",
+      "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%20visited%20your%20website%20and%20I%27m%20interested%20in%20your%20services.%20Could%20you%20share%20more%20details%3F",
       "_blank"
     );
   };
