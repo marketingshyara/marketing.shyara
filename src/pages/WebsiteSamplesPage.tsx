@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Loader2, FolderOpen, Share2, Check, ArrowLeft } from "lucide-react";
+import { ExternalLink, Loader2, FolderOpen, Share2, Check, ArrowLeft, MessageCircle } from "lucide-react";
 import {
   UtensilsCrossed, Stethoscope, Stars, LayoutGrid,
 } from "lucide-react";
@@ -84,10 +84,23 @@ function WebsiteSampleCard({ sample }: { sample: WebsiteSample }) {
       <div className="p-4">
         <h3 className="font-semibold text-foreground mb-1">{sample.name}</h3>
         <p className="text-sm text-muted-foreground line-clamp-2">{sample.description}</p>
-        <Button variant="outline" size="sm" className="mt-3 w-full" onClick={openInNewTab}>
-          <ExternalLink className="h-4 w-4 mr-2" />
-          Open Preview
-        </Button>
+        <div className="flex gap-2 mt-3">
+          <Button variant="outline" size="sm" className="flex-1" onClick={openInNewTab}>
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+          <Button
+            size="sm"
+            className="bg-[#25D366] hover:bg-[#1fb855] text-white"
+            onClick={() => {
+              const msg = `Hi, I'd like a website similar to "${sample.name}". Can we discuss?`;
+              window.open(`https://wa.me/919584661610?text=${encodeURIComponent(msg)}`, "_blank");
+            }}
+          >
+            <MessageCircle className="h-4 w-4 mr-1" />
+            Inquire
+          </Button>
+        </div>
       </div>
     </div>
   );
