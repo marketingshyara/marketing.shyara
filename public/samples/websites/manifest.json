@@ -2,7 +2,8 @@
   "categories": [
     { "id": "restaurants", "name": "Restaurants", "icon": "UtensilsCrossed" },
     { "id": "clinics", "name": "Clinics", "icon": "Stethoscope" },
-    { "id": "astrology", "name": "Astrology", "icon": "Stars" }
+    { "id": "astrology", "name": "Astrology", "icon": "Stars" },
+    { "id": "coaching", "name": "Coaching", "icon": "GraduationCap" }
   ],
   "samples": [
     {
@@ -36,6 +37,14 @@
       "folder": "clinic-sample",
       "file": "index.html",
       "category": "clinics"
+    },
+    {
+      "id": "coaching-sample",
+      "name": "Coaching Classes Website",
+      "description": "A modern coaching institute website with courses, faculty profiles, results showcase, scholarship info, and test series.",
+      "folder": "coaching-sample",
+      "file": "index.html",
+      "category": "coaching"
     }
   ]
 }

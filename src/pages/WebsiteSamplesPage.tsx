@@ -5,7 +5,7 @@ import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Loader2, FolderOpen, Share2, Check, ArrowLeft, MessageCircle } from "lucide-react";
 import {
-  UtensilsCrossed, Stethoscope, Stars, LayoutGrid,
+  UtensilsCrossed, Stethoscope, Stars, LayoutGrid, GraduationCap,
 } from "lucide-react";
 import type { WebsiteSample, SampleCategory, WebsitesManifest } from "@/types/samples";
 
@@ -14,6 +14,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   UtensilsCrossed,
   Stethoscope,
   Stars,
+  GraduationCap,
 };
 
 // Hook to load manifest data
