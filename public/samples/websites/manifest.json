@@ -42,7 +42,7 @@
       "id": "clinic-sample-3",
       "name": "Clinic Patient QR Website (Sample 3)",
       "description": "A modern clinic website with patient-focused sections, doctor profiles, services, and dedicated waiting area pages.",
-      "folder": "clinic-sample-3",
+      "folder": "clinic3v2",
       "file": "index.html",
       "category": "clinics"
     },
