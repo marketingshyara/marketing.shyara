@@ -31,6 +31,14 @@
       "category": "restaurants"
     },
     {
+      "id": "restaurant-sample-5",
+      "name": "Journey Of Taste Website",
+      "description": "A cinematic restaurant website with immersive storytelling, signature dishes, and modern dining visuals.",
+      "folder": "restaurant-sample-5",
+      "file": "index.html",
+      "category": "restaurants"
+    },
+    {
       "id": "clinic-sample",
       "name": "Clinic Website",
       "description": "A professional clinic website with doctor profiles, services, patient portal, and appointment booking.",
