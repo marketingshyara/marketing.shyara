@@ -39,6 +39,14 @@
       "category": "clinics"
     },
     {
+      "id": "clinic-sample-3",
+      "name": "Clinic Patient QR Website (Sample 3)",
+      "description": "A modern clinic website with patient-focused sections, doctor profiles, services, and dedicated waiting area pages.",
+      "folder": "clinic-sample-3",
+      "file": "index.html",
+      "category": "clinics"
+    },
+    {
       "id": "coaching-sample",
       "name": "Coaching Classes Website",
       "description": "A modern coaching institute website with courses, faculty profiles, results showcase, scholarship info, and test series.",
