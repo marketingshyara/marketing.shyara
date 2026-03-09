@@ -1,88 +1,110 @@
 import { Link } from "react-router-dom";
+import { MessageCircle, Mail } from "lucide-react";
 import shyaraLogo from "@/assets/shyara-logo.png";
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-card">
+    <footer className="border-t-2 border-accent/30 bg-card mt-auto">
       <div className="container py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="md:col-span-2">
             <Link to="/" className="flex items-center mb-4">
-              <img 
-                src={shyaraLogo} 
-                alt="Shyara" 
-                className="h-24 w-auto dark:invert" 
+              <img
+                src={shyaraLogo}
+                alt="Shyara"
+                className="h-24 w-auto dark:invert"
               />
-              <span className="text-3xl font-bold text-accent ml-1">Marketing</span>
+              <span className="text-3xl font-extrabold text-accent ml-1">Marketing</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
-              We help businesses grow through social media, advertising, websites, and apps — 
+              We help businesses grow through social media, advertising, websites, and apps —
               with clarity, consistency, and measurable results.
             </p>
-            <p className="text-muted-foreground text-sm mt-4">
+            <p className="text-muted-foreground text-sm mt-2">
               A brand under Shyara Tech Solutions (OPC) Pvt. Ltd.
             </p>
+            <div className="flex flex-col gap-2 mt-5">
+              <a
+                href="https://wa.me/919584661610"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-accent transition-colors"
+              >
+                <MessageCircle className="h-4 w-4 text-accent" />
+                WhatsApp
+              </a>
+              <a
+                href="mailto:marketing.shyara@gmail.com"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-accent transition-colors"
+              >
+                <Mail className="h-4 w-4 text-accent" />
+                marketing.shyara@gmail.com
+              </a>
+            </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-accent mb-4">Quick Links</h4>
             <ul className="space-y-2">
-              <li>
-                <Link to="/" className="text-sm text-muted-foreground hover:text-accent transition-colors">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link to="/services" className="text-sm text-muted-foreground hover:text-accent transition-colors">
-                  Services
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="text-sm text-muted-foreground hover:text-accent transition-colors">
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-sm text-muted-foreground hover:text-accent transition-colors">
-                  Contact
-                </Link>
-              </li>
+              {[
+                { to: "/", label: "Home" },
+                { to: "/services", label: "Services" },
+                { to: "/about", label: "About" },
+                { to: "/contact", label: "Contact" },
+                { to: "/offers", label: "Offers" },
+              ].map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} className="text-sm text-muted-foreground hover:text-accent transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Services */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Services</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-accent mb-4">Services</h4>
             <ul className="space-y-2">
-              <li>
-                <Link to="/services" className="text-sm text-muted-foreground hover:text-accent transition-colors">
-                  Social Media Management
-                </Link>
-              </li>
-              <li>
-                <Link to="/services" className="text-sm text-muted-foreground hover:text-accent transition-colors">
-                  Ads Campaign Management
-                </Link>
-              </li>
-              <li>
-                <Link to="/services" className="text-sm text-muted-foreground hover:text-accent transition-colors">
-                  Website Development
-                </Link>
-              </li>
-              <li>
-                <Link to="/services" className="text-sm text-muted-foreground hover:text-accent transition-colors">
-                  App Development
-                </Link>
-              </li>
+              {[
+                { to: "/services/social-media", label: "Social Media Management" },
+                { to: "/services/ads-campaign-management", label: "Ads Campaign Management" },
+                { to: "/services/website-development", label: "Website Development" },
+                { to: "/services/app-development", label: "App Development" },
+              ].map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} className="text-sm text-muted-foreground hover:text-accent transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Portfolio */}
+          <div>
+            <h4 className="text-xs font-semibold uppercase tracking-widest text-accent mb-4">Portfolio</h4>
+            <ul className="space-y-2">
+              {[
+                { to: "/samples/social-media", label: "Social Media Samples" },
+                { to: "/samples/websites", label: "Website Samples" },
+                { to: "/offers", label: "Current Offers" },
+              ].map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} className="text-sm text-muted-foreground hover:text-accent transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
         {/* Legal Links */}
-        <div className="border-t border-border mt-8 pt-8">
-          <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-4">
+        <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-wrap justify-center md:justify-start gap-4 md:gap-6">
             <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-accent transition-colors">
               Privacy Policy
             </Link>
@@ -96,8 +118,8 @@ export function Footer() {
               Service Delivery Policy
             </Link>
           </div>
-          <p className="text-sm text-muted-foreground text-center">
-            © {new Date().getFullYear()} Shyara Marketing. All rights reserved.
+          <p className="text-sm text-muted-foreground text-center md:text-right flex-shrink-0">
+            © {new Date().getFullYear()} Shyara Tech Solutions (OPC) Pvt. Ltd.
           </p>
         </div>
       </div>

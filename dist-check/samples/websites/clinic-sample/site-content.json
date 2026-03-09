@@ -1,0 +1,241 @@
+{
+  "clinic": {
+    "name": "Smile Dental Clinic",
+    "specialty": "Advanced Dental Care",
+    "tagline": "Where Every Smile Tells a Story",
+    "logo": "/images/logo.png",
+    "phone": "+91 98765 43210",
+    "email": "hello@smiledentalclinic.com",
+    "address": "42, MG Road, Koramangala, Bangalore - 560034",
+    "hours": [
+      { "days": "Monday - Friday", "time": "9:00 AM - 7:00 PM" },
+      { "days": "Saturday", "time": "9:00 AM - 4:00 PM" },
+      { "days": "Sunday", "time": "Closed" }
+    ],
+    "mapEmbedUrl": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.5965!2d77.6199!3d12.9352!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTLCsDU2JzA3LjIiTiA3N8KwMzcnMTEuNiJF!5e0!3m2!1sen!2sin!4v1234567890"
+  },
+  "about": {
+    "history": "Founded in 2010, Smile Dental Clinic has been serving the Bangalore community with world-class dental care for over 14 years. What started as a small practice has grown into one of the city's most trusted dental clinics.",
+    "mission": "To provide compassionate, high-quality dental care using the latest technology, ensuring every patient leaves with a healthier, brighter smile.",
+    "values": [
+      "Patient-First Approach",
+      "Clinical Excellence",
+      "Transparency & Trust",
+      "Continuous Learning"
+    ],
+    "facilities": [
+      "State-of-the-art digital X-ray systems",
+      "Intraoral cameras for detailed diagnostics",
+      "Laser dentistry equipment",
+      "Comfortable, spa-like treatment rooms",
+      "Sterilization protocols exceeding WHO standards"
+    ]
+  },
+  "doctors": [
+    {
+      "id": "dr-priya",
+      "name": "Dr. Priya Sharma",
+      "photo": "/images/doctor-1.jpg",
+      "designation": "Chief Dentist & Founder",
+      "specialty": "Cosmetic Dentistry & Implantology",
+      "yearsOfExperience": 15,
+      "bio": "Dr. Priya Sharma is a passionate dentist who believes in transforming lives through beautiful smiles. With over 15 years of experience, she specializes in smile makeovers and dental implants.",
+      "education": [
+        { "degree": "BDS", "institution": "Rajiv Gandhi University of Health Sciences", "year": 2009 },
+        { "degree": "MDS - Prosthodontics", "institution": "Manipal Academy of Higher Education", "year": 2013 },
+        { "degree": "Fellowship in Implantology", "institution": "NYU College of Dentistry, USA", "year": 2016 }
+      ],
+      "certifications": [
+        "Diplomate, International Congress of Oral Implantologists",
+        "Certified Invisalign Provider",
+        "Advanced Laser Dentistry Certification"
+      ],
+      "awards": [
+        "Best Dentist Award - Bangalore Medical Association, 2022",
+        "Top 10 Cosmetic Dentists in India - Dental Tribune, 2021"
+      ],
+      "researchPapers": [
+        { "title": "Comparative Evaluation of Zirconia vs Porcelain Veneers in Anterior Teeth", "journal": "Journal of Prosthetic Dentistry", "year": 2021, "url": "" },
+        { "title": "Long-term Success Rates of Immediate Dental Implant Loading", "journal": "International Journal of Oral Implantology", "year": 2023, "url": "" }
+      ]
+    },
+    {
+      "id": "dr-arjun",
+      "name": "Dr. Arjun Patel",
+      "photo": "/images/doctor-2.jpg",
+      "designation": "Senior Dental Surgeon",
+      "specialty": "Orthodontics & Pediatric Dentistry",
+      "yearsOfExperience": 10,
+      "bio": "Dr. Arjun Patel combines precision with a gentle touch, making dental visits comfortable for patients of all ages. He is particularly loved by young patients for his friendly approach.",
+      "education": [
+        { "degree": "BDS", "institution": "SDM College of Dental Sciences, Dharwad", "year": 2014 },
+        { "degree": "MDS - Orthodontics", "institution": "A.B. Shetty Memorial Institute", "year": 2018 }
+      ],
+      "certifications": [
+        "Certified in Clear Aligner Therapy",
+        "Pediatric Dental Sedation Certified"
+      ],
+      "awards": [
+        "Young Dentist of the Year - IDA Karnataka, 2023"
+      ],
+      "researchPapers": [
+        { "title": "Efficacy of Clear Aligners in Class II Malocclusion Correction", "journal": "Angle Orthodontist", "year": 2022, "url": "" }
+      ]
+    },
+    {
+      "id": "dr-meera",
+      "name": "Dr. Meera Reddy",
+      "photo": "/images/doctor-3.jpg",
+      "designation": "Endodontist & Conservative Dentist",
+      "specialty": "Root Canal Therapy & Restorative Dentistry",
+      "yearsOfExperience": 8,
+      "bio": "Dr. Meera Reddy is known for her painless root canal treatments. She uses advanced microscopy and rotary instruments to ensure precision and patient comfort during every procedure.",
+      "education": [
+        { "degree": "BDS", "institution": "Bangalore Institute of Dental Sciences", "year": 2016 },
+        { "degree": "MDS - Conservative Dentistry & Endodontics", "institution": "MS Ramaiah Dental College", "year": 2020 }
+      ],
+      "certifications": [
+        "Microscopic Endodontics Certification",
+        "Advanced Restorative Dentistry - CEREC CAD/CAM"
+      ],
+      "awards": [
+        "Excellence in Endodontics - National Dental Conference, 2023"
+      ],
+      "researchPapers": [
+        { "title": "Micro-CT Analysis of Root Canal Preparation Using Rotary vs Reciprocating Files", "journal": "Journal of Endodontics", "year": 2022, "url": "" },
+        { "title": "Single-Visit vs Multi-Visit Root Canal Treatment Outcomes", "journal": "International Endodontic Journal", "year": 2023, "url": "" }
+      ]
+    },
+    {
+      "id": "dr-vikram",
+      "name": "Dr. Vikram Singh",
+      "photo": "/images/doctor-4.jpg",
+      "designation": "Oral & Maxillofacial Surgeon",
+      "specialty": "Surgical Extractions & Jaw Surgery",
+      "yearsOfExperience": 12,
+      "bio": "Dr. Vikram Singh brings surgical expertise to the team, handling complex cases including wisdom tooth extractions, jaw corrections, and trauma management with exceptional skill.",
+      "education": [
+        { "degree": "BDS", "institution": "Government Dental College, Mumbai", "year": 2012 },
+        { "degree": "MDS - Oral & Maxillofacial Surgery", "institution": "Nair Hospital Dental College", "year": 2016 },
+        { "degree": "Fellowship in Craniofacial Surgery", "institution": "AIIMS, New Delhi", "year": 2018 }
+      ],
+      "certifications": [
+        "Board Certified Oral Surgeon",
+        "Advanced Trauma Life Support (ATLS)"
+      ],
+      "awards": [
+        "Best Paper Award - AOMSI National Conference, 2020"
+      ],
+      "researchPapers": [
+        { "title": "3D-Printed Surgical Guides for Impacted Third Molar Extraction", "journal": "Journal of Oral and Maxillofacial Surgery", "year": 2021, "url": "" }
+      ]
+    }
+  ],
+  "services": [
+    {
+      "id": "cosmetic",
+      "title": "Cosmetic Dentistry",
+      "icon": "Sparkles",
+      "description": "Transform your smile with veneers, teeth whitening, and complete smile makeovers tailored to your unique features.",
+      "details": "Our cosmetic treatments include porcelain veneers, professional teeth whitening, dental bonding, and gum contouring. We use digital smile design to preview your new smile before treatment begins."
+    },
+    {
+      "id": "implants",
+      "title": "Dental Implants",
+      "icon": "CircleDot",
+      "description": "Permanent tooth replacement solutions using titanium implants that look, feel, and function like natural teeth.",
+      "details": "We offer single tooth implants, implant-supported bridges, and full-arch solutions like All-on-4. Our 3D guided surgery ensures precise placement with faster healing times."
+    },
+    {
+      "id": "orthodontics",
+      "title": "Orthodontics",
+      "icon": "SmilePlus",
+      "description": "Straighten your teeth with braces, clear aligners, or lingual braces for a perfectly aligned smile.",
+      "details": "Choose from traditional metal braces, ceramic braces, Invisalign clear aligners, or hidden lingual braces. Treatment plans are customized using 3D digital scanning and planning."
+    },
+    {
+      "id": "rootcanal",
+      "title": "Root Canal Treatment",
+      "icon": "Shield",
+      "description": "Painless, modern root canal therapy to save damaged teeth using microscopic precision techniques.",
+      "details": "Our single-sitting root canal treatments use rotary endodontics and dental microscopes for maximum precision. We ensure complete comfort with advanced anesthesia techniques."
+    },
+    {
+      "id": "pediatric",
+      "title": "Pediatric Dentistry",
+      "icon": "Baby",
+      "description": "Gentle dental care for children in a fun, comfortable environment that builds positive dental habits early.",
+      "details": "From first tooth visits to preventive sealants and fluoride treatments, we make dental visits enjoyable for kids. Our child-friendly operatory helps young patients feel at ease."
+    },
+    {
+      "id": "surgery",
+      "title": "Oral Surgery",
+      "icon": "Stethoscope",
+      "description": "Expert surgical solutions including wisdom tooth removal, jaw surgery, and dental trauma management.",
+      "details": "Our oral surgeon handles complex extractions, impacted wisdom teeth, bone grafting, and corrective jaw surgery with hospital-grade precision in our clinic setting."
+    }
+  ],
+  "blogs": [
+    {
+      "id": "blog-1",
+      "title": "5 Signs You Need a Dental Check-up Right Away",
+      "content": "Regular dental check-ups are crucial for maintaining oral health, but sometimes your body sends warning signals that you shouldn't ignore.\n\n## 1. Persistent Tooth Pain\nIf you have a toothache that lasts more than a day or two, it could indicate a cavity, infection, or cracked tooth that needs immediate attention.\n\n## 2. Bleeding Gums\nGums that bleed when you brush or floss may be a sign of gum disease (gingivitis or periodontitis). Early treatment can prevent tooth loss.\n\n## 3. Sensitivity to Hot or Cold\nSudden sensitivity could mean enamel erosion, a cavity, or an exposed root surface that requires professional evaluation.\n\n## 4. Bad Breath That Won't Go Away\nChronic bad breath (halitosis) can be caused by gum disease, cavities, or other oral infections that need treatment.\n\n## 5. Visible Changes\nAny lumps, white patches, sores, or discoloration in your mouth should be examined promptly to rule out serious conditions.",
+      "author": "Dr. Priya Sharma",
+      "date": "2025-01-15",
+      "coverImage": "/images/blog-checkup.jpg"
+    },
+    {
+      "id": "blog-2",
+      "title": "The Truth About Teeth Whitening: What Works & What Doesn't",
+      "content": "Everyone wants a brighter smile, but with so many options available, it's hard to know what actually works.\n\n## Professional vs. Over-the-Counter\nProfessional whitening at a dental clinic uses higher concentrations of bleaching agents and custom-fitted trays, delivering faster and more dramatic results than store-bought kits.\n\n## Home Remedies: Fact or Fiction?\n- **Baking soda**: Mildly effective but can damage enamel with overuse\n- **Oil pulling**: No scientific evidence for whitening\n- **Activated charcoal**: Can actually scratch and damage enamel\n- **Strawberries**: Malic acid provides negligible whitening\n\n## What Actually Works\n1. Professional in-office whitening (best results)\n2. Custom take-home trays from your dentist\n3. Whitening toothpaste (for maintenance only)\n\n## Maintaining Your Results\nAvoid staining foods and drinks like coffee, tea, and red wine for 48 hours after treatment. Use a straw when possible and maintain regular brushing habits.",
+      "author": "Dr. Priya Sharma",
+      "date": "2025-02-01",
+      "coverImage": "/images/blog-whitening.jpg"
+    },
+    {
+      "id": "blog-3",
+      "title": "Why Your Child's First Dental Visit Should Be by Age 1",
+      "content": "Many parents wait until their child has a full set of teeth before visiting a dentist, but early visits are crucial for long-term oral health.\n\n## The One-Year Rule\nThe American Academy of Pediatric Dentistry recommends a child's first dental visit by their first birthday or within six months of the first tooth appearing.\n\n## What Happens at the First Visit?\n- Quick, gentle examination of emerging teeth and gums\n- Assessment of any early dental issues\n- Guidance on teething, thumb-sucking, and pacifier use\n- Tips on cleaning infant teeth and nutrition advice\n\n## Benefits of Early Visits\n- **Prevention**: Catch problems before they become painful\n- **Familiarity**: Children become comfortable with the dental environment\n- **Education**: Parents learn proper oral hygiene techniques for babies\n\n## Making It Fun\nChoose a pediatric-friendly dental clinic, bring your child's favorite toy, and keep the experience positive. Avoid using words like 'pain' or 'hurt' when talking about the dentist.",
+      "author": "Dr. Arjun Patel",
+      "date": "2025-01-28",
+      "coverImage": "/images/blog-pediatric.jpg"
+    }
+  ],
+  "testimonials": [
+    {
+      "id": "test-1",
+      "patientName": "Ananya Krishnan",
+      "review": "Dr. Priya transformed my smile completely! I was always self-conscious about my teeth, but after getting veneers, I can't stop smiling. The whole team made me feel so comfortable throughout the process.",
+      "rating": 5,
+      "date": "2025-01-10"
+    },
+    {
+      "id": "test-2",
+      "patientName": "Rahul Menon",
+      "review": "I had a terrible fear of dentists, but Dr. Arjun's gentle approach made my root canal completely painless. Honestly didn't feel a thing! Highly recommend this clinic to anyone with dental anxiety.",
+      "rating": 5,
+      "date": "2024-12-20"
+    },
+    {
+      "id": "test-3",
+      "patientName": "Sneha Gupta",
+      "review": "My daughter actually looks forward to her dental visits now! Dr. Arjun is amazing with kids. The clinic is clean, modern, and the staff is incredibly friendly and professional.",
+      "rating": 5,
+      "date": "2025-01-25"
+    },
+    {
+      "id": "test-4",
+      "patientName": "Mohammed Farhan",
+      "review": "Got my dental implant done here after comparing multiple clinics. Dr. Priya explained every step clearly and the result is perfect. Worth every rupee — my implant looks and feels just like a real tooth.",
+      "rating": 5,
+      "date": "2024-11-15"
+    },
+    {
+      "id": "test-5",
+      "patientName": "Lakshmi Iyer",
+      "review": "Had my wisdom teeth removed by Dr. Vikram. He was so professional and reassuring. The recovery was much smoother than I expected. The follow-up care was excellent too.",
+      "rating": 4,
+      "date": "2025-02-05"
+    }
+  ]
+}

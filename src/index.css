@@ -6,6 +6,7 @@
 
 @layer base {
   :root {
+    --surface: 210 15% 95%;
     --background: 210 20% 98%;
     --foreground: 215 25% 15%;
 
@@ -47,6 +48,7 @@
   }
 
   .dark {
+    --surface: 220 18% 14%;
     --background: 220 20% 10%;
     --foreground: 210 20% 95%;
 
@@ -97,12 +99,32 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    @apply font-bold tracking-tight leading-tight;
   }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-widest text-accent;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-md hover:-translate-y-0.5;
+  }
+
+  .gradient-hero {
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, hsl(160 84% 39% / 0.10) 0%, transparent 70%);
+  }
+
+  .icon-well {
+    @apply w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0;
+  }
+
+  .icon-well-lg {
+    @apply w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center flex-shrink-0;
   }
 }

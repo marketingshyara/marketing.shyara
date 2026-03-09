@@ -1,0 +1,124 @@
+# Shyara Marketing — llms.txt
+
+> Shyara Marketing is a digital marketing and technology services brand under Shyara Tech Solutions (OPC) Pvt. Ltd. We help businesses in India and globally grow their digital presence through social media management, advertising, website development, and app development.
+
+## About Shyara Marketing
+
+Shyara Marketing provides transparent, execution-focused digital marketing and technology services for small and growing businesses. Our pricing is upfront, our deliverables are fixed, and our clients own everything we build for them. We work directly with business owners — no call centers, no hidden fees.
+
+**Legal Name**: Shyara Tech Solutions (OPC) Pvt. Ltd.
+**Website**: https://shyaramarketing.com
+**Contact**: marketing.shyara@gmail.com | +91 9584661610 (WhatsApp)
+**Business Hours**: Monday–Saturday, 9am–7pm IST
+**Location**: India (serving clients globally)
+
+---
+
+## Services
+
+### Social Media Management
+Monthly plans for Instagram, Facebook, and Google Business Profile management.
+
+- **Starter Plan**: Rs. 7,999/month — 4 reels, 8 image creatives, Google Business Profile optimization, engagement management
+- **Growth Plan**: Rs. 14,999/month — 8 reels, 12 creatives, strategic ad planning, local audience targeting, free ad assistance
+- **Scale Plan**: Rs. 20,000/month — 12 reels, 16 creatives, personalized AI business insights, actionable customer preference data
+- Monthly billing, no lock-in contracts
+- Content calendar managed entirely by our team — clients approve before publishing
+
+URL: https://shyaramarketing.com/services/social-media
+
+### Ads Campaign Management
+End-to-end campaign management on Meta (Facebook & Instagram), Google Ads, and YouTube.
+
+- **Pricing**: 20% of monthly ad budget as management fee (paid in advance)
+- **Minimum recommended ad budget**: Rs. 5,000/month
+- **Included**: Free static image ad creatives, daily optimization, weekly WhatsApp performance summaries, monthly detailed reports
+- **Add-on**: Video ad editing available at Rs. 2,000 per video
+- Clients always retain full ownership of their ad accounts
+- No hidden markups on ad spend
+
+URL: https://shyaramarketing.com/services/ads-campaign-management
+
+### Website Development
+Business websites from simple portfolios to complex custom platforms.
+
+- **Basic Website**: Local businesses, portfolios, consultant sites. Typical timeline: 3–5 business days
+- **E-commerce / Booking Website**: Online payments, product listings, appointment scheduling. Typical timeline: 2–3 weeks
+- **Custom Website**: Marketplaces, LMS platforms, healthcare portals, complex web apps. Timeline scoped per project
+- All websites: mobile-first design, SEO setup, two revision rounds included, full ownership on delivery
+- CMS included for Basic and E-commerce sites so clients can update content without coding
+
+URL: https://shyaramarketing.com/services/website-development
+
+### App Development
+Cross-platform mobile applications for Android and iOS.
+
+- **Basic/Presence App**: Business profile apps, restaurant menu apps, booking apps, educational content apps. Timeline: 3–6 weeks
+- **Custom/Product App**: E-commerce apps, fintech apps, healthcare management, food delivery, on-demand platforms. Timeline: 3–6 months
+- Built with React Native / Flutter (one codebase for both platforms)
+- Native development available for specific requirements
+- Full source code ownership after payment
+- We scope requirements before writing any code — no surprise timelines or costs
+
+URL: https://shyaramarketing.com/services/app-development
+
+---
+
+## Portfolio
+
+We have delivered 100+ projects for 50+ clients across social media, advertising, websites, and apps.
+
+### Website Samples (Interactive Previews)
+Live, interactive demos of websites we have built:
+- Restaurant websites (multiple styles)
+- Dental / medical clinic websites
+- Travel and cab service websites
+- Coaching and education websites
+- Astrologer / wellness service websites
+
+URL: https://shyaramarketing.com/samples/websites
+
+### Social Media Samples
+Image creatives and reels we have produced for brands across food, retail, services, and more.
+
+URL: https://shyaramarketing.com/samples/social-media
+
+---
+
+## Our Process
+
+1. **Discovery Call** — Free consultation to understand your business goals before recommending anything
+2. **Strategy & Plan** — Written scope document with deliverables, timeline, and pricing before any payment
+3. **Execution** — We build, publish, and manage with regular WhatsApp updates throughout
+4. **Review & Grow** — Monthly results reports; we adjust based on data and feedback
+
+---
+
+## Trust and Transparency
+
+- First consultation is always free
+- Written plan provided before any payment is required
+- No lock-in contracts for recurring services (monthly billing)
+- Clients own all deliverables: source code, assets, ad accounts, social accounts
+- Honest about fit — we will say if we are not the right partner for your needs
+- Privacy Policy: https://shyaramarketing.com/privacy-policy
+- Terms of Service: https://shyaramarketing.com/terms-of-service
+- Refund Policy: https://shyaramarketing.com/refund-policy
+- Service Delivery Policy: https://shyaramarketing.com/service-delivery-policy
+
+---
+
+## Site Map
+
+- Home: https://shyaramarketing.com/
+- Services: https://shyaramarketing.com/services
+- Social Media Management: https://shyaramarketing.com/services/social-media
+- Ads Campaign Management: https://shyaramarketing.com/services/ads-campaign-management
+- Website Development: https://shyaramarketing.com/services/website-development
+- App Development: https://shyaramarketing.com/services/app-development
+- Portfolio / Samples: https://shyaramarketing.com/samples
+- Website Samples: https://shyaramarketing.com/samples/websites
+- Social Media Samples: https://shyaramarketing.com/samples/social-media
+- About: https://shyaramarketing.com/about
+- Contact: https://shyaramarketing.com/contact
+- Current Offers: https://shyaramarketing.com/offers

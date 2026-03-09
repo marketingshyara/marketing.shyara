@@ -1,81 +1,166 @@
-import { Share2, Target, Globe, Smartphone } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Share2, Target, Globe, Smartphone, ArrowRight, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { ServiceCard } from "@/components/ServiceCard";
-import { SocialMediaModal } from "@/components/modals/SocialMediaModal";
-import { AdsModal } from "@/components/modals/AdsModal";
-import { WebsiteModal } from "@/components/modals/WebsiteModal";
-import { AppModal } from "@/components/modals/AppModal";
-import { useModalWithHistory } from "@/hooks/use-modal-history";
+import { PageHero } from "@/components/PageHero";
+import { Button } from "@/components/ui/button";
 
 const services = [
   {
     id: "social-media",
     title: "Social Media Management",
-    description: "Build a consistent presence with strategic content, community engagement, and data-driven insights.",
+    description: "Monthly plans from Rs. 7,999 with reels, creatives, engagement management, and Google Business Profile support.",
     icon: Share2,
+    href: "/services/social-media",
+    ctaLabel: "Explore Plans",
   },
   {
     id: "ads",
     title: "Ads Campaign Management",
-    description: "Drive results with professionally managed ad campaigns, continuous optimization, and transparent reporting.",
+    description: "Transparent 20% management fee model with no hidden markups on your ad budget.",
     icon: Target,
+    href: "/services/ads-campaign-management",
+    ctaLabel: "See Pricing",
   },
   {
     id: "website",
     title: "Website Development",
-    description: "Fast, functional, and business-focused websites designed to convert visitors and scale with your growth.",
+    description: "Basic to custom builds with clear timelines, mobile-first performance, and full ownership.",
     icon: Globe,
+    href: "/services/website-development",
+    ctaLabel: "View Tiers",
   },
   {
     id: "app",
     title: "App Development",
-    description: "Mobile apps that solve real business problems — from simple MVPs to complex, scalable platforms.",
+    description: "From MVP apps to scalable products with clear scope, timeline, and handover.",
+    icon: Smartphone,
+    href: "/services/app-development",
+    ctaLabel: "View Details",
+  },
+];
+
+const decisionGuide: Array<{
+  need: string;
+  service: string;
+  href: string;
+  icon: LucideIcon;
+}> = [
+  {
+    need: "I want more followers and engagement",
+    service: "Social Media Management",
+    href: "/services/social-media",
+    icon: Share2,
+  },
+  {
+    need: "I want to run ads and generate more sales",
+    service: "Ads Campaign Management",
+    href: "/services/ads-campaign-management",
+    icon: Target,
+  },
+  {
+    need: "I need a high-converting business website",
+    service: "Website Development",
+    href: "/services/website-development",
+    icon: Globe,
+  },
+  {
+    need: "I want to build a mobile app product",
+    service: "App Development",
+    href: "/services/app-development",
     icon: Smartphone,
   },
 ];
 
 export default function Services() {
-  const { openModal, isModalOpen, createOnOpenChange } = useModalWithHistory();
+  const openWhatsApp = () => {
+    window.open(
+      "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%27m%20not%20sure%20which%20service%20fits%20my%20business.%20Can%20you%20guide%20me%20to%20the%20right%20option%3F",
+      "_blank"
+    );
+  };
+
+  const openWhatsAppCustom = () => {
+    window.open(
+      "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%20have%20specific%20requirements%20that%20may%20need%20a%20custom%20approach.%20Can%20we%20discuss%20my%20needs%3F",
+      "_blank"
+    );
+  };
 
   return (
     <Layout>
-      <SEO 
+      <SEO
         title="Services"
         description="Explore our comprehensive digital services including social media management, advertising campaign management, website development, and app development tailored to your business needs."
         canonical="/services"
         keywords="digital marketing services, social media management service, ad campaign management, website development company, app development agency, digital advertising, SEO services India"
       />
-      {/* Hero Section */}
-      <section className="py-16 lg:py-24">
+
+      <PageHero
+        label="Our Services"
+        title={<>Everything Your Business Needs to Grow <span className="text-accent">Online.</span></>}
+        description="Four focused services. One execution team. Clear pricing, fixed deliverables, and direct support."
+        trustPoints={["Transparent pricing", "Defined deliverables", "Direct WhatsApp support"]}
+      >
+        <Button onClick={openWhatsApp} variant="outline" className="gap-2">
+          <MessageCircle className="h-4 w-4" />
+          Need Help Choosing a Service?
+        </Button>
+      </PageHero>
+
+      <section className="py-12 bg-[hsl(var(--surface))]">
         <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Our Services
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Comprehensive digital solutions tailored to your business needs. 
-              Click on any service to explore details and pricing.
+          <div className="max-w-5xl mx-auto">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5 text-center">
+              Find your service quickly
             </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {decisionGuide.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className="group rounded-xl border border-border bg-card p-5 hover:border-accent/40 hover:shadow-md transition-all duration-300"
+                >
+                  <div className="icon-well mb-3">
+                    <item.icon className="h-5 w-5 text-accent" />
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-snug mb-3">
+                    {item.need}
+                  </p>
+                  <span className="text-xs font-semibold text-accent inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+                    {item.service}
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Services Grid */}
-      <section className="pb-20">
+      <section className="py-20 lg:py-28 bg-background">
         <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">Our Services in Detail</h2>
+            <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
+              Click any service to explore pricing, process, and frequently asked questions.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {services.map((service, index) => (
-              <div 
-                key={service.id} 
-                className="animate-fade-in-up opacity-0" 
+              <div
+                key={service.id}
+                className="animate-fade-in-up opacity-0"
                 style={{ animationDelay: `${0.1 * index}s` }}
               >
                 <ServiceCard
                   title={service.title}
                   description={service.description}
                   icon={service.icon}
-                  onViewDetails={() => openModal(service.id)}
+                  href={service.href}
+                  ctaLabel={service.ctaLabel}
                 />
               </div>
             ))}
@@ -83,23 +168,21 @@ export default function Services() {
         </div>
       </section>
 
-      {/* Modals */}
-      <SocialMediaModal 
-        open={isModalOpen("social-media")} 
-        onOpenChange={createOnOpenChange("social-media")} 
-      />
-      <AdsModal 
-        open={isModalOpen("ads")} 
-        onOpenChange={createOnOpenChange("ads")} 
-      />
-      <WebsiteModal 
-        open={isModalOpen("website")} 
-        onOpenChange={createOnOpenChange("website")} 
-      />
-      <AppModal 
-        open={isModalOpen("app")} 
-        onOpenChange={createOnOpenChange("app")} 
-      />
+      <section className="py-16 bg-[hsl(var(--surface))]">
+        <div className="container max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl font-bold mb-3 text-foreground">Need Something Unique?</h2>
+          <p className="text-muted-foreground mb-6">
+            Our services can be combined or customized. Tell us your goal and we will design the right approach.
+          </p>
+          <Button
+            onClick={openWhatsAppCustom}
+            className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Discuss My Requirements
+          </Button>
+        </div>
+      </section>
     </Layout>
   );
 }

@@ -1,48 +1,93 @@
 import { Link } from "react-router-dom";
-import { Share2, Target, Globe, Smartphone, ArrowRight } from "lucide-react";
+import { Share2, Target, Globe, Smartphone, ArrowRight, MessageCircle, Camera } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { ServiceCard } from "@/components/ServiceCard";
-import { SocialMediaModal } from "@/components/modals/SocialMediaModal";
-import { AdsModal } from "@/components/modals/AdsModal";
-import { WebsiteModal } from "@/components/modals/WebsiteModal";
-import { AppModal } from "@/components/modals/AppModal";
 import { Button } from "@/components/ui/button";
-import { useModalWithHistory } from "@/hooks/use-modal-history";
 
 const services = [
   {
     id: "social-media",
     title: "Social Media Management",
-    description: "Build a consistent presence with strategic content and community engagement.",
+    description: "Monthly plans from ₹7,999 — reels, creatives, engagement management, and Google Business Profile.",
     icon: Share2,
+    href: "/services/social-media",
+    ctaLabel: "Explore Plans",
   },
   {
     id: "ads",
     title: "Ads Campaign Management",
-    description: "Drive results with data-driven ad campaigns and continuous optimization.",
+    description: "20% management fee model. No hidden markups on your ad budget. Transparent, results-focused.",
     icon: Target,
+    href: "/services/ads-campaign-management",
+    ctaLabel: "See Pricing",
   },
   {
     id: "website",
     title: "Website Development",
-    description: "Fast, functional websites designed to convert and scale with your business.",
+    description: "Basic to custom. Fast, functional websites built to convert — with clear timelines and pricing.",
     icon: Globe,
+    href: "/services/website-development",
+    ctaLabel: "View Details",
   },
   {
     id: "app",
     title: "App Development",
-    description: "Mobile apps that solve real problems — from MVPs to complex platforms.",
+    description: "MVP to full-scale apps. We scope before we build so there are no surprises.",
     icon: Smartphone,
+    href: "/services/app-development",
+    ctaLabel: "View Details",
+  },
+];
+
+const processSteps = [
+  {
+    title: "Discovery Call",
+    description: "Free consultation. We understand your goals before recommending anything.",
+  },
+  {
+    title: "Strategy & Plan",
+    description: "Clear deliverables, timeline, and pricing in writing. No surprises.",
+  },
+  {
+    title: "Execution",
+    description: "We build, publish, manage — with regular WhatsApp updates throughout.",
+  },
+  {
+    title: "Review & Grow",
+    description: "Monthly results shared. We adjust based on data and your feedback.",
+  },
+];
+
+const trustStats = [
+  {
+    value: "100+",
+    label: "Projects Delivered",
+    note: "Across social media, ads, websites, and apps",
+  },
+  {
+    value: "50+",
+    label: "Happy Clients",
+    note: "From local shops to scaling brands",
+  },
+  {
+    value: "5+",
+    label: "Years of Experience",
+    note: "Building digital solutions that hold up",
   },
 ];
 
 export default function Home() {
-  const { openModal, isModalOpen, createOnOpenChange } = useModalWithHistory();
-
   const openWhatsAppHero = () => {
     window.open(
       "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%20visited%20your%20website%20and%20I%27m%20looking%20for%20digital%20marketing%20%2F%20technology%20services%20for%20my%20business.%20Can%20we%20discuss%3F",
+      "_blank"
+    );
+  };
+
+  const openWhatsAppServices = () => {
+    window.open(
+      "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%27m%20not%20sure%20which%20service%20fits%20my%20business.%20Can%20you%20help%20me%20figure%20out%20the%20right%20option%3F",
       "_blank"
     );
   };
@@ -54,154 +99,253 @@ export default function Home() {
     );
   };
 
-  const scrollToServices = () => {
-    document.getElementById("services")?.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
     <Layout>
-      <SEO 
+      <SEO
         title="Digital Marketing & Technology Services"
         description="Shyara Marketing helps businesses grow through social media management, advertising campaigns, website development, and app development with clarity, consistency, and measurable results."
         canonical="/"
         keywords="digital marketing India, social media management, website development, app development, advertising campaigns, Shyara Marketing, digital marketing agency, online marketing services"
       />
+
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent" />
-        <div className="container relative">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 animate-fade-in">
-              Grow Your Business with{" "}
-              <span className="text-accent">Digital Excellence</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 animate-fade-in opacity-0" style={{ animationDelay: "0.1s" }}>
-              We help businesses grow through social media, advertising, websites, and apps — 
-              with clarity, consistency, and measurable results.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in opacity-0" style={{ animationDelay: "0.2s" }}>
-              <Button 
-                size="lg" 
-                onClick={openWhatsAppHero}
-                className="bg-accent hover:bg-accent/90 text-accent-foreground"
-              >
-                Talk to Us
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                onClick={scrollToServices}
-              >
-                Explore Services
-              </Button>
+      <section className="gradient-hero py-20 lg:py-32 overflow-hidden">
+        <div className="container">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left: Text content */}
+            <div className="animate-fade-in">
+              <span className="section-label block mb-4">Digital Marketing & Technology</span>
+              <h1 className="text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.05] text-foreground">
+                Your Business Deserves a Digital Presence That Actually{" "}
+                <span className="text-accent">Converts.</span>
+              </h1>
+              <p className="mt-5 text-lg text-muted-foreground leading-relaxed max-w-lg">
+                We handle social media, ads, websites, and apps — so you can focus on running
+                your business while we grow it online.
+              </p>
+              <div className="flex flex-wrap gap-3 mt-8">
+                <Button
+                  size="lg"
+                  onClick={openWhatsAppHero}
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Get a Free Consultation
+                </Button>
+                <Link to="/samples">
+                  <Button size="lg" variant="outline" className="gap-2">
+                    See Our Work
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Floating stat cards (desktop only) */}
+            <div className="relative h-[320px] hidden lg:block">
+              <div className="absolute top-0 right-0 w-56 bg-card rounded-2xl border border-border shadow-lg p-5 rotate-2 hover:rotate-0 transition-transform duration-300">
+                <div className="text-3xl font-extrabold text-accent">100+</div>
+                <div className="text-sm text-muted-foreground mt-1">Projects Delivered</div>
+              </div>
+              <div className="absolute top-28 left-4 w-48 bg-card rounded-2xl border border-border shadow-lg p-5 -rotate-1 hover:rotate-0 transition-transform duration-300">
+                <div className="text-3xl font-extrabold text-accent">50+</div>
+                <div className="text-sm text-muted-foreground mt-1">Happy Clients</div>
+              </div>
+              <div className="absolute bottom-0 right-8 w-52 bg-card rounded-2xl border border-border shadow-lg p-5 rotate-1 hover:rotate-0 transition-transform duration-300">
+                <div className="text-3xl font-extrabold text-accent">5+</div>
+                <div className="text-sm text-muted-foreground mt-1">Years of Experience</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-20 bg-secondary/30">
+      <section id="services" className="py-20 lg:py-28 bg-[hsl(var(--surface))]">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Our Services
+            <span className="section-label block mb-3">What We Do</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+              Four Services. One Focused Team.
             </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Comprehensive digital solutions to help your business thrive in the modern landscape.
+            <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
+              Whether you need online visibility, ads that convert, a website that works, or an app —
+              we have a clear process for each.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {services.map((service, index) => (
-              <div 
-                key={service.id} 
-                className="animate-fade-in-up opacity-0" 
+              <div
+                key={service.id}
+                className="animate-fade-in-up opacity-0"
                 style={{ animationDelay: `${0.1 * index}s` }}
               >
                 <ServiceCard
                   title={service.title}
                   description={service.description}
                   icon={service.icon}
-                  onViewDetails={() => openModal(service.id)}
+                  href={service.href}
+                  ctaLabel={service.ctaLabel}
                 />
               </div>
             ))}
           </div>
 
-          <div className="text-center mt-12">
-            <Link to="/services">
-              <Button variant="outline" size="lg">
-                View All Services
-                <ArrowRight className="ml-2 h-4 w-4" />
+          <div className="mt-12 max-w-xl mx-auto">
+            <div className="rounded-2xl bg-card border border-border p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                Not sure which service fits your business?
+              </p>
+              <Button
+                onClick={openWhatsAppServices}
+                className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Ask Us — We'll Recommend
               </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Section */}
-      <section className="py-20">
-        <div className="container">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-              <div className="p-6">
-                <div className="text-4xl font-bold text-accent mb-2">100+</div>
-                <p className="text-muted-foreground">Projects Delivered</p>
-              </div>
-              <div className="p-6">
-                <div className="text-4xl font-bold text-accent mb-2">50+</div>
-                <p className="text-muted-foreground">Happy Clients</p>
-              </div>
-              <div className="p-6">
-                <div className="text-4xl font-bold text-accent mb-2">5+</div>
-                <p className="text-muted-foreground">Years of Experience</p>
-              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
+      {/* How We Work — Process Section */}
+      <section className="py-20 lg:py-28 bg-background">
         <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Ready to Grow Your Business?
+          <div className="text-center mb-16">
+            <span className="section-label block mb-3">Our Process</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+              How We Turn Vision Into Results
             </h2>
-            <p className="text-primary-foreground/80 mb-8">
-              Let's discuss how we can help you achieve your goals with our digital marketing 
-              and technology solutions.
-            </p>
-            <Button 
-              size="lg" 
-              onClick={openWhatsAppCTA}
-              className="bg-accent hover:bg-accent/90 text-accent-foreground"
-            >
-              Start a Conversation
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+            {/* Connecting line (desktop only) */}
+            <div className="hidden md:block absolute top-8 left-[12.5%] right-[12.5%] h-px bg-border" />
+            {processSteps.map((step, i) => (
+              <div key={i} className="flex flex-col items-center text-center relative">
+                <div className="w-16 h-16 rounded-full bg-accent/10 border-2 border-accent/30 flex items-center justify-center mb-4 z-10 bg-background">
+                  <span className="text-xl font-extrabold text-accent">{i + 1}</span>
+                </div>
+                <h3 className="text-base font-semibold mb-2 text-foreground">{step.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Modals */}
-      <SocialMediaModal 
-        open={isModalOpen("social-media")} 
-        onOpenChange={createOnOpenChange("social-media")} 
-      />
-      <AdsModal 
-        open={isModalOpen("ads")} 
-        onOpenChange={createOnOpenChange("ads")} 
-      />
-      <WebsiteModal 
-        open={isModalOpen("website")} 
-        onOpenChange={createOnOpenChange("website")} 
-      />
-      <AppModal 
-        open={isModalOpen("app")} 
-        onOpenChange={createOnOpenChange("app")} 
-      />
+      {/* Portfolio Teaser */}
+      <section className="py-20 lg:py-28 bg-[hsl(var(--surface))]">
+        <div className="container">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-10">
+            <div>
+              <span className="section-label block mb-3">Our Work</span>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">See What We've Built</h2>
+              <p className="text-muted-foreground mt-2">
+                Real websites and social media content for real businesses.
+              </p>
+            </div>
+            <Link to="/samples" className="flex-shrink-0">
+              <Button variant="outline" className="gap-2">
+                Browse Full Portfolio
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Link
+              to="/samples/social-media"
+              className="group rounded-2xl border border-border bg-card p-7 hover:shadow-md hover:border-accent/40 transition-all duration-300 flex items-start gap-5"
+            >
+              <div className="icon-well-lg group-hover:bg-accent/20 transition-colors">
+                <Camera className="h-8 w-8 text-accent" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2 text-foreground">Social Media Content</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Browse image creatives and reels we've produced for brands across niches.
+                </p>
+                <span className="inline-flex items-center gap-1 text-accent text-sm font-semibold mt-4 group-hover:gap-2 transition-all">
+                  View Samples <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+            </Link>
+            <Link
+              to="/samples/websites"
+              className="group rounded-2xl border border-border bg-card p-7 hover:shadow-md hover:border-accent/40 transition-all duration-300 flex items-start gap-5"
+            >
+              <div className="icon-well-lg group-hover:bg-accent/20 transition-colors">
+                <Globe className="h-8 w-8 text-accent" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2 text-foreground">Website Designs</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Live interactive previews of websites we've built — explore them before you commit.
+                </p>
+                <span className="inline-flex items-center gap-1 text-accent text-sm font-semibold mt-4 group-hover:gap-2 transition-all">
+                  Preview Sites <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Stats */}
+      <section className="py-20 lg:py-28 bg-background">
+        <div className="container">
+          <div className="text-center mb-12">
+            <span className="section-label block mb-3">By the Numbers</span>
+            <h2 className="text-3xl font-bold text-foreground">Trusted by Growing Businesses</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {trustStats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-border bg-card p-8 text-center shadow-sm"
+              >
+                <div className="text-5xl font-extrabold text-accent mb-2">{stat.value}</div>
+                <div className="font-semibold text-foreground mb-1">{stat.label}</div>
+                <div className="text-sm text-muted-foreground">{stat.note}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Band */}
+      <section className="py-20 bg-[hsl(215_20%_20%)] border-l-4 border-accent text-white">
+        <div className="container">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">
+              Ready to Grow Your Business?
+            </h2>
+            <p className="text-white/60 text-sm mb-8">
+              First consultation is always free. No commitment required.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                size="lg"
+                onClick={openWhatsAppCTA}
+                className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2"
+              >
+                <MessageCircle className="h-5 w-5" />
+                Start a Conversation
+              </Button>
+              <Link to="/services">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-white/30 text-white hover:bg-white/10 gap-2"
+                >
+                  Explore Services
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
     </Layout>
   );
 }
