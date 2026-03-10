@@ -13,38 +13,44 @@
     <meta property="og:title" content="Shyara Marketing | Digital Marketing & Technology Services" />
     <meta property="og:description" content="Grow your business with expert digital marketing, social media management, website development, and app development services in India." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://shyaramarketing.com" />
+    <meta property="og:url" content="https://marketing.shyara.co.in" />
     <meta property="og:site_name" content="Shyara Marketing" />
     <meta property="og:locale" content="en_IN" />
-    <meta property="og:image" content="https://shyaramarketing.com/og-image.png" />
+    <meta property="og:image" content="https://marketing.shyara.co.in/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Shyara Marketing | Digital Marketing & Technology Services" />
     <meta name="twitter:description" content="Grow your business with expert digital marketing, social media management, website development, and app development services in India." />
-    <meta name="twitter:image" content="https://shyaramarketing.com/og-image.png" />
+    <meta name="twitter:image" content="https://marketing.shyara.co.in/og-image.png" />
 
-    <link rel="canonical" href="https://shyaramarketing.com" />
+    <link rel="canonical" href="https://marketing.shyara.co.in" />
 
-    <!-- Structured Data: Organization + WebSite (server-rendered for AI crawlers) -->
+    <!-- Structured Data: Organization + LocalBusiness + WebSite (server-rendered for AI crawlers) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
         {
-          "@type": "Organization",
-          "@id": "https://shyaramarketing.com/#organization",
+          "@type": ["Organization", "LocalBusiness"],
+          "@id": "https://marketing.shyara.co.in/#organization",
           "name": "Shyara Marketing",
           "legalName": "Shyara Tech Solutions (OPC) Pvt. Ltd.",
-          "url": "https://shyaramarketing.com",
+          "url": "https://marketing.shyara.co.in",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://shyaramarketing.com/favicon.png",
+            "url": "https://marketing.shyara.co.in/favicon.png",
             "width": 512,
             "height": 512
           },
+          "image": "https://marketing.shyara.co.in/og-image.png",
           "description": "Shyara Marketing is a digital marketing and technology services brand under Shyara Tech Solutions (OPC) Pvt. Ltd. We help businesses grow through social media management, advertising campaigns, website development, and app development — with clear pricing, transparent processes, and measurable results.",
+          "priceRange": "Rs. 7,999 – Rs. 20,000+",
+          "sameAs": [
+            "https://instagram.com/shyaramarketing",
+            "https://www.linkedin.com/company/shyaratechsolution"
+          ],
           "contactPoint": {
             "@type": "ContactPoint",
             "telephone": "+91-9584661610",
@@ -58,14 +64,20 @@
               "closes": "19:00"
             }
           },
+          "openingHoursSpecification": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+            "opens": "09:00",
+            "closes": "19:00"
+          },
           "address": {
             "@type": "PostalAddress",
             "addressCountry": "IN"
           },
-          "areaServed": {
-            "@type": "GeoShape",
-            "name": "India and Global"
-          },
+          "areaServed": [
+            { "@type": "Country", "name": "India" },
+            { "@type": "GeoShape", "name": "Global" }
+          ],
           "knowsAbout": [
             "Social Media Management",
             "Digital Marketing",
@@ -87,20 +99,27 @@
             "itemListElement": [
               {
                 "@type": "Offer",
+                "priceSpecification": {
+                  "@type": "PriceSpecification",
+                  "price": "7999",
+                  "priceCurrency": "INR",
+                  "description": "Starter Plan — starting price per month"
+                },
                 "itemOffered": {
                   "@type": "Service",
                   "name": "Social Media Management",
-                  "description": "Monthly social media management plans including reels, image creatives, engagement management, and Google Business Profile optimization. Plans start at Rs. 7,999 per month.",
-                  "url": "https://shyaramarketing.com/services/social-media"
+                  "description": "Monthly social media management plans including reels, image creatives, engagement management, and Google Business Profile optimization. Starter plan at Rs. 7,999/month, Growth at Rs. 14,999/month, Scale at Rs. 20,000/month. No lock-in contracts.",
+                  "url": "https://marketing.shyara.co.in/services/social-media"
                 }
               },
               {
                 "@type": "Offer",
+                "description": "20% of monthly ad budget as management fee. Minimum recommended ad budget: Rs. 5,000/month.",
                 "itemOffered": {
                   "@type": "Service",
                   "name": "Ads Campaign Management",
-                  "description": "End-to-end advertising campaign management on Meta, Google, and YouTube. Transparent 20% management fee model with no hidden markups on ad budget.",
-                  "url": "https://shyaramarketing.com/services/ads-campaign-management"
+                  "description": "End-to-end advertising campaign management on Meta (Facebook & Instagram), Google Ads, and YouTube. Transparent 20% management fee of ad budget. No hidden markups. Free static image creatives included.",
+                  "url": "https://marketing.shyara.co.in/services/ads-campaign-management"
                 }
               },
               {
@@ -108,8 +127,8 @@
                 "itemOffered": {
                   "@type": "Service",
                   "name": "Website Development",
-                  "description": "Business website development from basic portfolios to custom e-commerce and booking platforms. Fast, mobile-first, SEO-optimized websites with full ownership on delivery.",
-                  "url": "https://shyaramarketing.com/services/website-development"
+                  "description": "Business website development from basic portfolios (3–5 business days) to e-commerce/booking sites (2–3 weeks) and custom platforms. Mobile-first design, SEO-optimized, two revision rounds included. Full ownership on delivery.",
+                  "url": "https://marketing.shyara.co.in/services/website-development"
                 }
               },
               {
@@ -117,8 +136,8 @@
                 "itemOffered": {
                   "@type": "Service",
                   "name": "App Development",
-                  "description": "Cross-platform mobile app development using React Native and Flutter. From simple presence apps to full-scale product apps with payments, user accounts, and dashboards.",
-                  "url": "https://shyaramarketing.com/services/app-development"
+                  "description": "Cross-platform mobile app development using React Native and Flutter for Android and iOS. Basic presence apps (3–6 weeks) to full custom product apps (3–6 months). Full source code ownership after delivery.",
+                  "url": "https://marketing.shyara.co.in/services/app-development"
                 }
               }
             ]
@@ -126,18 +145,101 @@
         },
         {
           "@type": "WebSite",
-          "@id": "https://shyaramarketing.com/#website",
+          "@id": "https://marketing.shyara.co.in/#website",
           "name": "Shyara Marketing",
-          "url": "https://shyaramarketing.com",
+          "url": "https://marketing.shyara.co.in",
           "publisher": {
-            "@id": "https://shyaramarketing.com/#organization"
+            "@id": "https://marketing.shyara.co.in/#organization"
           },
           "inLanguage": "en-IN",
           "description": "Digital marketing and technology services for businesses in India and globally — social media management, ads, website development, and app development."
+        },
+        {
+          "@type": "ItemList",
+          "@id": "https://marketing.shyara.co.in/#services-list",
+          "name": "Shyara Marketing Services",
+          "description": "All digital marketing and technology services offered by Shyara Marketing",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Social Media Management",
+              "url": "https://marketing.shyara.co.in/services/social-media"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Ads Campaign Management",
+              "url": "https://marketing.shyara.co.in/services/ads-campaign-management"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Website Development",
+              "url": "https://marketing.shyara.co.in/services/website-development"
+            },
+            {
+              "@type": "ListItem",
+              "position": 4,
+              "name": "App Development",
+              "url": "https://marketing.shyara.co.in/services/app-development"
+            }
+          ]
         }
       ]
     }
     </script>
+
+    <!-- Structured Data: FAQPage (server-rendered — covers most-asked questions for AI Overviews) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How much does social media management cost at Shyara Marketing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Shyara Marketing offers three social media management plans: Starter at Rs. 7,999/month (4 reels + 8 image creatives), Growth at Rs. 14,999/month (8 reels + 12 creatives + ad planning), and Scale at Rs. 20,000/month (12 reels + 16 creatives + AI business insights). All plans include Google Business Profile optimization and engagement management. No lock-in contracts — monthly billing only."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is Shyara Marketing's fee for managing ad campaigns?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Shyara Marketing charges a transparent 20% management fee of the monthly ad budget. The minimum recommended ad budget is Rs. 5,000/month. There are no hidden markups on ad spend — clients always retain full ownership of their ad accounts. Free static image creatives are included in the management fee."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How long does it take to build a website with Shyara Marketing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A basic business website (portfolio, local business, consultant site) typically takes 3–5 business days. An e-commerce or booking website takes 2–3 weeks. Custom websites (marketplaces, LMS, healthcare portals) are scoped per project. All websites include two revision rounds and full ownership is transferred on delivery."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are there lock-in contracts for Shyara Marketing's services?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Shyara Marketing uses monthly billing with no lock-in contracts for recurring services like social media management and ads campaign management. Clients can stop at any time. A written scope document with deliverables, timeline, and pricing is provided before any payment is required."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do clients own the website, app, or ad account that Shyara Marketing builds?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Clients receive full ownership of all deliverables: website source code, app source code, ad accounts, social media assets, and brand materials. Shyara Marketing transfers complete ownership on delivery — there are no ongoing dependency fees or platform lock-ins."
+          }
+        }
+      ]
+    }
+    </script>
+    <!--app-head-->
   </head>
 
   <body>

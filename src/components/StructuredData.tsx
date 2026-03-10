@@ -5,8 +5,8 @@ const organizationSchema = {
   "@type": "Organization",
   "name": "Shyara Marketing",
   "legalName": "Shyara Tech Solutions (OPC) Pvt. Ltd.",
-  "url": "https://shyaramarketing.com",
-  "logo": "https://shyaramarketing.com/logo.png",
+  "url": "https://marketing.shyara.co.in",
+  "logo": "https://marketing.shyara.co.in/logo.png",
   "description": "Digital marketing and technology services company helping businesses grow through social media, advertising, websites, and apps.",
   "email": "marketing.shyara@gmail.com",
   "address": {
@@ -21,7 +21,7 @@ const localBusinessSchema = {
   "@type": "LocalBusiness",
   "name": "Shyara Marketing",
   "description": "Digital marketing and technology services company in India",
-  "url": "https://shyaramarketing.com",
+  "url": "https://marketing.shyara.co.in",
   "email": "marketing.shyara@gmail.com",
   "priceRange": "₹₹",
   "address": {
@@ -79,7 +79,7 @@ export function StructuredData({ type = "organization", data }: StructuredDataPr
         "isPartOf": {
           "@type": "WebSite",
           "name": "Shyara Marketing",
-          "url": "https://shyaramarketing.com"
+          "url": "https://marketing.shyara.co.in"
         },
         ...data
       };

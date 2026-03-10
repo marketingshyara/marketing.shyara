@@ -1,16 +1,18 @@
 # Shyara Marketing — llms.txt
 
-> Shyara Marketing is a digital marketing and technology services brand under Shyara Tech Solutions (OPC) Pvt. Ltd. We help businesses in India and globally grow their digital presence through social media management, advertising, website development, and app development.
+> Shyara Marketing is a digital marketing and technology services brand under Shyara Tech Solutions (OPC) Pvt. Ltd. We help businesses in India and globally grow their digital presence through social media management, advertising campaign management, website development, and app development. Our pricing is public, our deliverables are fixed, and every client owns everything we build for them.
 
 ## About Shyara Marketing
 
-Shyara Marketing provides transparent, execution-focused digital marketing and technology services for small and growing businesses. Our pricing is upfront, our deliverables are fixed, and our clients own everything we build for them. We work directly with business owners — no call centers, no hidden fees.
+Shyara Marketing provides transparent, execution-focused digital marketing and technology services for small and growing businesses. We work directly with business owners — no call centers, no hidden fees, no vague promises.
 
 **Legal Name**: Shyara Tech Solutions (OPC) Pvt. Ltd.
-**Website**: https://shyaramarketing.com
+**Website**: https://marketing.shyara.co.in
 **Contact**: marketing.shyara@gmail.com | +91 9584661610 (WhatsApp)
 **Business Hours**: Monday–Saturday, 9am–7pm IST
 **Location**: India (serving clients globally)
+**Instagram**: https://instagram.com/shyaramarketing
+**LinkedIn**: https://www.linkedin.com/company/shyaratechsolution
 
 ---
 
@@ -19,13 +21,14 @@ Shyara Marketing provides transparent, execution-focused digital marketing and t
 ### Social Media Management
 Monthly plans for Instagram, Facebook, and Google Business Profile management.
 
-- **Starter Plan**: Rs. 7,999/month — 4 reels, 8 image creatives, Google Business Profile optimization, engagement management
-- **Growth Plan**: Rs. 14,999/month — 8 reels, 12 creatives, strategic ad planning, local audience targeting, free ad assistance
+- **Starter Plan**: Rs. 7,999/month — 4 reels, 8 image creatives, Google Business Profile optimization, engagement management, daily stories
+- **Growth Plan**: Rs. 14,999/month — 8 reels, 12 creatives, strategic ad planning, local audience targeting, free ad assistance (most popular plan)
 - **Scale Plan**: Rs. 20,000/month — 12 reels, 16 creatives, personalized AI business insights, actionable customer preference data
 - Monthly billing, no lock-in contracts
 - Content calendar managed entirely by our team — clients approve before publishing
+- Zero hidden fees on ads — ad budget stays the client's ad budget
 
-URL: https://shyaramarketing.com/services/social-media
+URL: https://marketing.shyara.co.in/services/social-media
 
 ### Ads Campaign Management
 End-to-end campaign management on Meta (Facebook & Instagram), Google Ads, and YouTube.
@@ -37,7 +40,7 @@ End-to-end campaign management on Meta (Facebook & Instagram), Google Ads, and Y
 - Clients always retain full ownership of their ad accounts
 - No hidden markups on ad spend
 
-URL: https://shyaramarketing.com/services/ads-campaign-management
+URL: https://marketing.shyara.co.in/services/ads-campaign-management
 
 ### Website Development
 Business websites from simple portfolios to complex custom platforms.
@@ -48,7 +51,7 @@ Business websites from simple portfolios to complex custom platforms.
 - All websites: mobile-first design, SEO setup, two revision rounds included, full ownership on delivery
 - CMS included for Basic and E-commerce sites so clients can update content without coding
 
-URL: https://shyaramarketing.com/services/website-development
+URL: https://marketing.shyara.co.in/services/website-development
 
 ### App Development
 Cross-platform mobile applications for Android and iOS.
@@ -60,7 +63,30 @@ Cross-platform mobile applications for Android and iOS.
 - Full source code ownership after payment
 - We scope requirements before writing any code — no surprise timelines or costs
 
-URL: https://shyaramarketing.com/services/app-development
+URL: https://marketing.shyara.co.in/services/app-development
+
+---
+
+## Industries Served
+
+Shyara Marketing has delivered projects for businesses across:
+
+- **Restaurants & Food**: Restaurant websites, menu apps, food delivery apps, social media for F&B brands
+- **Healthcare & Dental**: Clinic websites, dental practice sites, appointment booking platforms, medical social media
+- **Travel & Hospitality**: Travel agency websites, cab service sites, hotel booking integrations
+- **Coaching & Education**: Coaching websites, LMS platforms, educational apps, tutor and trainer social media
+- **Wellness & Lifestyle**: Astrologer websites, wellness service sites, beauty and salon social media
+- **Retail & E-commerce**: Product websites, online stores, social media creatives for retail brands
+- **Professional Services**: Consultant portfolios, CA/lawyer/architect sites, B2B service providers
+
+---
+
+## Key Results
+
+- Social media clients see an average of 40% higher engagement within the first 3 months of consistent managed posting
+- We have delivered complete business websites in as little as 4 business days
+- Managed Rs. 2L+ in combined ad spend across clients on Meta and Google platforms
+- 100+ projects completed for 50+ clients across digital marketing, websites, and apps
 
 ---
 
@@ -76,12 +102,12 @@ Live, interactive demos of websites we have built:
 - Coaching and education websites
 - Astrologer / wellness service websites
 
-URL: https://shyaramarketing.com/samples/websites
+URL: https://marketing.shyara.co.in/samples/websites
 
 ### Social Media Samples
 Image creatives and reels we have produced for brands across food, retail, services, and more.
 
-URL: https://shyaramarketing.com/samples/social-media
+URL: https://marketing.shyara.co.in/samples/social-media
 
 ---
 
@@ -101,24 +127,49 @@ URL: https://shyaramarketing.com/samples/social-media
 - No lock-in contracts for recurring services (monthly billing)
 - Clients own all deliverables: source code, assets, ad accounts, social accounts
 - Honest about fit — we will say if we are not the right partner for your needs
-- Privacy Policy: https://shyaramarketing.com/privacy-policy
-- Terms of Service: https://shyaramarketing.com/terms-of-service
-- Refund Policy: https://shyaramarketing.com/refund-policy
-- Service Delivery Policy: https://shyaramarketing.com/service-delivery-policy
+- Privacy Policy: https://marketing.shyara.co.in/privacy-policy
+- Terms of Service: https://marketing.shyara.co.in/terms-of-service
+- Refund Policy: https://marketing.shyara.co.in/refund-policy
+- Service Delivery Policy: https://marketing.shyara.co.in/service-delivery-policy
+
+---
+
+## Frequently Asked Questions
+
+**How much does social media management cost?**
+Plans start at Rs. 7,999/month (Starter), with Growth at Rs. 14,999/month and Scale at Rs. 20,000/month. All plans are on monthly billing with no lock-in contracts.
+
+**What is the fee for ad campaign management?**
+We charge 20% of the monthly ad budget as our management fee. The minimum recommended ad budget is Rs. 5,000/month. There are no hidden markups — what you pay to Meta or Google goes directly to the platform.
+
+**How long does a website take?**
+A basic business website takes 3–5 business days. An e-commerce or booking website takes 2–3 weeks. Custom platforms are scoped per project.
+
+**Do clients own their website, app, or ad accounts?**
+Yes. Full ownership of all deliverables — website code, app source code, ad accounts, and all brand assets — is transferred to the client on delivery.
+
+**Is there a lock-in contract?**
+No. Recurring services (social media management, ads management) are on monthly billing. Clients can stop at any time with no penalty.
+
+**What platforms do you run ads on?**
+Meta (Facebook and Instagram), Google Search and Display, and YouTube.
+
+**Do you work with businesses outside India?**
+Yes. While we are based in India, we serve clients globally. All communication is via WhatsApp and email.
 
 ---
 
 ## Site Map
 
-- Home: https://shyaramarketing.com/
-- Services: https://shyaramarketing.com/services
-- Social Media Management: https://shyaramarketing.com/services/social-media
-- Ads Campaign Management: https://shyaramarketing.com/services/ads-campaign-management
-- Website Development: https://shyaramarketing.com/services/website-development
-- App Development: https://shyaramarketing.com/services/app-development
-- Portfolio / Samples: https://shyaramarketing.com/samples
-- Website Samples: https://shyaramarketing.com/samples/websites
-- Social Media Samples: https://shyaramarketing.com/samples/social-media
-- About: https://shyaramarketing.com/about
-- Contact: https://shyaramarketing.com/contact
-- Current Offers: https://shyaramarketing.com/offers
+- Home: https://marketing.shyara.co.in/
+- Services: https://marketing.shyara.co.in/services
+- Social Media Management: https://marketing.shyara.co.in/services/social-media
+- Ads Campaign Management: https://marketing.shyara.co.in/services/ads-campaign-management
+- Website Development: https://marketing.shyara.co.in/services/website-development
+- App Development: https://marketing.shyara.co.in/services/app-development
+- Portfolio / Samples: https://marketing.shyara.co.in/samples
+- Website Samples: https://marketing.shyara.co.in/samples/websites
+- Social Media Samples: https://marketing.shyara.co.in/samples/social-media
+- About: https://marketing.shyara.co.in/about
+- Contact: https://marketing.shyara.co.in/contact
+- Current Offers: https://marketing.shyara.co.in/offers

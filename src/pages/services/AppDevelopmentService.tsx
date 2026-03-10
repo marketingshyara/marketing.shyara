@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight, MessageCircle, ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { PageHero } from "@/components/PageHero";
@@ -65,7 +66,32 @@ const appProcess = [
   },
 ];
 
+const faqItems = [
+  {
+    question: "Does the app work on both Android and iOS?",
+    answer: "Yes. We build with React Native or Flutter, which produces a single codebase that runs natively on both Android and iOS. This means faster delivery and lower cost compared to building two separate apps. Native development is available when specific platform requirements demand it.",
+  },
+  {
+    question: "Do I own the source code after delivery?",
+    answer: "Yes. Full source code ownership is transferred to you after final payment. You can take the codebase to any developer in the future — there is no ongoing dependency on us.",
+  },
+  {
+    question: "How long does app development take?",
+    answer: "A basic presence app (business profile, menu, booking, content) typically takes 3–6 weeks. A custom product app (marketplace, fintech, healthcare, food delivery) typically takes 3–6 months. We scope requirements fully before providing a timeline — no surprise delays.",
+  },
+  {
+    question: "What happens after the app launches?",
+    answer: "We assist with app store submission (Google Play and Apple App Store) as part of the handover. Post-launch support and maintenance packages are available if you want ongoing updates and bug fixes.",
+  },
+  {
+    question: "How do you prevent scope creep and cost overruns?",
+    answer: "We write a detailed requirements document before a single line of code is written. You approve the scope, timeline, and pricing upfront. Any new features added after scope approval are quoted separately — there are no surprise bills.",
+  },
+];
+
 export default function AppDevelopmentService() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   const openWhatsApp = (message: string) => {
     window.open(`https://wa.me/919584661610?text=${encodeURIComponent(message)}`, "_blank");
   };
@@ -78,14 +104,15 @@ export default function AppDevelopmentService() {
         canonical="/services/app-development"
         keywords="app development, mobile app development, custom app development, business mobile app"
         breadcrumbs={[
-          { name: "Services", url: "https://shyaramarketing.com/services" },
-          { name: "App Development", url: "https://shyaramarketing.com/services/app-development" },
+          { name: "Services", url: "https://marketing.shyara.co.in/services" },
+          { name: "App Development", url: "https://marketing.shyara.co.in/services/app-development" },
         ]}
         serviceSchema={{
           name: "App Development",
           description: "Cross-platform mobile app development for Android and iOS using React Native and Flutter. From simple presence apps to full-scale product apps with payments, user accounts, and dashboards. Full source code ownership after delivery.",
-          url: "https://shyaramarketing.com/services/app-development",
+          url: "https://marketing.shyara.co.in/services/app-development",
         }}
+        faqSchema={faqItems}
       />
 
       <PageHero
@@ -164,6 +191,36 @@ export default function AppDevelopmentService() {
                 </div>
                 <h3 className="text-base font-semibold text-foreground mb-2">{step.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 lg:py-28 bg-[hsl(var(--surface))]">
+        <div className="container max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="section-label block mb-3">FAQ</span>
+            <h2 className="text-3xl font-bold text-foreground">Common Questions</h2>
+          </div>
+          <div className="space-y-3">
+            {faqItems.map((item, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
+                <button
+                  className="w-full flex items-center justify-between px-6 py-4 text-left gap-4"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                >
+                  <span className="font-medium text-foreground text-sm">{item.question}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-accent flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {openFaq === i && (
+                  <div className="px-6 pb-4 text-sm text-muted-foreground leading-relaxed border-t border-border pt-3">
+                    {item.answer}
+                  </div>
+                )}
               </div>
             ))}
           </div>

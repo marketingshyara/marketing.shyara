@@ -64,7 +64,8 @@ export default function About() {
         title="About Us"
         description="Shyara Marketing is a digital marketing and technology services brand under Shyara Tech Solutions (OPC) Pvt. Ltd., built on trust, clarity, and execution."
         canonical="/about"
-        keywords="Shyara Tech Solutions, digital marketing agency India, marketing company, technology services, about Shyara Marketing, digital agency"
+        keywords="Shyara Tech Solutions, digital marketing agency India, social media management agency India, marketing company India, technology services, about Shyara Marketing"
+        breadcrumbs={[{ name: "About", url: "https://marketing.shyara.co.in/about" }]}
       />
 
       <PageHero
@@ -74,15 +75,34 @@ export default function About() {
         trustPoints={["Registered Indian company", "Transparent delivery model", "Long-term growth focus"]}
       />
 
+      <section className="py-12 bg-[hsl(var(--surface))] border-b border-border">
+        <div className="container">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto text-center">
+            {[
+              { stat: "100+", label: "Projects Completed" },
+              { stat: "50+", label: "Happy Clients" },
+              { stat: "5+", label: "Years Delivering" },
+              { stat: "4", label: "Core Services" },
+            ].map((item) => (
+              <div key={item.label}>
+                <div className="text-3xl font-extrabold text-accent">{item.stat}</div>
+                <div className="text-xs text-muted-foreground mt-1">{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="py-20 lg:py-28 bg-[hsl(var(--surface))]">
         <div className="container">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
             <div className="rounded-xl border-l-4 border-accent bg-accent/5 p-7">
               <h3 className="font-semibold text-foreground mb-3">Why We Started</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                We saw too many small businesses paying for digital marketing and getting nothing measurable back.
+                We saw too many small businesses in India paying for digital marketing and getting nothing measurable back.
                 No clarity on what was being done, no honest reporting, and only vague promises. We built Shyara
-                Marketing to be the opposite: transparent, execution-focused, and accountable.
+                Marketing to be the opposite: transparent, execution-focused, and accountable. Every client gets
+                a written plan before paying, owns everything we deliver, and can stop any time.
               </p>
             </div>
             <div className="space-y-6">

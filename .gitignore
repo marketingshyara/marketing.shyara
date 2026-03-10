@@ -10,7 +10,12 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-check
+dist-check-*/
 *.local
+
+# Internal audit/report files
+GEO-AUDIT-REPORT.md
 
 # Editor directories and files
 .vscode/*

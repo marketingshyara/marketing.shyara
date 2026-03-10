@@ -14,4 +14,8 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  ssr: {
+    format: "esm",
+    noExternal: ["react-helmet-async"],
+  },
 });

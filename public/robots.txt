@@ -42,8 +42,23 @@ Allow: /
 User-agent: cohere-ai
 Allow: /
 
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: Kangaroobot
+Allow: /
+
 # Default: allow all
 User-agent: *
 Allow: /
 
-Sitemap: https://shyaramarketing.com/sitemap.xml
+Sitemap: https://marketing.shyara.co.in/sitemap.xml

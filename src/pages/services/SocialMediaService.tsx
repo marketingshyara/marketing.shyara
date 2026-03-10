@@ -1,4 +1,5 @@
-import { Check, MessageCircle } from "lucide-react";
+import { Check, MessageCircle, ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { PageHero } from "@/components/PageHero";
@@ -65,6 +66,29 @@ const howItWorks = [
   },
 ];
 
+const faqItems = [
+  {
+    question: "What is included in each social media management plan?",
+    answer: "Every plan includes reel production, image creatives, Google Business Profile optimization, engagement management (responding to comments and messages), and daily stories. The Starter plan includes 4 reels and 8 creatives per month. Growth adds ad planning and local audience targeting. Scale adds AI-powered business insights and customer preference data.",
+  },
+  {
+    question: "How is content approved before it goes live?",
+    answer: "We send you a content calendar before publishing each month. You review and approve every reel, creative, and caption before it is posted. Nothing goes live without your sign-off.",
+  },
+  {
+    question: "Is there a lock-in contract for social media management?",
+    answer: "No. All plans are on monthly billing. You can stop at any time with no penalty. We earn your business every month by delivering results.",
+  },
+  {
+    question: "How do you report results?",
+    answer: "You receive a monthly engagement report covering reach, follower growth, engagement rate, top-performing content, and what we are doing differently next month. You always know exactly what has been delivered.",
+  },
+  {
+    question: "Can I upgrade or downgrade my plan?",
+    answer: "Yes. You can change plans at the start of any new billing month. Just message us on WhatsApp and we will update your plan immediately.",
+  },
+];
+
 const comparisonRows = [
   { label: "Reels / month", starter: "4", growth: "8", scale: "12" },
   { label: "Image creatives / month", starter: "8", growth: "12", scale: "16" },
@@ -75,6 +99,8 @@ const comparisonRows = [
 ];
 
 export default function SocialMediaService() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   const openWhatsApp = (planName?: string) => {
     const selectedPlan = planName ? plans.find((p) => p.name === planName) : null;
     const message = selectedPlan
@@ -92,14 +118,15 @@ export default function SocialMediaService() {
         canonical="/services/social-media"
         keywords="social media management, reels package, creatives package, social media plans, local business social media"
         breadcrumbs={[
-          { name: "Services", url: "https://shyaramarketing.com/services" },
-          { name: "Social Media Management", url: "https://shyaramarketing.com/services/social-media" },
+          { name: "Services", url: "https://marketing.shyara.co.in/services" },
+          { name: "Social Media Management", url: "https://marketing.shyara.co.in/services/social-media" },
         ]}
         serviceSchema={{
           name: "Social Media Management",
           description: "Monthly social media management plans for Instagram, Facebook, and Google Business Profile. Includes reels, image creatives, engagement management. Plans from Rs. 7,999/month with no lock-in contracts.",
-          url: "https://shyaramarketing.com/services/social-media",
+          url: "https://marketing.shyara.co.in/services/social-media",
         }}
+        faqSchema={faqItems}
       />
 
       <PageHero
@@ -249,6 +276,48 @@ export default function SocialMediaService() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-background">
+        <div className="container max-w-3xl mx-auto text-center">
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-6">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Businesses that post consistently see an average of{" "}
+              <span className="font-semibold text-foreground">40% higher engagement</span>{" "}
+              within the first three months. We have helped clients reach that benchmark — without them creating a single piece of content themselves.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 lg:py-28 bg-[hsl(var(--surface))]">
+        <div className="container max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="section-label block mb-3">FAQ</span>
+            <h2 className="text-3xl font-bold text-foreground">Common Questions</h2>
+          </div>
+          <div className="space-y-3">
+            {faqItems.map((item, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
+                <button
+                  className="w-full flex items-center justify-between px-6 py-4 text-left gap-4"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                >
+                  <span className="font-medium text-foreground text-sm">{item.question}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-accent flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {openFaq === i && (
+                  <div className="px-6 pb-4 text-sm text-muted-foreground leading-relaxed border-t border-border pt-3">
+                    {item.answer}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>

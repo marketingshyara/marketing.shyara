@@ -5,6 +5,11 @@ interface BreadcrumbItem {
   url: string;
 }
 
+interface FaqItem {
+  question: string;
+  answer: string;
+}
+
 interface SEOProps {
   title: string;
   description: string;
@@ -19,9 +24,10 @@ interface SEOProps {
     description: string;
     url: string;
   };
+  faqSchema?: FaqItem[];
 }
 
-const BASE_URL = "https://shyaramarketing.com";
+const BASE_URL = "https://marketing.shyara.co.in";
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;
 
 export function SEO({
@@ -34,6 +40,7 @@ export function SEO({
   noIndex = false,
   breadcrumbs,
   serviceSchema,
+  faqSchema,
 }: SEOProps) {
   const fullTitle = title === "Shyara Marketing"
     ? title
@@ -66,6 +73,21 @@ export function SEO({
         "url": serviceSchema.url,
         "provider": { "@id": `${BASE_URL}/#organization` },
         "areaServed": { "@type": "GeoShape", "name": "India and Global" },
+      })
+    : null;
+
+  const faqJsonLd = faqSchema && faqSchema.length > 0
+    ? JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": faqSchema.map((item) => ({
+          "@type": "Question",
+          "name": item.question,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": item.answer,
+          },
+        })),
       })
     : null;
 
@@ -110,6 +132,11 @@ export function SEO({
       {/* Service Schema */}
       {serviceJsonLd && (
         <script type="application/ld+json">{serviceJsonLd}</script>
+      )}
+
+      {/* FAQ Schema */}
+      {faqJsonLd && (
+        <script type="application/ld+json">{faqJsonLd}</script>
       )}
     </Helmet>
   );

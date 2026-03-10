@@ -1,4 +1,5 @@
-import { Check, Clock, Smartphone, Search, MessageCircle } from "lucide-react";
+import { Check, Clock, Smartphone, Search, MessageCircle, ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { PageHero } from "@/components/PageHero";
@@ -97,7 +98,32 @@ const websiteProcess = [
   },
 ];
 
+const faqItems = [
+  {
+    question: "How long does it take to build a website?",
+    answer: "A basic business website (portfolio, local business, consultant) typically takes 3–5 business days. An e-commerce or booking website takes 2–3 weeks. Custom websites — marketplaces, LMS platforms, healthcare portals — are scoped per project before work begins. Our fastest delivery to date: a complete business website in 4 business days.",
+  },
+  {
+    question: "Do I own the website after it is delivered?",
+    answer: "Yes. Full ownership of the website source code, design files, and all assets is transferred to you on delivery. There are no ongoing platform fees or dependency on us to keep the site running.",
+  },
+  {
+    question: "What CMS will I be able to use to update content?",
+    answer: "Basic and e-commerce websites include a CMS (content management system) so you can update text, images, products, and blog posts without any coding. We configure it and train you on how to use it.",
+  },
+  {
+    question: "How many revisions are included?",
+    answer: "Two full revision rounds are included in every project. Most revision requests are turned around within 1–2 business days. If you need additional rounds beyond the two included, we discuss and quote fairly.",
+  },
+  {
+    question: "Do you handle hosting and domain setup?",
+    answer: "We help you choose and configure hosting, and we handle domain pointing and SSL setup as part of the launch. You own and control the hosting account — we do not lock you into any hosting provider we control.",
+  },
+];
+
 export default function WebsiteDevelopmentService() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   const openWhatsApp = (message: string) => {
     window.open(`https://wa.me/919584661610?text=${encodeURIComponent(message)}`, "_blank");
   };
@@ -110,14 +136,15 @@ export default function WebsiteDevelopmentService() {
         canonical="/services/website-development"
         keywords="website development, ecommerce website, booking website, custom web app development"
         breadcrumbs={[
-          { name: "Services", url: "https://shyaramarketing.com/services" },
-          { name: "Website Development", url: "https://shyaramarketing.com/services/website-development" },
+          { name: "Services", url: "https://marketing.shyara.co.in/services" },
+          { name: "Website Development", url: "https://marketing.shyara.co.in/services/website-development" },
         ]}
         serviceSchema={{
           name: "Website Development",
           description: "Business website development from basic portfolios to full custom platforms. Mobile-first, SEO-optimized websites with clear timelines and transparent pricing. Basic sites in 3-5 days, e-commerce in 2-3 weeks. Full ownership on delivery.",
-          url: "https://shyaramarketing.com/services/website-development",
+          url: "https://marketing.shyara.co.in/services/website-development",
         }}
+        faqSchema={faqItems}
       />
 
       <PageHero
@@ -229,6 +256,48 @@ export default function WebsiteDevelopmentService() {
                 </div>
                 <h3 className="text-base font-semibold text-foreground mb-2">{step.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-background">
+        <div className="container max-w-3xl mx-auto text-center">
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-6">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Our fastest delivery:{" "}
+              <span className="font-semibold text-foreground">a complete business website in 4 business days</span>.
+              Every site includes mobile-first design, SEO structure, and two revision rounds — before we hand over full ownership.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 lg:py-28 bg-[hsl(var(--surface))]">
+        <div className="container max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="section-label block mb-3">FAQ</span>
+            <h2 className="text-3xl font-bold text-foreground">Common Questions</h2>
+          </div>
+          <div className="space-y-3">
+            {faqItems.map((item, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
+                <button
+                  className="w-full flex items-center justify-between px-6 py-4 text-left gap-4"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                >
+                  <span className="font-medium text-foreground text-sm">{item.question}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-accent flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {openFaq === i && (
+                  <div className="px-6 pb-4 text-sm text-muted-foreground leading-relaxed border-t border-border pt-3">
+                    {item.answer}
+                  </div>
+                )}
               </div>
             ))}
           </div>

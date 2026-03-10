@@ -1,4 +1,5 @@
-import { Check, Target, Users, Image, BarChart2, FileText, PhoneCall, MessageCircle } from "lucide-react";
+import { Check, Target, Users, Image, BarChart2, FileText, PhoneCall, MessageCircle, ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { PageHero } from "@/components/PageHero";
@@ -37,7 +38,32 @@ const capabilities = [
   },
 ];
 
+const faqItems = [
+  {
+    question: "How does the 20% management fee work?",
+    answer: "You decide your monthly ad budget (we recommend a minimum of Rs. 5,000/month). We charge 20% of that budget as our management fee, paid in advance. For example, if your ad budget is Rs. 10,000/month, our fee is Rs. 2,000. Your full Rs. 10,000 goes to the ad platforms — we do not take a cut from it.",
+  },
+  {
+    question: "What platforms do you manage ads on?",
+    answer: "We manage campaigns on Meta (Facebook and Instagram), Google Search and Display, and YouTube. We recommend the right platform mix based on your business type and target audience.",
+  },
+  {
+    question: "Do I retain ownership of my ad accounts?",
+    answer: "Yes. You always retain full ownership of your Facebook Ads Manager, Google Ads account, and any other platforms used. We request access to manage campaigns on your behalf — we never create accounts under our ownership.",
+  },
+  {
+    question: "What is the minimum ad budget required?",
+    answer: "We recommend a minimum ad budget of Rs. 5,000/month for meaningful results. Below this threshold, the data is too limited to optimize effectively. We will be upfront if we believe a higher budget is needed for your specific goals.",
+  },
+  {
+    question: "Are ad creatives included in the management fee?",
+    answer: "Yes. Static image ad creatives are included in the management fee at no extra cost. Video ad editing is available as an add-on at Rs. 2,000 per video.",
+  },
+];
+
 export default function AdsCampaignService() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   const openWhatsApp = (type: "enquire" | "discuss") => {
     const message =
       type === "enquire"
@@ -55,14 +81,15 @@ export default function AdsCampaignService() {
         canonical="/services/ads-campaign-management"
         keywords="ads campaign management, paid advertising service, local ad targeting, ad optimization"
         breadcrumbs={[
-          { name: "Services", url: "https://shyaramarketing.com/services" },
-          { name: "Ads Campaign Management", url: "https://shyaramarketing.com/services/ads-campaign-management" },
+          { name: "Services", url: "https://marketing.shyara.co.in/services" },
+          { name: "Ads Campaign Management", url: "https://marketing.shyara.co.in/services/ads-campaign-management" },
         ]}
         serviceSchema={{
           name: "Ads Campaign Management",
           description: "End-to-end advertising campaign management on Meta (Facebook and Instagram), Google Ads, and YouTube. Transparent 20% management fee model with no hidden markups. Includes free image creatives, daily optimization, and weekly performance reports.",
-          url: "https://shyaramarketing.com/services/ads-campaign-management",
+          url: "https://marketing.shyara.co.in/services/ads-campaign-management",
         }}
+        faqSchema={faqItems}
       />
 
       <PageHero
@@ -124,6 +151,48 @@ export default function AdsCampaignService() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-[hsl(var(--surface))]">
+        <div className="container max-w-3xl mx-auto text-center">
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-6">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We have managed{" "}
+              <span className="font-semibold text-foreground">Rs. 2L+ in combined ad spend</span>{" "}
+              across clients on Meta and Google. Every rupee is tracked, reported, and optimized — with no markup on what goes to the platform.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 lg:py-28 bg-background">
+        <div className="container max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="section-label block mb-3">FAQ</span>
+            <h2 className="text-3xl font-bold text-foreground">Common Questions</h2>
+          </div>
+          <div className="space-y-3">
+            {faqItems.map((item, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
+                <button
+                  className="w-full flex items-center justify-between px-6 py-4 text-left gap-4"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                >
+                  <span className="font-medium text-foreground text-sm">{item.question}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-accent flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {openFaq === i && (
+                  <div className="px-6 pb-4 text-sm text-muted-foreground leading-relaxed border-t border-border pt-3">
+                    {item.answer}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
