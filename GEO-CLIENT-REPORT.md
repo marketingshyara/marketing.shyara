@@ -44,7 +44,7 @@ All schema is server-rendered in `<script type="application/ld+json">` tags, mak
 1. How much does social media management cost? → Plans from Rs. 7,999–Rs. 20,000/month
 2. What is the ad management fee? → 20% of monthly ad budget
 3. How long does a website take? → 3–5 days basic, 2–3 weeks e-commerce
-4. Are there lock-in contracts? → No, monthly billing only
+4. Is there a contract for social media management? → Yes, 3-month contract (SM takes time)
 5. Do clients own their deliverables? → Yes, full ownership on delivery
 
 **File: `src/components/SEO.tsx`**
@@ -99,7 +99,7 @@ All 4 service pages now have:
 **Social Media Management** (`/services/social-media`):
 - What is included in each plan?
 - How is content approved before going live?
-- Is there a lock-in contract?
+- Is there a contract for social media management?
 - How do you report results?
 - Can I upgrade/downgrade my plan?
 

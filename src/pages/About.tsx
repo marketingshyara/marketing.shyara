@@ -45,8 +45,8 @@ const workingWithUs = [
     description: "Reports, links, and screenshots every month. You always know what has been delivered.",
   },
   {
-    title: "No lock-in contracts for recurring services",
-    description: "Monthly billing. If we are not delivering value, you can stop. We earn your business every month.",
+    title: "3-month contract for social media",
+    description: "Social media growth takes consistency. We work on a 3-month contract so there is enough time to build content rhythm, grow your audience, and show measurable results.",
   },
 ];
 

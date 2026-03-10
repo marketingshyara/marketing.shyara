@@ -76,8 +76,8 @@ const faqItems = [
     answer: "We send you a content calendar before publishing each month. You review and approve every reel, creative, and caption before it is posted. Nothing goes live without your sign-off.",
   },
   {
-    question: "Is there a lock-in contract for social media management?",
-    answer: "No. All plans are on monthly billing. You can stop at any time with no penalty. We earn your business every month by delivering results.",
+    question: "Is there a contract for social media management?",
+    answer: "Yes. Social media management is offered on a 3-month contract. Social media growth depends on consistency — regular posting, engagement, and a content rhythm that builds over time. Results are rarely visible in the first few weeks. The 3-month period gives us the runway to build that momentum and show you real numbers.",
   },
   {
     question: "How do you report results?",
@@ -123,7 +123,7 @@ export default function SocialMediaService() {
         ]}
         serviceSchema={{
           name: "Social Media Management",
-          description: "Monthly social media management plans for Instagram, Facebook, and Google Business Profile. Includes reels, image creatives, engagement management. Plans from Rs. 7,999/month with no lock-in contracts.",
+          description: "Monthly social media management plans for Instagram, Facebook, and Google Business Profile. Includes reels, image creatives, engagement management. Plans from Rs. 7,999/month on a 3-month contract.",
           url: "https://marketing.shyara.co.in/services/social-media",
         }}
         faqSchema={faqItems}
@@ -137,7 +137,7 @@ export default function SocialMediaService() {
         ]}
         title={<>Consistent Content. Real Engagement. <span className="text-accent">Month After Month.</span></>}
         description="We handle your social media with a clear monthly plan, fixed deliverables, and transparent reporting."
-        trustPoints={["Plans from Rs. 7,999/month", "No lock-in contracts", "Monthly reporting"]}
+        trustPoints={["Plans from Rs. 7,999/month", "3-month contract", "Monthly reporting"]}
       />
 
       <section className="py-10 bg-[hsl(var(--surface))]">
