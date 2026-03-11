@@ -27,6 +27,8 @@ export interface SampleCategory {
   icon: string;
 }
 
+export type ClinicExperience = "waiting-room" | "standard";
+
 export interface WebsiteSample {
   id: string;
   name: string;
@@ -34,6 +36,9 @@ export interface WebsiteSample {
   folder: string;
   file: string;
   category: string;
+  clinicType?: string;
+  clinicExperience?: ClinicExperience;
+  waitingRoomPath?: string;
 }
 
 export interface WebsitesManifest {

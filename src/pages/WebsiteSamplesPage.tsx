@@ -53,9 +53,18 @@ function useWebsiteManifest() {
 function WebsiteSampleCard({ sample }: { sample: WebsiteSample }) {
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const sampleUrl = `/samples/websites/${sample.folder}/`;
+  const hasWaitingRoom = sample.category === "clinics" && sample.clinicExperience === "waiting-room";
+  const waitingRoomPath = (sample.waitingRoomPath || "waiting").replace(/^\/+/, "");
+  const waitingRoomUrl = hasWaitingRoom ? `${sampleUrl}${waitingRoomPath}` : null;
 
   const openInNewTab = () => {
     window.open(sampleUrl, "_blank");
+  };
+
+  const openWaitingRoomInNewTab = () => {
+    if (waitingRoomUrl) {
+      window.open(waitingRoomUrl, "_blank");
+    }
   };
 
   return (
@@ -83,16 +92,41 @@ function WebsiteSampleCard({ sample }: { sample: WebsiteSample }) {
         </div>
       </div>
       <div className="p-4">
+        {(sample.clinicType || sample.category === "clinics") && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {sample.clinicType && (
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                {sample.clinicType}
+              </span>
+            )}
+            {sample.category === "clinics" && (
+              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                hasWaitingRoom
+                  ? "bg-accent/15 text-accent"
+                  : "bg-muted text-muted-foreground"
+              }`}
+              >
+                {hasWaitingRoom ? "Waiting Room + QR" : "Standard Clinic Website"}
+              </span>
+            )}
+          </div>
+        )}
         <h3 className="font-semibold text-foreground mb-1">{sample.name}</h3>
         <p className="text-sm text-muted-foreground line-clamp-2">{sample.description}</p>
-        <div className="flex gap-2 mt-3">
+        <div className={`grid gap-2 mt-3 ${waitingRoomUrl ? "grid-cols-2" : "grid-cols-1"}`}>
           <Button variant="outline" size="sm" className="flex-1" onClick={openInNewTab}>
             <ExternalLink className="h-4 w-4 mr-2" />
             Preview
           </Button>
+          {waitingRoomUrl && (
+            <Button variant="outline" size="sm" className="flex-1" onClick={openWaitingRoomInNewTab}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Waiting Room
+            </Button>
+          )}
           <Button
             size="sm"
-            className="bg-[#25D366] hover:bg-[#1fb855] text-white"
+            className={`bg-[#25D366] hover:bg-[#1fb855] text-white ${waitingRoomUrl ? "col-span-2" : ""}`}
             onClick={() => {
               const msg = `Hi Shyara Marketing, I just viewed the "${sample.name}" sample on your website and I'd like something similar for my business. Can we discuss the scope, timeline, and pricing?`;
               window.open(`https://wa.me/919584661610?text=${encodeURIComponent(msg)}`, "_blank");
@@ -103,6 +137,16 @@ function WebsiteSampleCard({ sample }: { sample: WebsiteSample }) {
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SamplesGrid({ samples }: { samples: WebsiteSample[] }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {samples.map((sample) => (
+        <WebsiteSampleCard key={sample.id} sample={sample} />
+      ))}
     </div>
   );
 }
@@ -165,6 +209,13 @@ export default function WebsiteSamplesPage() {
   const filteredSamples = activeCategory
     ? samples.filter((s) => s.category === activeCategory)
     : samples;
+  const isClinicCategory = activeCategory === "clinics";
+  const waitingRoomClinicSamples = isClinicCategory
+    ? filteredSamples.filter((sample) => sample.clinicExperience === "waiting-room")
+    : [];
+  const standardClinicSamples = isClinicCategory
+    ? filteredSamples.filter((sample) => sample.clinicExperience !== "waiting-room")
+    : [];
 
   const activeCategoryData = activeCategory
     ? categories.find((c) => c.id === activeCategory)
@@ -174,9 +225,11 @@ export default function WebsiteSamplesPage() {
     ? `${activeCategoryData.name} Website Samples`
     : "Website Samples";
 
-  const pageDescription = activeCategoryData
-    ? `Explore our portfolio of ${activeCategoryData.name.toLowerCase()} websites. Click on any preview to see the full website.`
-    : "Explore our portfolio of professionally designed websites across different industries.";
+  const pageDescription = activeCategory === "clinics"
+    ? "Explore clinic website samples segmented by waiting-room enabled and standard builds. Waiting-room samples include QR flows to doctors, blogs, and clinic details."
+    : activeCategoryData
+      ? `Explore our portfolio of ${activeCategoryData.name.toLowerCase()} websites. Click on any preview to see the full website.`
+      : "Explore our portfolio of professionally designed websites across different industries.";
 
   return (
     <Layout>
@@ -269,12 +322,47 @@ export default function WebsiteSamplesPage() {
                   We're preparing our portfolio for you to explore.
                 </p>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredSamples.map((sample) => (
-                  <WebsiteSampleCard key={sample.id} sample={sample} />
-                ))}
+            ) : isClinicCategory ? (
+              <div className="space-y-10">
+                <div className="rounded-xl border border-accent/25 bg-accent/5 p-5">
+                  <h3 className="text-lg font-semibold text-foreground">Clinic Waiting Room Flow</h3>
+                  <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                    Waiting-room enabled samples support a QR journey where patients can scan in-clinic and open a
+                    dedicated page with doctor profiles, blogs, and helpful clinic information while they wait.
+                    Non-waiting-room clinic samples are listed separately below.
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-4 gap-3">
+                    <h3 className="text-xl font-semibold text-foreground">Waiting Room Enabled</h3>
+                    <p className="text-sm text-muted-foreground">{waitingRoomClinicSamples.length} samples</p>
+                  </div>
+                  {waitingRoomClinicSamples.length > 0 ? (
+                    <SamplesGrid samples={waitingRoomClinicSamples} />
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-border py-10 px-6 text-center text-sm text-muted-foreground">
+                      No waiting-room clinic samples added yet.
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-4 gap-3">
+                    <h3 className="text-xl font-semibold text-foreground">Standard Clinic Websites</h3>
+                    <p className="text-sm text-muted-foreground">{standardClinicSamples.length} samples</p>
+                  </div>
+                  {standardClinicSamples.length > 0 ? (
+                    <SamplesGrid samples={standardClinicSamples} />
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-border py-10 px-6 text-center text-sm text-muted-foreground">
+                      Non-waiting-room clinic samples will appear here.
+                    </div>
+                  )}
+                </div>
               </div>
+            ) : (
+              <SamplesGrid samples={filteredSamples} />
             )}
           </div>
         </div>
