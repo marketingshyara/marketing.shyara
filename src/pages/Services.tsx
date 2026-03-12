@@ -1,6 +1,4 @@
-import type { LucideIcon } from "lucide-react";
-import { Share2, Target, Globe, Smartphone, ArrowRight, MessageCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Share2, Target, Globe, Smartphone, MessageCircle } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { ServiceCard } from "@/components/ServiceCard";
@@ -42,38 +40,6 @@ const services = [
   },
 ];
 
-const decisionGuide: Array<{
-  need: string;
-  service: string;
-  href: string;
-  icon: LucideIcon;
-}> = [
-  {
-    need: "I want more followers and engagement",
-    service: "Social Media Management",
-    href: "/services/social-media",
-    icon: Share2,
-  },
-  {
-    need: "I want to run ads and generate more sales",
-    service: "Ads Campaign Management",
-    href: "/services/ads-campaign-management",
-    icon: Target,
-  },
-  {
-    need: "I need a high-converting business website",
-    service: "Website Development",
-    href: "/services/website-development",
-    icon: Globe,
-  },
-  {
-    need: "I want to build a mobile app product",
-    service: "App Development",
-    href: "/services/app-development",
-    icon: Smartphone,
-  },
-];
-
 export default function Services() {
   const openWhatsApp = () => {
     window.open(
@@ -110,40 +76,10 @@ export default function Services() {
         </Button>
       </PageHero>
 
-      <section className="py-12 bg-[hsl(var(--surface))]">
-        <div className="container">
-          <div className="max-w-5xl mx-auto">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5 text-center">
-              Find your service quickly
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {decisionGuide.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className="group rounded-xl border border-border bg-card p-5 hover:border-accent/40 hover:shadow-md transition-all duration-300"
-                >
-                  <div className="icon-well mb-3">
-                    <item.icon className="h-5 w-5 text-accent" />
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-snug mb-3">
-                    {item.need}
-                  </p>
-                  <span className="text-xs font-semibold text-accent inline-flex items-center gap-1 group-hover:gap-2 transition-all">
-                    {item.service}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="py-20 lg:py-28 bg-background">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">Our Services in Detail</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">Our Services</h2>
             <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
               Click any service to explore pricing, process, and frequently asked questions.
             </p>
