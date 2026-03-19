@@ -10,6 +10,7 @@ import AppDevelopmentService from "./pages/services/AppDevelopmentService";
 import Offers from "./pages/Offers";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Careers from "./pages/Careers";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import TermsOfService from "./pages/legal/TermsOfService";
@@ -36,6 +37,7 @@ export function AppRoutes() {
         <Route path="/waiting/*" element={<Navigate to="/samples/websites/clinic-multispeciality-waiting-room/waiting" replace />} />
         <Route path="/offers" element={<Offers />} />
         <Route path="/about" element={<About />} />
+        <Route path="/careers" element={<Careers />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
