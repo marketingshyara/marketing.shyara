@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tasklist)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(data[0][''text'']\\)\")",
+      "Bash(python3 -c \" import json with open\\(r''C:\\\\Users\\\\Shashwat\\\\.claude\\\\projects\\\\h--Websites-Shyara-and-its-Sub-Domains-Shyara-Marketing\\\\34536e93-0f3e-4407-904b-2c956f5a5f2e\\\\tool-results\\\\toolu_01JaeikzawHXHevDCxhPQywE.json''\\) as f: data = json.load\\(f\\) print\\(data[0][''text'']\\) \")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const data=JSON.parse\\(fs.readFileSync\\(String.raw\\\\`C:\\\\Users\\\\Shashwat\\\\.claude\\\\projects\\\\h--Websites-Shyara-and-its-Sub-Domains-Shyara-Marketing\\\\34536e93-0f3e-4407-904b-2c956f5a5f2e\\\\tool-results\\\\toolu_01JaeikzawHXHevDCxhPQywE.json\\\\`,''utf8''\\)\\); console.log\\(data[0].text\\);\")",
+      "Bash(node -e \":*)",
+      "Bash(npm run build)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(python -m pip install -r \"H:/Websites/Shyara and its Sub Domains/Shyara Marketing/Claude Skill/geo-seo-claude/requirements.txt\" --quiet)",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse -Include *.tsx,*.html,*.txt,*.xml,*.ts,*.md -Exclude ''*.md'' | Where-Object { $_FullName -notmatch ''dist-check|node_modules'' } | ForEach-Object { \\(Get-Content $_FullName -Raw\\) -replace ''shyaramarketing\\\\.com'', ''marketing.shyara.co.in'' | Set-Content $_FullName -NoNewline }\")",
+      "Bash(npm run build:ssg)",
+      "Bash(cmd /c \"mkdir C:\\\\empty_tmp 2>NUL & robocopy C:\\\\empty_tmp \"\"H:\\\\Websites\\\\Shyara and its Sub Domains\\\\Shyara Marketing\\\\dist\\\\samples\\\\websites\"\" /MIR /R:0 /W:0 & rmdir C:\\\\empty_tmp\")",
+      "Bash(node --input-type=module --eval \":*)"
+    ]
+  }
+}

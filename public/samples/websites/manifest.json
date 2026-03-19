@@ -1,0 +1,127 @@
+{
+  "categories": [
+    { "id": "restaurants", "name": "Restaurants", "icon": "UtensilsCrossed" },
+    { "id": "clinics", "name": "Clinics", "icon": "Stethoscope" },
+    { "id": "astrology", "name": "Astrology", "icon": "Stars" },
+    { "id": "coaching", "name": "Coaching", "icon": "GraduationCap" }
+  ],
+  "samples": [
+    {
+      "id": "restaurant-classic-website",
+      "name": "Restaurant Website",
+      "description": "A premium restaurant website with animated sections, gallery, menu, and contact form.",
+      "folder": "restaurant-classic-website",
+      "file": "index.html",
+      "category": "restaurants"
+    },
+    {
+      "id": "astrology-consultant-website",
+      "name": "Astrologer Website",
+      "description": "A mystical astrology website with cosmic design, services showcase, and consultation booking.",
+      "folder": "astrology-consultant-website",
+      "file": "index.html",
+      "category": "astrology"
+    },
+    {
+      "id": "restaurant-botanical-website",
+      "name": "Botanical Restaurant Website",
+      "description": "A nature-inspired restaurant website with botanical design, seasonal menu, and organic dining experience.",
+      "folder": "restaurant-botanical-website",
+      "file": "index.html",
+      "category": "restaurants"
+    },
+    {
+      "id": "restaurant-journey-of-taste-website",
+      "name": "Journey Of Taste Website",
+      "description": "A cinematic restaurant website with immersive storytelling, signature dishes, and modern dining visuals.",
+      "folder": "restaurant-journey-of-taste-website",
+      "file": "index.html",
+      "category": "restaurants"
+    },
+    {
+      "id": "clinic-dental-waiting-room-classic",
+      "name": "Dental Clinic Website (Classic)",
+      "description": "A dental clinic sample with QR-enabled waiting room flow, doctor profiles, blogs, and patient information pages.",
+      "folder": "clinic-dental-waiting-room-classic",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Dental Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "patient"
+    },
+    {
+      "id": "clinic-multispeciality-waiting-room",
+      "name": "Multispeciality Clinic Website",
+      "description": "A multispeciality clinic sample with QR waiting-room pages, doctor highlights, blogs, and service information.",
+      "folder": "clinic-multispeciality-waiting-room",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Multispeciality Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting"
+    },
+    {
+      "id": "clinic-dental-waiting-room-modern",
+      "name": "Dental Clinic Website (Modern)",
+      "description": "A modern dental clinic website with waiting-room QR flow, specialists, educational blogs, and treatment details.",
+      "folder": "clinic-dental-waiting-room-modern",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Dental Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting"
+    },
+    {
+      "id": "clinic-dermatology-waiting-room",
+      "name": "Dermatology Clinic Website",
+      "description": "A dermatology-focused clinic sample with QR waiting room, skin-care blogs, doctor cards, and clinic details.",
+      "folder": "clinic-dermatology-waiting-room",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Dermatology Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting"
+    },
+    {
+      "id": "clinic-pathology-waiting-room",
+      "name": "Pathology Clinic Website",
+      "description": "A pathology clinic sample with QR-enabled waiting room, test-focused resources, doctors, and service information.",
+      "folder": "clinic-pathology-waiting-room",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Pathology Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting"
+    },
+    {
+      "id": "clinic-physiotherapy-waiting-room",
+      "name": "Physiotherapy Clinic Website",
+      "description": "A physiotherapy clinic sample with QR waiting-room experience, therapist profiles, care blogs, and clinic highlights.",
+      "folder": "clinic-physiotherapy-waiting-room",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Physiotherapy Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting"
+    },
+    {
+      "id": "clinic-psychological-waiting-room",
+      "name": "Psychological Clinic Website",
+      "description": "A psychology clinic sample with QR waiting room, therapist information, wellness blogs, and patient support details.",
+      "folder": "clinic-psychological-waiting-room",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Psychological Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting"
+    },
+    {
+      "id": "coaching-classes-website",
+      "name": "Coaching Classes Website",
+      "description": "A modern coaching institute website with courses, faculty profiles, results showcase, scholarship info, and test series.",
+      "folder": "coaching-classes-website",
+      "file": "index.html",
+      "category": "coaching"
+    }
+  ]
+}
