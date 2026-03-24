@@ -5,13 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "node ../node_modules/vite/bin/vite.js",
-    "build": "node ../node_modules/vite/bin/vite.js build",
+    "build": "node ../node_modules/vite/bin/vite.js build --outDir ../dist --emptyOutDir",
     "build:ssg": "node scripts/prerender.mjs",
-    "build:dev": "node ../node_modules/vite/bin/vite.js build --mode development",
+    "build:dev": "node ../node_modules/vite/bin/vite.js build --mode development --outDir ../dist --emptyOutDir",
     "lint": "node ../node_modules/eslint/bin/eslint.js .",
     "test": "node ../node_modules/vitest/vitest.mjs run",
-    "preview": "node ../node_modules/vite/bin/vite.js preview",
-    "start": "serve -c serve.json -l 10000"
+    "preview": "node ../node_modules/vite/bin/vite.js preview --outDir ../dist",
+    "start": "serve -c serve.json -l 10000 ../dist"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
