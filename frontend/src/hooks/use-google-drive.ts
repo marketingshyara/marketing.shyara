@@ -1,6 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
 import type { DriveMedia, DriveApiResponse } from "@/types/samples";
 
+interface GoogleDriveFile {
+  id: string;
+  name: string;
+  mimeType?: string;
+  thumbnailLink?: string;
+  webContentLink?: string;
+  webViewLink?: string;
+}
+
+interface GoogleDriveResponse {
+  files: GoogleDriveFile[];
+}
+
 // Configuration - will be populated when API key is provided
 const DRIVE_CONFIG = {
   apiKey: "", // Add your Google Drive API key here
@@ -48,16 +61,16 @@ export function useGoogleDrive(
         throw new Error("Failed to fetch from Google Drive");
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as GoogleDriveResponse;
       
       const mediaItems: DriveMedia[] = data.files
-        .filter((file: any) => {
+        .filter((file) => {
           if (mediaType === 'image') {
             return file.mimeType?.startsWith('image/');
           }
           return file.mimeType?.startsWith('video/');
         })
-        .map((file: any) => ({
+        .map((file) => ({
           id: file.id,
           name: file.name,
           thumbnailUrl: file.thumbnailLink || "",

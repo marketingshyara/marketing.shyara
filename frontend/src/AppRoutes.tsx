@@ -17,6 +17,19 @@ import TermsOfService from "./pages/legal/TermsOfService";
 import RefundPolicy from "./pages/legal/RefundPolicy";
 import ServiceDeliveryPolicy from "./pages/legal/ServiceDeliveryPolicy";
 import { ScrollToTop } from "./components/ScrollToTop";
+import PortalLoginPage from "./pages/portal/PortalLoginPage";
+import PortalDashboardPage from "./pages/portal/PortalDashboardPage";
+import PortalLeadsPage from "./pages/portal/PortalLeadsPage";
+import PortalLeadDetailPage from "./pages/portal/PortalLeadDetailPage";
+import PortalUsersPage from "./pages/portal/PortalUsersPage";
+import PortalCommissionsPage from "./pages/portal/PortalCommissionsPage";
+import PortalProjectsPage from "./pages/portal/PortalProjectsPage";
+import PortalRevisionsPage from "./pages/portal/PortalRevisionsPage";
+import PortalReportsPage from "./pages/portal/PortalReportsPage";
+import PortalSettingsPage from "./pages/portal/PortalSettingsPage";
+import PortalAuditPage from "./pages/portal/PortalAuditPage";
+import { PortalLayout } from "./components/portal/PortalLayout";
+import { PortalProtectedRoute } from "./components/portal/PortalGuards";
 
 export function AppRoutes() {
   return (
@@ -43,6 +56,24 @@ export function AppRoutes() {
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/refund-policy" element={<RefundPolicy />} />
         <Route path="/service-delivery-policy" element={<ServiceDeliveryPolicy />} />
+        <Route path="/sales-portal/login" element={<PortalLoginPage />} />
+        <Route element={<PortalProtectedRoute />}>
+          <Route path="/sales-portal" element={<PortalLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<PortalDashboardPage />} />
+            <Route path="leads" element={<PortalLeadsPage />} />
+            <Route path="leads/:leadId" element={<PortalLeadDetailPage />} />
+            <Route path="commissions" element={<PortalCommissionsPage />} />
+            <Route path="projects" element={<PortalProjectsPage />} />
+            <Route path="revisions" element={<PortalRevisionsPage />} />
+            <Route path="reports" element={<PortalReportsPage />} />
+            <Route element={<PortalProtectedRoute allowedRoles={["admin"]} />}>
+              <Route path="users" element={<PortalUsersPage />} />
+              <Route path="settings" element={<PortalSettingsPage />} />
+              <Route path="audit" element={<PortalAuditPage />} />
+            </Route>
+          </Route>
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

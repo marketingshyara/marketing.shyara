@@ -1,0 +1,350 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  sales_associate
+  operations
+}
+
+enum UserStatus {
+  active
+  suspended
+  deactivated
+}
+
+enum LeadStatus {
+  new
+  contacted
+  under_follow_up
+  interested
+  not_interested
+  callback_later
+  payment_pending
+  closed_won
+  lost
+  dormant
+}
+
+enum FollowUpType {
+  call
+  whatsapp
+  email
+  meeting
+  callback
+  payment_discussion
+  other
+}
+
+enum FollowUpOutcome {
+  no_response
+  interested
+  not_interested
+  follow_up_needed
+  call_later
+  payment_pending
+}
+
+enum CommissionStatus {
+  pending
+  under_review
+  approved
+  paid
+  rejected
+  on_hold
+}
+
+enum ProjectStatus {
+  project_started
+  content_pending
+  in_progress
+  preview_shared
+  revision_pending
+  revision_in_progress
+  final_delivery_done
+  closed
+}
+
+enum RevisionStatus {
+  pending
+  in_progress
+  completed
+  on_hold
+}
+
+enum DuplicateMatchType {
+  phone
+  email
+  business_city
+}
+
+model PortalMeta {
+  id        String   @id
+  nextId    Int
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id                 String     @id
+  name               String
+  email              String     @unique
+  phone              String?
+  role               Role
+  status             UserStatus
+  passwordHash       String
+  mustChangePassword Boolean    @default(true)
+  passwordResetAt    DateTime?
+  createdAt          DateTime
+  updatedAt          DateTime
+
+  @@index([role])
+  @@index([status])
+}
+
+model Lead {
+  id                    String     @id
+  businessName          String
+  contactPersonName     String
+  phoneNumber           String
+  whatsappNumber        String
+  email                 String
+  businessCategory      String
+  city                  String
+  locality              String
+  source                String
+  packageInterest       String
+  firstContactDate      String
+  description           String
+  status                LeadStatus
+  assignedSalesPersonId String
+  createdByUserId       String
+  sharedWithUserIds     String[]
+  closureId             String?    @unique
+  projectId             String?    @unique
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@index([status])
+  @@index([assignedSalesPersonId])
+  @@index([city])
+}
+
+model LeadNote {
+  id                String   @id
+  leadId            String
+  authorUserId      String
+  discussionSummary String
+  objections        String?
+  nextSteps         String?
+  promisedFollowUp  String?
+  internalReminder  String?
+  createdAt         DateTime
+
+  @@index([leadId])
+}
+
+model FollowUp {
+  id               String          @id
+  leadId           String
+  authorUserId     String
+  dateTime         DateTime
+  followUpType     FollowUpType
+  note             String
+  nextFollowUpDate String?
+  outcome          FollowUpOutcome
+  createdAt        DateTime
+
+  @@index([leadId])
+  @@index([nextFollowUpDate])
+}
+
+model LeadActivityLog {
+  id          String   @id
+  leadId      String
+  action      String
+  actorUserId String
+  createdAt   DateTime
+  oldValue    String?
+  newValue    String?
+  details     String?
+
+  @@index([leadId])
+}
+
+model LeadDuplicateFlag {
+  id               String             @id
+  leadId           String
+  conflictingLeadId String
+  matchType        DuplicateMatchType
+  status           String
+  createdAt        DateTime
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+  resolutionNote   String?
+
+  @@index([leadId])
+  @@index([status])
+}
+
+model LeadOwnershipHistory {
+  id          String   @id
+  leadId      String
+  actorUserId String
+  fromUserId  String?
+  toUserId    String
+  createdAt   DateTime
+
+  @@index([leadId])
+}
+
+model ServicePackage {
+  id          String   @id
+  packageName String
+  shortPitch  String
+  inclusions  String[]
+  exclusions  String[]
+  pricing     Int?
+}
+
+model SalesInstruction {
+  id      String @id
+  title   String
+  content String
+}
+
+model ObjectionGuide {
+  id       String @id
+  title    String
+  response String
+}
+
+model ClosingGuide {
+  id      String @id
+  title   String
+  content String
+}
+
+model LeadClosure {
+  id                 String   @id
+  leadId             String   @unique
+  markedReadyByUserId String
+  confirmedByUserId  String
+  packageName        String
+  closedValue        Float
+  closureDate        DateTime
+  remarks            String?
+}
+
+model CommissionRule {
+  id          String  @id
+  name        String
+  packageName String?
+  role        Role?
+  amount      Int?
+  percentage  Float?
+}
+
+model CommissionRecord {
+  id               String           @id
+  leadId           String           @unique
+  salesPersonUserId String
+  businessName     String
+  commissionAmount Int
+  closureDate      DateTime
+  status           CommissionStatus
+  payoutDate       String?
+  remarks          String?
+  rejectionReason  String?
+  holdReason       String?
+
+  @@index([salesPersonUserId])
+  @@index([status])
+}
+
+model CommissionLog {
+  id           String   @id
+  commissionId String
+  actorUserId  String
+  action       String
+  createdAt    DateTime
+  oldValue     String?
+  newValue     String?
+  details      String?
+
+  @@index([commissionId])
+}
+
+model Project {
+  id                String        @id
+  leadId            String        @unique
+  salesPersonUserId String
+  operationsOwnerUserId String?
+  status            ProjectStatus
+  startedAt         DateTime
+  completedAt       DateTime?
+  currentRevisionStage String?
+
+  @@index([salesPersonUserId])
+  @@index([operationsOwnerUserId])
+  @@index([status])
+}
+
+model Revision {
+  id            String         @id
+  projectId     String
+  roundNumber   Int
+  revisionNotes String
+  requestedDate String
+  completedDate String?
+  status        RevisionStatus
+
+  @@index([projectId])
+}
+
+model Notification {
+  id        String   @id
+  userId    String
+  title     String
+  message   String
+  type      String
+  readAt    DateTime?
+  createdAt DateTime
+
+  @@index([userId])
+}
+
+model AuditEvent {
+  id         String   @id
+  entityType String
+  entityId   String
+  actorUserId String
+  action     String
+  createdAt  DateTime
+  oldValue   String?
+  newValue   String?
+  details    String?
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model PortalSettings {
+  id                        String             @id
+  leadStatuses              LeadStatus[]
+  commissionStatuses        CommissionStatus[]
+  projectStatuses           ProjectStatus[]
+  revisionStatuses          RevisionStatus[]
+  inactivityReminderDays    Int
+  inAppNotificationsEnabled Boolean
+  emailNotificationsEnabled Boolean
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
+}

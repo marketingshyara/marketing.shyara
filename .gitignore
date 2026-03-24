@@ -13,6 +13,8 @@ dist-ssr
 dist-check
 dist-check-*/
 *.local
+.env
+.env.*
 
 # Internal audit/report files
 GEO-AUDIT-REPORT.md

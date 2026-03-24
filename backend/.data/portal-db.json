@@ -1,0 +1,391 @@
+{
+  "meta": {
+    "nextId": 115
+  },
+  "users": [
+    {
+      "id": "user-admin",
+      "name": "Portal Admin",
+      "email": "admin@shyara.local",
+      "role": "admin",
+      "status": "active",
+      "passwordHash": "$2b$10$0YScDYV0mdntbHDnlANfmequtw0bochqQSulI0pFAc1wo..MUwH.C",
+      "createdAt": "2026-03-24T09:00:00.000Z",
+      "updatedAt": "2026-03-24T09:00:00.000Z"
+    },
+    {
+      "id": "user-sales",
+      "name": "Ananya Sales",
+      "email": "sales@shyara.local",
+      "phone": "9000000010",
+      "role": "sales_associate",
+      "status": "active",
+      "passwordHash": "$2b$10$/e4R7SVMVHV.bFY.PcXgUedg4MZnuI7frPuRGs12WHgA.1toFNg8e",
+      "createdAt": "2026-03-24T09:00:00.000Z",
+      "updatedAt": "2026-03-24T09:00:00.000Z"
+    },
+    {
+      "id": "user-ops",
+      "name": "Rohan Ops",
+      "email": "ops@shyara.local",
+      "phone": "9000000020",
+      "role": "operations",
+      "status": "active",
+      "passwordHash": "$2b$10$/e4R7SVMVHV.bFY.PcXgUedg4MZnuI7frPuRGs12WHgA.1toFNg8e",
+      "createdAt": "2026-03-24T09:00:00.000Z",
+      "updatedAt": "2026-03-24T09:00:00.000Z"
+    },
+    {
+      "id": "user-suspended",
+      "name": "Suspended Sales",
+      "email": "suspended@shyara.local",
+      "role": "sales_associate",
+      "status": "suspended",
+      "passwordHash": "$2b$10$/e4R7SVMVHV.bFY.PcXgUedg4MZnuI7frPuRGs12WHgA.1toFNg8e",
+      "createdAt": "2026-03-24T09:00:00.000Z",
+      "updatedAt": "2026-03-24T09:00:00.000Z"
+    }
+  ],
+  "leads": [
+    {
+      "id": "lead-seeded-open",
+      "businessName": "Shine Dental Care",
+      "contactPersonName": "Dr. Meera Sen",
+      "phoneNumber": "9000000091",
+      "whatsappNumber": "9000000091",
+      "email": "hello@shinedental.com",
+      "businessCategory": "Dental Clinic",
+      "city": "Kolkata",
+      "locality": "Park Street",
+      "source": "Website Referral",
+      "packageInterest": "Growth Website",
+      "firstContactDate": "2026-03-20",
+      "description": "Wants website redesign and local SEO support.",
+      "status": "interested",
+      "assignedSalesPersonId": "user-sales",
+      "createdByUserId": "user-sales",
+      "sharedWithUserIds": [],
+      "createdAt": "2026-03-24T09:00:00.000Z",
+      "updatedAt": "2026-03-24T09:00:00.000Z"
+    },
+    {
+      "id": "lead-seeded-shared",
+      "businessName": "North Star Cafe",
+      "contactPersonName": "Kabir Das",
+      "phoneNumber": "9000000092",
+      "whatsappNumber": "9000000092",
+      "email": "owner@northstarcafe.com",
+      "businessCategory": "Cafe",
+      "city": "Kolkata",
+      "locality": "New Town",
+      "source": "Walk-in",
+      "packageInterest": "Social Media Management",
+      "firstContactDate": "2026-03-18",
+      "description": "Needs content pipeline and ad support.",
+      "status": "under_follow_up",
+      "assignedSalesPersonId": "user-admin",
+      "createdByUserId": "user-admin",
+      "sharedWithUserIds": [
+        "user-sales"
+      ],
+      "createdAt": "2026-03-24T09:00:00.000Z",
+      "updatedAt": "2026-03-24T09:00:00.000Z"
+    },
+    {
+      "id": "lead-ops-hidden",
+      "businessName": "Velocity Motors",
+      "contactPersonName": "Ankit Roy",
+      "phoneNumber": "9000000093",
+      "whatsappNumber": "9000000093",
+      "email": "owner@velocitymotors.com",
+      "businessCategory": "Automobile",
+      "city": "Howrah",
+      "locality": "Andul",
+      "source": "Cold Outreach",
+      "packageInterest": "App Development",
+      "firstContactDate": "2026-03-17",
+      "description": "Owned by admin only; should not be visible to sales associate.",
+      "status": "payment_pending",
+      "assignedSalesPersonId": "user-admin",
+      "createdByUserId": "user-admin",
+      "sharedWithUserIds": [],
+      "createdAt": "2026-03-24T09:00:00.000Z",
+      "updatedAt": "2026-03-24T09:00:00.000Z"
+    },
+    {
+      "id": "lead-seeded-duplicate-target",
+      "businessName": "Aster Dental",
+      "contactPersonName": "Dr. Arjun Bose",
+      "phoneNumber": "9000000001",
+      "whatsappNumber": "9000000001",
+      "email": "owner@asterdental.com",
+      "businessCategory": "Dental Clinic",
+      "city": "Kolkata",
+      "locality": "Salt Lake",
+      "source": "Referral",
+      "packageInterest": "Website Development",
+      "firstContactDate": "2026-03-10",
+      "description": "Used to test duplicate detection.",
+      "status": "contacted",
+      "assignedSalesPersonId": "user-sales",
+      "createdByUserId": "user-sales",
+      "sharedWithUserIds": [],
+      "createdAt": "2026-03-24T09:00:00.000Z",
+      "updatedAt": "2026-03-24T09:00:00.000Z"
+    },
+    {
+      "id": "lead-101",
+      "businessName": "Portal Smoke Lead",
+      "contactPersonName": "Ritu Das",
+      "phoneNumber": "9876543210",
+      "whatsappNumber": "9876543210",
+      "email": "ritu@smokelead.test",
+      "businessCategory": "Education",
+      "city": "Kolkata",
+      "locality": "Salt Lake",
+      "source": "Manual",
+      "packageInterest": "Growth Website",
+      "firstContactDate": "2026-03-24",
+      "description": "Created during smoke test.",
+      "status": "closed_won",
+      "assignedSalesPersonId": "user-sales",
+      "createdByUserId": "user-sales",
+      "sharedWithUserIds": [],
+      "createdAt": "2026-03-24T02:34:46.743Z",
+      "updatedAt": "2026-03-24T02:34:46.755Z",
+      "closureId": "closure-111",
+      "projectId": "project-112"
+    }
+  ],
+  "leadNotes": [
+    {
+      "id": "note-106",
+      "leadId": "lead-101",
+      "authorUserId": "user-sales",
+      "createdAt": "2026-03-24T02:34:46.748Z",
+      "discussionSummary": "Initial discovery completed."
+    }
+  ],
+  "followUps": [
+    {
+      "id": "followup-108",
+      "leadId": "lead-101",
+      "authorUserId": "user-sales",
+      "createdAt": "2026-03-24T02:34:46.751Z",
+      "dateTime": "2026-03-24T10:00:00.000Z",
+      "followUpType": "call",
+      "note": "Need pricing confirmation.",
+      "nextFollowUpDate": "2026-03-25",
+      "outcome": "follow_up_needed"
+    }
+  ],
+  "leadActivities": [
+    {
+      "id": "activity-103",
+      "createdAt": "2026-03-24T02:34:46.743Z",
+      "leadId": "lead-101",
+      "actorUserId": "user-sales",
+      "action": "lead_created",
+      "details": "Lead created from portal"
+    },
+    {
+      "id": "activity-107",
+      "createdAt": "2026-03-24T02:34:46.748Z",
+      "leadId": "lead-101",
+      "actorUserId": "user-sales",
+      "action": "note_added",
+      "details": "Initial discovery completed."
+    },
+    {
+      "id": "activity-109",
+      "createdAt": "2026-03-24T02:34:46.751Z",
+      "leadId": "lead-101",
+      "actorUserId": "user-sales",
+      "action": "follow_up_added",
+      "details": "call: follow_up_needed"
+    },
+    {
+      "id": "activity-114",
+      "createdAt": "2026-03-24T02:34:46.755Z",
+      "leadId": "lead-101",
+      "actorUserId": "user-sales",
+      "action": "lead_closed",
+      "oldValue": "payment_pending",
+      "newValue": "closed_won",
+      "details": "Growth Website"
+    }
+  ],
+  "duplicateFlags": [],
+  "ownershipHistory": [
+    {
+      "id": "ownership-102",
+      "leadId": "lead-101",
+      "actorUserId": "user-sales",
+      "toUserId": "user-sales",
+      "createdAt": "2026-03-24T02:34:46.743Z"
+    }
+  ],
+  "servicePackages": [
+    {
+      "id": "package-growth-website",
+      "packageName": "Growth Website",
+      "shortPitch": "High-conversion business website with clear CTAs.",
+      "inclusions": [
+        "Custom landing pages",
+        "Mobile responsive",
+        "Contact capture setup"
+      ],
+      "exclusions": [
+        "Ad spend",
+        "Third-party licenses"
+      ],
+      "pricing": 45000
+    }
+  ],
+  "salesInstructions": [
+    {
+      "id": "instruction-intro",
+      "title": "First Discovery Call",
+      "content": "Focus on business goal, current funnel, and urgency before pitching packages."
+    }
+  ],
+  "objectionGuides": [
+    {
+      "id": "objection-budget",
+      "title": "Budget Concern",
+      "response": "Acknowledge budget first, then propose a smaller entry package with milestone-based upsell."
+    }
+  ],
+  "closingGuides": [
+    {
+      "id": "closing-payment",
+      "title": "Payment Stage",
+      "content": "Confirm package, timeline, and handoff owner before marking payment pending."
+    }
+  ],
+  "closures": [
+    {
+      "id": "closure-111",
+      "leadId": "lead-101",
+      "markedReadyByUserId": "user-sales",
+      "confirmedByUserId": "user-admin",
+      "packageName": "Growth Website",
+      "closedValue": 45000,
+      "closureDate": "2026-03-24T02:34:46.755Z",
+      "remarks": "Closed in smoke test."
+    }
+  ],
+  "commissionRules": [
+    {
+      "id": "commission-rule-growth",
+      "name": "Default Growth Website Rule",
+      "packageName": "Growth Website",
+      "amount": 4500
+    }
+  ],
+  "commissions": [
+    {
+      "id": "commission-113",
+      "leadId": "lead-101",
+      "salesPersonUserId": "user-sales",
+      "businessName": "Portal Smoke Lead",
+      "commissionAmount": 4500,
+      "closureDate": "2026-03-24T02:34:46.755Z",
+      "status": "pending"
+    }
+  ],
+  "commissionLogs": [],
+  "projects": [
+    {
+      "id": "project-112",
+      "leadId": "lead-101",
+      "salesPersonUserId": "user-sales",
+      "operationsOwnerUserId": "user-ops",
+      "status": "project_started",
+      "startedAt": "2026-03-24T02:34:46.755Z",
+      "currentRevisionStage": "round-0"
+    }
+  ],
+  "revisions": [
+    {
+      "id": "revision-115",
+      "projectId": "project-112",
+      "roundNumber": 1,
+      "revisionNotes": "Client asked for one header revision.",
+      "requestedDate": "2026-03-26",
+      "status": "pending"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notification-104",
+      "createdAt": "2026-03-24T02:34:46.743Z",
+      "userId": "user-sales",
+      "title": "Lead Assigned",
+      "message": "Portal Smoke Lead is now assigned to you.",
+      "type": "lead_assigned"
+    },
+    {
+      "id": "notification-110",
+      "createdAt": "2026-03-24T02:34:46.751Z",
+      "userId": "user-sales",
+      "title": "Follow-up Updated",
+      "message": "Follow-up saved for Portal Smoke Lead.",
+      "type": "follow_up_due"
+    }
+  ],
+  "auditEvents": [
+    {
+      "id": "audit-105",
+      "createdAt": "2026-03-24T02:34:46.743Z",
+      "entityType": "lead",
+      "entityId": "lead-101",
+      "actorUserId": "user-sales",
+      "action": "lead_created",
+      "newValue": "{\"id\":\"lead-101\",\"businessName\":\"Portal Smoke Lead\",\"contactPersonName\":\"Ritu Das\",\"phoneNumber\":\"9876543210\",\"whatsappNumber\":\"9876543210\",\"email\":\"ritu@smokelead.test\",\"businessCategory\":\"Education\",\"city\":\"Kolkata\",\"locality\":\"Salt Lake\",\"source\":\"Manual\",\"packageInterest\":\"Growth Website\",\"firstContactDate\":\"2026-03-24\",\"description\":\"Created during smoke test.\",\"status\":\"new\",\"assignedSalesPersonId\":\"user-sales\",\"createdByUserId\":\"user-sales\",\"sharedWithUserIds\":[],\"createdAt\":\"2026-03-24T02:34:46.743Z\",\"updatedAt\":\"2026-03-24T02:34:46.743Z\"}"
+    }
+  ],
+  "settings": {
+    "leadStatuses": [
+      "new",
+      "contacted",
+      "under_follow_up",
+      "interested",
+      "not_interested",
+      "callback_later",
+      "payment_pending",
+      "closed_won",
+      "lost",
+      "dormant"
+    ],
+    "commissionStatuses": [
+      "pending",
+      "under_review",
+      "approved",
+      "paid",
+      "rejected",
+      "on_hold"
+    ],
+    "projectStatuses": [
+      "project_started",
+      "content_pending",
+      "in_progress",
+      "preview_shared",
+      "revision_pending",
+      "revision_in_progress",
+      "final_delivery_done",
+      "closed"
+    ],
+    "revisionStatuses": [
+      "pending",
+      "in_progress",
+      "completed",
+      "on_hold"
+    ],
+    "inactivityReminderDays": 14,
+    "notifications": {
+      "inAppEnabled": true,
+      "emailEnabled": false
+    }
+  }
+}
