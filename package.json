@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "dev": "concurrently -k -n frontend,backend \"npm run dev --workspace frontend\" \"npm run dev --workspace backend\"",
-    "build": "npm run build --workspaces --if-present",
+    "postinstall": "npm run backend:prisma:generate",
+    "build": "npm run backend:prisma:generate && npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "frontend:dev": "npm run dev --workspace frontend",
