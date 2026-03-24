@@ -1,10 +1,35 @@
 import { portalApi } from "@/lib/portal-api";
+import { cn } from "@/lib/utils";
 import { usePortalSession } from "@/components/portal/PortalGuards";
+import {
+  PortalPanel,
+  PortalSectionHeading,
+  PortalStatusBadge
+} from "@/components/portal/portal-ui";
+import {
+  formatPortalDateTime,
+  formatPortalLabel,
+  portalButtonPrimaryClass,
+  portalButtonSecondaryClass,
+  portalInputClass
+} from "@/components/portal/portal-theme";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, FileSpreadsheet, FolderKanban, Gauge, LogOut, Settings, Shield, Users } from "lucide-react";
+import {
+  Bell,
+  FileSpreadsheet,
+  FolderKanban,
+  Gauge,
+  LogOut,
+  Menu,
+  Settings,
+  Shield,
+  Users,
+  X
+} from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { FormEvent, useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { FormEvent, useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import shyaraLogo from "@/assets/shyara-logo.png";
 
 const navByRole = {
   admin: [
@@ -34,6 +59,8 @@ const navByRole = {
 export function PortalLayout() {
   const queryClient = useQueryClient();
   const session = usePortalSession();
+  const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -46,18 +73,24 @@ export function PortalLayout() {
     enabled: Boolean(session.data?.authenticated)
   });
 
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
+
   const logout = useMutation({
     mutationFn: portalApi.logout,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portal-session"] });
     }
   });
+
   const markNotificationRead = useMutation({
     mutationFn: portalApi.markNotificationRead,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["portal-notifications"] });
     }
   });
+
   const changePassword = useMutation({
     mutationFn: ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) =>
       portalApi.changePassword(currentPassword, newPassword),
@@ -75,10 +108,14 @@ export function PortalLayout() {
   });
 
   const user = session.data?.user;
-  if (!user) return null;
+  const notificationItems = notifications.data ?? [];
+  const unreadNotifications = notificationItems.filter((item) => !item.readAt);
+
+  if (!user) {
+    return null;
+  }
 
   const navItems = navByRole[user.role];
-  const unreadNotifications = (notifications.data ?? []).filter((item) => !item.readAt);
 
   const handlePasswordSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -93,140 +130,251 @@ export function PortalLayout() {
     });
   };
 
+  const navigation = (
+    <div className="flex h-full flex-col gap-6">
+      <div>
+        <Link to="/" className="inline-flex items-center gap-3">
+          <img src={shyaraLogo} alt="Shyara Marketing" className="h-10 w-auto" />
+          <div>
+            <p className="text-sm font-extrabold tracking-tight text-accent">Shyara Marketing</p>
+            <p className="text-caption uppercase tracking-[0.2em] text-muted-foreground">Sales Portal</p>
+          </div>
+        </Link>
+      </div>
+
+      <PortalPanel className="bg-[hsl(var(--surface))] p-5">
+        <p className="text-sm font-semibold text-foreground">{user.name}</p>
+        <p className="mt-1 text-small text-muted-foreground">{user.email}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <PortalStatusBadge status={user.status}>{user.status}</PortalStatusBadge>
+          <span className="portal-badge portal-badge-info">{formatPortalLabel(user.role)}</span>
+        </div>
+      </PortalPanel>
+
+      <nav className="space-y-1.5" aria-label="Portal navigation">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  "flex min-h-[48px] items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition",
+                  isActive
+                    ? "border-accent/25 bg-accent/10 text-foreground shadow-sm"
+                    : "border-transparent text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
+                )
+              }
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
+      </nav>
+
+      <PortalPanel className="mt-auto bg-ctaBand text-white">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Operating Standard</p>
+        <p className="mt-3 text-sm font-semibold">Keep lead data complete, follow-ups logged, and handoffs clear.</p>
+        <p className="mt-2 text-sm leading-relaxed text-white/75">
+          This portal mirrors the main Shyara brand while staying operationally focused for internal teams.
+        </p>
+      </PortalPanel>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="portal-shell">
       <Helmet>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
-      <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-        <aside className="border-r border-white/10 bg-slate-900/80 p-6">
-          <Link to="/" className="text-sm uppercase tracking-[0.25em] text-cyan-300">
-            Shyara Portal
-          </Link>
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-sm font-semibold">{user.name}</p>
-            <p className="text-xs text-slate-400">{user.email}</p>
-            <p className="mt-2 text-[11px] uppercase tracking-[0.2em] text-emerald-300">{user.role.replace("_", " ")}</p>
-          </div>
-          <nav className="mt-8 space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${
-                      isActive ? "bg-cyan-400/15 text-cyan-200" : "text-slate-300 hover:bg-white/5 hover:text-white"
-                    }`
-                  }
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </NavLink>
-              );
-            })}
-          </nav>
+
+      <div className="flex min-h-screen">
+        <aside className="portal-sidebar sticky top-0 hidden h-screen w-[300px] shrink-0 overflow-y-auto px-6 py-6 xl:block">
+          {navigation}
         </aside>
-        <main className="min-w-0">
-          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-slate-950/80 px-6 py-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-cyan-300">Internal Sales Portal</p>
-              <h1 className="text-xl font-semibold text-white">Sales, commissions, projects, and delivery tracking</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300">
-                <Bell className="mr-2 inline h-4 w-4 text-cyan-300" />
-                {unreadNotifications.length} unread
-              </div>
-              <button
-                type="button"
-                onClick={() => logout.mutate()}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 hover:bg-white/5"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-          </header>
-          <div className="space-y-6 p-6">
-            {user.mustChangePassword ? (
-              <section className="rounded-[28px] border border-amber-400/30 bg-amber-400/10 p-6">
-                <h2 className="text-lg font-semibold text-amber-100">Password update required</h2>
-                <p className="mt-2 max-w-2xl text-sm text-amber-50/80">
-                  This account is using a temporary password. Set a new password before continuing with daily portal work.
-                </p>
-                <form className="mt-4 grid gap-3 md:grid-cols-3" onSubmit={handlePasswordSubmit}>
-                  <input
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(event) => setPasswordForm((current) => ({ ...current, currentPassword: event.target.value }))}
-                    placeholder="Current password"
-                    className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3"
-                  />
-                  <input
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(event) => setPasswordForm((current) => ({ ...current, newPassword: event.target.value }))}
-                    placeholder="New password"
-                    className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3"
-                  />
-                  <input
-                    type="password"
-                    value={passwordForm.confirmPassword}
-                    onChange={(event) => setPasswordForm((current) => ({ ...current, confirmPassword: event.target.value }))}
-                    placeholder="Confirm new password"
-                    className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3"
-                  />
-                  {passwordError ? <p className="md:col-span-3 text-sm text-rose-200">{passwordError}</p> : null}
-                  <div className="md:col-span-3 flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={changePassword.isPending}
-                      className="rounded-full bg-amber-300 px-5 py-3 font-medium text-slate-950 disabled:opacity-70"
-                    >
-                      {changePassword.isPending ? "Updating..." : "Update password"}
-                    </button>
-                  </div>
-                </form>
-              </section>
-            ) : null}
-            <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
+
+        {mobileNavOpen ? (
+          <>
+            <button
+              type="button"
+              aria-label="Close navigation"
+              className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-[2px] xl:hidden"
+              onClick={() => setMobileNavOpen(false)}
+            />
+            <aside className="portal-sidebar fixed inset-y-0 left-0 z-50 w-[88vw] max-w-[320px] overflow-y-auto px-5 py-5 xl:hidden">
+              {navigation}
+            </aside>
+          </>
+        ) : null}
+
+        <div className="min-w-0 flex-1">
+          <header className="sticky top-0 z-30 border-b border-border/80 bg-background/95 backdrop-blur-sm">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold">Notifications</h2>
-                  <p className="mt-1 text-sm text-slate-400">Unread operational updates and admin actions.</p>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
+                    aria-expanded={mobileNavOpen}
+                    onClick={() => setMobileNavOpen((current) => !current)}
+                    className={cn(portalButtonSecondaryClass, "h-11 w-11 rounded-full px-0 xl:hidden")}
+                  >
+                    {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                  </button>
+                  <div>
+                    <p className="portal-eyebrow">Internal Sales Portal</p>
+                    <h1 className="text-lg font-semibold text-foreground md:text-2xl">
+                      Sales, commissions, projects, and delivery tracking
+                    </h1>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground shadow-sm">
+                    <Bell className="h-4 w-4 text-accent" />
+                    <span>
+                      {unreadNotifications.length} unread
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => logout.mutate()}
+                    className={portalButtonSecondaryClass}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
                 </div>
               </div>
-              <div className="mt-4 space-y-3">
-                {(notifications.data ?? []).slice(0, 5).map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="font-medium">{item.title}</p>
-                        <p className="mt-1 text-sm text-slate-300">{item.message}</p>
-                        <p className="mt-2 text-xs text-slate-500">{new Date(item.createdAt).toLocaleString()}</p>
-                      </div>
-                      {!item.readAt ? (
-                        <button
-                          type="button"
-                          onClick={() => markNotificationRead.mutate(item.id)}
-                          className="rounded-full border border-white/10 px-3 py-2 text-xs text-slate-200"
-                        >
-                          Mark read
-                        </button>
-                      ) : (
-                        <span className="rounded-full border border-emerald-400/30 px-3 py-2 text-xs text-emerald-200">Read</span>
-                      )}
+            </div>
+          </header>
+
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <div className="space-y-6">
+              {user.mustChangePassword ? (
+                <PortalPanel className="border-amber-200 bg-amber-50">
+                  <PortalSectionHeading
+                    title="Password update required"
+                    description="This account is using a temporary password. Set a new password before continuing daily portal work."
+                  />
+                  <form className="mt-5 grid gap-3 md:grid-cols-3" onSubmit={handlePasswordSubmit}>
+                    <label className="block">
+                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Current password
+                      </span>
+                      <input
+                        type="password"
+                        value={passwordForm.currentPassword}
+                        onChange={(event) =>
+                          setPasswordForm((current) => ({
+                            ...current,
+                            currentPassword: event.target.value
+                          }))
+                        }
+                        className={portalInputClass}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        New password
+                      </span>
+                      <input
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={(event) =>
+                          setPasswordForm((current) => ({
+                            ...current,
+                            newPassword: event.target.value
+                          }))
+                        }
+                        className={portalInputClass}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Confirm password
+                      </span>
+                      <input
+                        type="password"
+                        value={passwordForm.confirmPassword}
+                        onChange={(event) =>
+                          setPasswordForm((current) => ({
+                            ...current,
+                            confirmPassword: event.target.value
+                          }))
+                        }
+                        className={portalInputClass}
+                      />
+                    </label>
+                    {passwordError ? (
+                      <p className="text-sm font-medium text-rose-700 md:col-span-3">{passwordError}</p>
+                    ) : null}
+                    <div className="flex justify-end md:col-span-3">
+                      <button
+                        type="submit"
+                        disabled={changePassword.isPending}
+                        className={portalButtonPrimaryClass}
+                      >
+                        {changePassword.isPending ? "Updating..." : "Update password"}
+                      </button>
                     </div>
-                  </div>
-                ))}
-                {!notifications.data?.length ? <p className="text-sm text-slate-400">No notifications yet.</p> : null}
+                  </form>
+                </PortalPanel>
+              ) : null}
+
+              <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="min-w-0">
+                  <Outlet />
+                </div>
+
+                <aside className="space-y-6">
+                  <PortalPanel className="2xl:sticky 2xl:top-24">
+                    <PortalSectionHeading
+                      title="Notifications"
+                      description="Unread operational updates and admin actions."
+                    />
+                    <div className="portal-card-list mt-5">
+                      {notificationItems.slice(0, 5).map((item) => (
+                        <div key={item.id} className="portal-list-card">
+                          <div className="flex flex-col gap-3">
+                            <div>
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <p className="font-semibold text-foreground">{item.title}</p>
+                                {item.readAt ? (
+                                  <PortalStatusBadge status="read">Read</PortalStatusBadge>
+                                ) : (
+                                  <PortalStatusBadge status="new">Unread</PortalStatusBadge>
+                                )}
+                              </div>
+                              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.message}</p>
+                              <p className="mt-3 text-caption text-muted-foreground">
+                                {formatPortalDateTime(item.createdAt)}
+                              </p>
+                            </div>
+                            {!item.readAt ? (
+                              <button
+                                type="button"
+                                onClick={() => markNotificationRead.mutate(item.id)}
+                                className={cn(portalButtonSecondaryClass, "w-full")}
+                              >
+                                Mark read
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                      {!notificationItems.length ? (
+                        <p className="text-sm text-muted-foreground">No notifications yet.</p>
+                      ) : null}
+                    </div>
+                  </PortalPanel>
+                </aside>
               </div>
-            </section>
-            <Outlet />
+            </div>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );

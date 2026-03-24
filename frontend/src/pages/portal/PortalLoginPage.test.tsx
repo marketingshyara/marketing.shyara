@@ -4,7 +4,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { MemoryRouter } from "react-router-dom";
 import PortalLoginPage from "./PortalLoginPage";
 
-test("starts with blank login fields and no demo credential hint", () => {
+test("starts with blank login fields and shows seeded local test accounts", () => {
   const queryClient = new QueryClient();
 
   render(
@@ -19,5 +19,7 @@ test("starts with blank login fields and no demo credential hint", () => {
 
   expect(screen.getByLabelText(/email/i)).toHaveValue("");
   expect(screen.getByLabelText(/password/i)).toHaveValue("");
-  expect(screen.queryByText(/seeded demo users/i)).not.toBeInTheDocument();
+  expect(screen.getByText(/local test accounts/i)).toBeInTheDocument();
+  expect(screen.getByText("admin@shyara.local")).toBeInTheDocument();
+  expect(screen.getAllByText("password123").length).toBeGreaterThan(0);
 });

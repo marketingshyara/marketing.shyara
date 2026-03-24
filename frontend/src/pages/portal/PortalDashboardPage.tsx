@@ -1,5 +1,12 @@
-import { portalApi } from "@/lib/portal-api";
 import { usePortalSession } from "@/components/portal/PortalGuards";
+import {
+  PortalMetricCard,
+  PortalPageHeader,
+  PortalPanel,
+  PortalSectionHeading
+} from "@/components/portal/portal-ui";
+import { formatPortalCurrency, formatPortalDateTime, formatPortalLabel } from "@/components/portal/portal-theme";
+import { portalApi } from "@/lib/portal-api";
 import { useQuery } from "@tanstack/react-query";
 
 export default function PortalDashboardPage() {
@@ -13,52 +20,75 @@ export default function PortalDashboardPage() {
     : [];
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-        <p className="text-sm text-slate-400">Welcome back</p>
-        <h2 className="mt-2 text-3xl font-semibold">{session.data?.user?.name}</h2>
-        <p className="mt-2 max-w-2xl text-sm text-slate-300">
-          The portal keeps sales, commissions, projects, revisions, duplicate checks, and audit history in one place.
-        </p>
-      </section>
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">
+      <PortalPageHeader
+        eyebrow="Overview"
+        title={`Welcome back, ${session.data?.user?.name ?? "team"}`}
+        description="The portal keeps sales, commissions, projects, revisions, duplicate checks, and audit history in one place with the same clean visual language as the main Shyara site."
+      />
+
+      <section className="portal-stat-grid">
         {cards.map(([key, value]) => (
-          <article key={key} className="rounded-[24px] border border-white/10 bg-slate-900/70 p-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">{key.replace(/([A-Z])/g, " $1")}</p>
-            <p className="mt-4 text-4xl font-semibold text-cyan-300">{value}</p>
-          </article>
+          <PortalMetricCard
+            key={key}
+            label={formatPortalLabel(key)}
+            value={typeof value === "number" && key.toLowerCase().includes("value") ? formatPortalCurrency(value) : value}
+            helper="Live operational count"
+          />
         ))}
       </section>
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-          <h3 className="text-lg font-semibold">Approved Packages</h3>
-          <div className="mt-4 space-y-4">
+
+      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <PortalPanel>
+          <PortalSectionHeading
+            title="Approved Packages"
+            description="Reference pricing and positioning approved for the sales team."
+          />
+          <div className="portal-card-list mt-5">
             {support.data?.servicePackages.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium">{item.packageName}</p>
-                    <p className="mt-1 text-sm text-slate-400">{item.shortPitch}</p>
+              <div key={item.id} className="portal-list-card">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground">{item.packageName}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.shortPitch}</p>
+                    {item.inclusions.length ? (
+                      <p className="mt-3 text-caption text-muted-foreground">
+                        Includes: {item.inclusions.join(", ")}
+                      </p>
+                    ) : null}
                   </div>
-                  {item.pricing ? <p className="text-sm font-semibold text-emerald-300">Rs. {item.pricing}</p> : null}
+                  {item.pricing ? (
+                    <div className="shrink-0 rounded-full bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
+                      {formatPortalCurrency(item.pricing)}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))}
+            {!support.data?.servicePackages.length ? (
+              <p className="text-sm text-muted-foreground">No packages configured yet.</p>
+            ) : null}
           </div>
-        </div>
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-          <h3 className="text-lg font-semibold">Recent Notifications</h3>
-          <div className="mt-4 space-y-3">
+        </PortalPanel>
+
+        <PortalPanel className="bg-[hsl(var(--surface))]">
+          <PortalSectionHeading
+            title="Recent Notifications"
+            description="A quick snapshot of the latest operational movement."
+          />
+          <div className="portal-card-list mt-5">
             {notifications.data?.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <p className="font-medium">{item.title}</p>
-                <p className="mt-1 text-sm text-slate-300">{item.message}</p>
-                <p className="mt-2 text-xs text-slate-500">{new Date(item.createdAt).toLocaleString()}</p>
+              <div key={item.id} className="portal-list-card">
+                <p className="font-semibold text-foreground">{item.title}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.message}</p>
+                <p className="mt-3 text-caption text-muted-foreground">{formatPortalDateTime(item.createdAt)}</p>
               </div>
             ))}
-            {!notifications.data?.length ? <p className="text-sm text-slate-400">No notifications yet.</p> : null}
+            {!notifications.data?.length ? (
+              <p className="text-sm text-muted-foreground">No notifications yet.</p>
+            ) : null}
           </div>
-        </div>
+        </PortalPanel>
       </section>
     </div>
   );

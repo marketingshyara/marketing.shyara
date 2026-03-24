@@ -1,9 +1,49 @@
 import { usePortalSession } from "@/components/portal/PortalGuards";
+import {
+  PortalPageHeader,
+  PortalPanel,
+  PortalSectionHeading,
+  PortalStatusBadge
+} from "@/components/portal/portal-ui";
+import {
+  formatPortalCurrency,
+  formatPortalDate,
+  formatPortalDateTime,
+  formatPortalLabel,
+  portalButtonPrimaryClass,
+  portalButtonSecondaryClass,
+  portalInputClass,
+  portalSelectClass,
+  portalTextareaClass
+} from "@/components/portal/portal-theme";
 import { portalApi } from "@/lib/portal-api";
+import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+const leadStatuses = [
+  "new",
+  "contacted",
+  "under_follow_up",
+  "interested",
+  "not_interested",
+  "callback_later",
+  "payment_pending",
+  "closed_won",
+  "lost",
+  "dormant"
+];
+
+const followUpTypes = ["call", "whatsapp", "email", "meeting", "callback", "payment_discussion", "other"];
+const followUpOutcomes = [
+  "follow_up_needed",
+  "interested",
+  "call_later",
+  "payment_pending",
+  "no_response",
+  "not_interested"
+];
 export default function PortalLeadDetailPage() {
   const queryClient = useQueryClient();
   const { leadId = "" } = useParams();
@@ -44,13 +84,15 @@ export default function PortalLeadDetailPage() {
   });
 
   useEffect(() => {
-    if (!detail.data) return;
+    if (!detail.data) {
+      return;
+    }
+
     setStatus(detail.data.lead.status);
     setAssignTo(detail.data.lead.assignedSalesPersonId);
     setCloseForm((current) => ({
       ...current,
-      packageName: detail.data?.lead.packageInterest ?? "",
-      operationsOwnerUserId: detail.data?.project?.id ? current.operationsOwnerUserId : current.operationsOwnerUserId
+      packageName: detail.data.lead.packageInterest ?? ""
     }));
   }, [detail.data]);
 
@@ -138,285 +180,407 @@ export default function PortalLeadDetailPage() {
   };
 
   if (!detail.data) {
-    return <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 text-sm text-slate-300">Loading lead...</div>;
+    return <PortalPanel>Loading lead...</PortalPanel>;
   }
 
   const operationsUsers = (users.data ?? []).filter((user) => user.role === "operations" && user.status === "active");
   const assigneeOptions = (users.data ?? []).filter((user) => user.role === "sales_associate" || user.role === "admin");
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Lead Detail</p>
-            <h2 className="mt-2 text-3xl font-semibold">{detail.data.lead.businessName}</h2>
-            <p className="mt-2 text-sm text-slate-300">{detail.data.lead.description}</p>
-          </div>
-          <div className="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200">
-            {detail.data.lead.status.replaceAll("_", " ")}
-          </div>
-        </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Contact</p>
-            <p className="mt-2">{detail.data.lead.contactPersonName}</p>
-            <p className="text-sm text-slate-400">{detail.data.lead.phoneNumber}</p>
-            <p className="text-sm text-slate-400">{detail.data.lead.email}</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Location</p>
-            <p className="mt-2">{detail.data.lead.city}</p>
-            <p className="text-sm text-slate-400">{detail.data.lead.locality}</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Source</p>
-            <p className="mt-2">{detail.data.lead.source}</p>
-            <p className="text-sm text-slate-400">{detail.data.lead.packageInterest}</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Timeline</p>
-            <p className="mt-2">{detail.data.lead.firstContactDate}</p>
-            <p className="text-sm text-slate-400">{new Date(detail.data.lead.updatedAt).toLocaleString()}</p>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <PortalPageHeader
+        eyebrow="Lead Detail"
+        title={detail.data.lead.businessName}
+        description={detail.data.lead.description || "This lead record tracks contact history, duplicate checks, project handoff, and commission context."}
+        action={<PortalStatusBadge status={detail.data.lead.status} className="text-sm" />}
+      />
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <PortalPanel className="bg-[hsl(var(--surface))]">
+          <p className="portal-eyebrow">Contact</p>
+          <p className="mt-3 text-base font-semibold text-foreground">{detail.data.lead.contactPersonName}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{detail.data.lead.phoneNumber}</p>
+          {detail.data.lead.email ? <p className="text-sm text-muted-foreground">{detail.data.lead.email}</p> : null}
+        </PortalPanel>
+        <PortalPanel className="bg-[hsl(var(--surface))]">
+          <p className="portal-eyebrow">Location</p>
+          <p className="mt-3 text-base font-semibold text-foreground">{detail.data.lead.city}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{detail.data.lead.locality || "No locality provided"}</p>
+        </PortalPanel>
+        <PortalPanel className="bg-[hsl(var(--surface))]">
+          <p className="portal-eyebrow">Source</p>
+          <p className="mt-3 text-base font-semibold text-foreground">{detail.data.lead.source || "Not recorded"}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{detail.data.lead.packageInterest || "No package mapped"}</p>
+        </PortalPanel>
+        <PortalPanel className="bg-[hsl(var(--surface))]">
+          <p className="portal-eyebrow">Timeline</p>
+          <p className="mt-3 text-base font-semibold text-foreground">{formatPortalDate(detail.data.lead.firstContactDate)}</p>
+          <p className="mt-2 text-sm text-muted-foreground">Updated {formatPortalDateTime(detail.data.lead.updatedAt)}</p>
+        </PortalPanel>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-          <h3 className="text-lg font-semibold">Lead Actions</h3>
-          <div className="mt-4 space-y-4">
-            <div>
-              <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-slate-400">Update status</label>
-              <div className="flex gap-3">
-                <select value={status} onChange={(event) => setStatus(event.target.value)} className="flex-1 rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">
-                  {["new", "contacted", "under_follow_up", "interested", "not_interested", "callback_later", "payment_pending", "closed_won", "lost", "dormant"].map((option) => (
+        <PortalPanel>
+          <PortalSectionHeading
+            title="Lead Actions"
+            description="Update progress and ownership without leaving the record."
+          />
+          <div className="mt-5 space-y-5">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Update status
+                </span>
+                <select value={status} onChange={(event) => setStatus(event.target.value)} className={portalSelectClass}>
+                  {leadStatuses.map((option) => (
                     <option key={option} value={option}>
-                      {option.replaceAll("_", " ")}
+                      {formatPortalLabel(option)}
                     </option>
                   ))}
                 </select>
-                <button type="button" onClick={() => updateStatus.mutate(status)} className="rounded-full bg-cyan-400 px-4 py-2 font-medium text-slate-950">
-                  Save
+              </label>
+              <div className="flex items-end">
+                <button type="button" onClick={() => updateStatus.mutate(status)} className={portalButtonPrimaryClass}>
+                  Save status
                 </button>
               </div>
             </div>
+
             {session.data?.user?.role === "admin" ? (
-              <div>
-                <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-slate-400">Assign lead</label>
-                <div className="flex gap-3">
-                  <select value={assignTo} onChange={(event) => setAssignTo(event.target.value)} className="flex-1 rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Assign lead
+                  </span>
+                  <select value={assignTo} onChange={(event) => setAssignTo(event.target.value)} className={portalSelectClass}>
                     {assigneeOptions.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.name}
                       </option>
                     ))}
                   </select>
-                  <button type="button" onClick={() => assignLead.mutate()} className="rounded-full border border-white/10 px-4 py-2 text-sm">
+                </label>
+                <div className="flex items-end">
+                  <button type="button" onClick={() => assignLead.mutate()} className={portalButtonSecondaryClass}>
                     Reassign
                   </button>
                 </div>
               </div>
             ) : null}
           </div>
-        </div>
+        </PortalPanel>
 
-        <form className="rounded-[28px] border border-white/10 bg-white/5 p-6" onSubmit={handleCloseLead}>
-          <h3 className="text-lg font-semibold">Close / Won</h3>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <input
-              value={closeForm.packageName}
-              onChange={(event) => setCloseForm((current) => ({ ...current, packageName: event.target.value }))}
-              placeholder="Package name"
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
-            />
-            <input
-              type="number"
-              value={closeForm.closedValue}
-              onChange={(event) => setCloseForm((current) => ({ ...current, closedValue: event.target.value }))}
-              placeholder="Contract value"
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
-            />
-            <input
-              type="number"
-              value={closeForm.commissionAmount}
-              onChange={(event) => setCloseForm((current) => ({ ...current, commissionAmount: event.target.value }))}
-              placeholder="Commission override (optional)"
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
-            />
+        <PortalPanel className="bg-[hsl(var(--surface))]">
+          <PortalSectionHeading
+            title="Close / Won"
+            description="Create the commission and operations handoff from the same workflow."
+          />
+          <form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={handleCloseLead}>
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Package name
+              </span>
+              <input
+                value={closeForm.packageName}
+                onChange={(event) => setCloseForm((current) => ({ ...current, packageName: event.target.value }))}
+                className={portalInputClass}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Contract value
+              </span>
+              <input
+                type="number"
+                value={closeForm.closedValue}
+                onChange={(event) => setCloseForm((current) => ({ ...current, closedValue: event.target.value }))}
+                className={portalInputClass}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Commission override
+              </span>
+              <input
+                type="number"
+                value={closeForm.commissionAmount}
+                onChange={(event) => setCloseForm((current) => ({ ...current, commissionAmount: event.target.value }))}
+                className={portalInputClass}
+              />
+            </label>
             {session.data?.user?.role === "admin" ? (
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Operations owner
+                </span>
+                <select
+                  value={closeForm.operationsOwnerUserId}
+                  onChange={(event) =>
+                    setCloseForm((current) => ({ ...current, operationsOwnerUserId: event.target.value }))
+                  }
+                  className={portalSelectClass}
+                >
+                  <option value="">Auto-assign operations owner</option>
+                  {operationsUsers.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            <label className="block md:col-span-2">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Closure remarks
+              </span>
+              <textarea
+                value={closeForm.remarks}
+                onChange={(event) => setCloseForm((current) => ({ ...current, remarks: event.target.value }))}
+                className={portalTextareaClass}
+              />
+            </label>
+            <div className="md:col-span-2">
+              <button type="submit" className={cn(portalButtonPrimaryClass, "w-full")}>
+                Mark closed / won
+              </button>
+            </div>
+          </form>
+        </PortalPanel>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <PortalPanel>
+          <PortalSectionHeading
+            title="Add Note"
+            description="Capture objections, next steps, and internal reminders while the context is fresh."
+          />
+          <form className="mt-5 grid gap-4" onSubmit={handleAddNote}>
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Discussion summary
+              </span>
+              <textarea
+                value={noteForm.discussionSummary}
+                onChange={(event) => setNoteForm((current) => ({ ...current, discussionSummary: event.target.value }))}
+                className={portalTextareaClass}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Objections
+              </span>
+              <input
+                value={noteForm.objections}
+                onChange={(event) => setNoteForm((current) => ({ ...current, objections: event.target.value }))}
+                className={portalInputClass}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Next steps
+              </span>
+              <input
+                value={noteForm.nextSteps}
+                onChange={(event) => setNoteForm((current) => ({ ...current, nextSteps: event.target.value }))}
+                className={portalInputClass}
+              />
+            </label>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Promised follow-up
+                </span>
+                <input
+                  value={noteForm.promisedFollowUp}
+                  onChange={(event) =>
+                    setNoteForm((current) => ({ ...current, promisedFollowUp: event.target.value }))
+                  }
+                  className={portalInputClass}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Internal reminder
+                </span>
+                <input
+                  value={noteForm.internalReminder}
+                  onChange={(event) =>
+                    setNoteForm((current) => ({ ...current, internalReminder: event.target.value }))
+                  }
+                  className={portalInputClass}
+                />
+              </label>
+            </div>
+            <div>
+              <button type="submit" className={portalButtonPrimaryClass}>
+                Save note
+              </button>
+            </div>
+          </form>
+        </PortalPanel>
+
+        <PortalPanel className="bg-[hsl(var(--surface))]">
+          <PortalSectionHeading
+            title="Add Follow-up"
+            description="Log the latest outreach and define the next action."
+          />
+          <form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={handleAddFollowUp}>
+            <label className="block md:col-span-2">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Follow-up note
+              </span>
+              <textarea
+                value={followUpForm.note}
+                onChange={(event) => setFollowUpForm((current) => ({ ...current, note: event.target.value }))}
+                className={portalTextareaClass}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Follow-up type
+              </span>
               <select
-                value={closeForm.operationsOwnerUserId}
-                onChange={(event) => setCloseForm((current) => ({ ...current, operationsOwnerUserId: event.target.value }))}
-                className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
+                value={followUpForm.followUpType}
+                onChange={(event) =>
+                  setFollowUpForm((current) => ({ ...current, followUpType: event.target.value }))
+                }
+                className={portalSelectClass}
               >
-                <option value="">Auto-assign operations owner</option>
-                {operationsUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
+                {followUpTypes.map((option) => (
+                  <option key={option} value={option}>
+                    {formatPortalLabel(option)}
                   </option>
                 ))}
               </select>
-            ) : null}
-            <textarea
-              value={closeForm.remarks}
-              onChange={(event) => setCloseForm((current) => ({ ...current, remarks: event.target.value }))}
-              placeholder="Closure remarks"
-              className="min-h-24 rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 md:col-span-2"
-            />
-          </div>
-          <button type="submit" className="mt-4 w-full rounded-2xl bg-emerald-400 px-4 py-3 font-semibold text-slate-950">
-            Mark Closed / Won
-          </button>
-        </form>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <form className="rounded-[28px] border border-white/10 bg-white/5 p-6" onSubmit={handleAddNote}>
-          <h3 className="text-lg font-semibold">Add Note</h3>
-          <div className="mt-4 grid gap-3">
-            <textarea
-              value={noteForm.discussionSummary}
-              onChange={(event) => setNoteForm((current) => ({ ...current, discussionSummary: event.target.value }))}
-              placeholder="Discussion summary"
-              className="min-h-24 rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
-            />
-            <input
-              value={noteForm.objections}
-              onChange={(event) => setNoteForm((current) => ({ ...current, objections: event.target.value }))}
-              placeholder="Objections"
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
-            />
-            <input
-              value={noteForm.nextSteps}
-              onChange={(event) => setNoteForm((current) => ({ ...current, nextSteps: event.target.value }))}
-              placeholder="Next steps"
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
-            />
-            <input
-              value={noteForm.promisedFollowUp}
-              onChange={(event) => setNoteForm((current) => ({ ...current, promisedFollowUp: event.target.value }))}
-              placeholder="Promised follow-up"
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
-            />
-            <input
-              value={noteForm.internalReminder}
-              onChange={(event) => setNoteForm((current) => ({ ...current, internalReminder: event.target.value }))}
-              placeholder="Internal reminder"
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
-            />
-          </div>
-          <button type="submit" className="mt-4 rounded-full bg-cyan-400 px-4 py-2 font-medium text-slate-950">
-            Save note
-          </button>
-        </form>
-
-        <form className="rounded-[28px] border border-white/10 bg-white/5 p-6" onSubmit={handleAddFollowUp}>
-          <h3 className="text-lg font-semibold">Add Follow-up</h3>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <textarea
-              value={followUpForm.note}
-              onChange={(event) => setFollowUpForm((current) => ({ ...current, note: event.target.value }))}
-              placeholder="Follow-up note"
-              className="min-h-24 rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 md:col-span-2"
-            />
-            <select
-              value={followUpForm.followUpType}
-              onChange={(event) => setFollowUpForm((current) => ({ ...current, followUpType: event.target.value }))}
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
-            >
-              {["call", "whatsapp", "email", "meeting", "callback", "payment_discussion", "other"].map((option) => (
-                <option key={option} value={option}>
-                  {option.replaceAll("_", " ")}
-                </option>
-              ))}
-            </select>
-            <select
-              value={followUpForm.outcome}
-              onChange={(event) => setFollowUpForm((current) => ({ ...current, outcome: event.target.value }))}
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
-            >
-              {["follow_up_needed", "interested", "call_later", "payment_pending", "no_response", "not_interested"].map((option) => (
-                <option key={option} value={option}>
-                  {option.replaceAll("_", " ")}
-                </option>
-              ))}
-            </select>
-            <input
-              type="date"
-              value={followUpForm.nextFollowUpDate}
-              onChange={(event) => setFollowUpForm((current) => ({ ...current, nextFollowUpDate: event.target.value }))}
-              className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 md:col-span-2"
-            />
-          </div>
-          <button type="submit" className="mt-4 rounded-full bg-cyan-400 px-4 py-2 font-medium text-slate-950">
-            Save follow-up
-          </button>
-        </form>
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Outcome
+              </span>
+              <select
+                value={followUpForm.outcome}
+                onChange={(event) => setFollowUpForm((current) => ({ ...current, outcome: event.target.value }))}
+                className={portalSelectClass}
+              >
+                {followUpOutcomes.map((option) => (
+                  <option key={option} value={option}>
+                    {formatPortalLabel(option)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block md:col-span-2">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Next follow-up date
+              </span>
+              <input
+                type="date"
+                value={followUpForm.nextFollowUpDate}
+                onChange={(event) =>
+                  setFollowUpForm((current) => ({ ...current, nextFollowUpDate: event.target.value }))
+                }
+                className={portalInputClass}
+              />
+            </label>
+            <div className="md:col-span-2">
+              <button type="submit" className={portalButtonPrimaryClass}>
+                Save follow-up
+              </button>
+            </div>
+          </form>
+        </PortalPanel>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-4">
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 xl:col-span-2">
-          <h3 className="text-lg font-semibold">Notes</h3>
-          <div className="mt-4 space-y-3">
+        <PortalPanel className="xl:col-span-2">
+          <PortalSectionHeading title="Notes" description="Conversation history and internal context." />
+          <div className="portal-card-list mt-5">
             {detail.data.notes.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <p>{item.discussionSummary}</p>
-                {item.objections ? <p className="mt-2 text-sm text-slate-400">Objections: {item.objections}</p> : null}
-                {item.nextSteps ? <p className="mt-1 text-sm text-slate-400">Next steps: {item.nextSteps}</p> : null}
-                <p className="mt-2 text-xs text-slate-500">{new Date(item.createdAt).toLocaleString()}</p>
+              <div key={item.id} className="portal-list-card">
+                <p className="text-sm leading-relaxed text-foreground">{item.discussionSummary}</p>
+                {item.objections ? <p className="mt-3 text-sm text-muted-foreground">Objections: {item.objections}</p> : null}
+                {item.nextSteps ? <p className="mt-1 text-sm text-muted-foreground">Next steps: {item.nextSteps}</p> : null}
+                <p className="mt-3 text-caption text-muted-foreground">{formatPortalDateTime(item.createdAt)}</p>
               </div>
             ))}
-            {!detail.data.notes.length ? <p className="text-sm text-slate-400">No notes yet.</p> : null}
+            {!detail.data.notes.length ? <p className="text-sm text-muted-foreground">No notes yet.</p> : null}
           </div>
-        </div>
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-          <h3 className="text-lg font-semibold">Follow-ups</h3>
-          <div className="mt-4 space-y-3">
+        </PortalPanel>
+
+        <PortalPanel className="bg-[hsl(var(--surface))]">
+          <PortalSectionHeading title="Follow-ups" description="Latest outreach and upcoming callbacks." />
+          <div className="portal-card-list mt-5">
             {detail.data.followUps.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <p>{item.note}</p>
-                <p className="mt-1 text-sm text-slate-400">
-                  {item.followUpType.replaceAll("_", " ")} • {item.outcome.replaceAll("_", " ")}
+              <div key={item.id} className="portal-list-card">
+                <p className="text-sm leading-relaxed text-foreground">{item.note}</p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {formatPortalLabel(item.followUpType)} - {formatPortalLabel(item.outcome)}
                 </p>
-                {item.nextFollowUpDate ? <p className="mt-1 text-xs text-slate-500">Next: {item.nextFollowUpDate}</p> : null}
+                {item.nextFollowUpDate ? (
+                  <p className="mt-2 text-caption text-muted-foreground">Next: {formatPortalDate(item.nextFollowUpDate)}</p>
+                ) : null}
               </div>
             ))}
-            {!detail.data.followUps.length ? <p className="text-sm text-slate-400">No follow-ups yet.</p> : null}
+            {!detail.data.followUps.length ? <p className="text-sm text-muted-foreground">No follow-ups yet.</p> : null}
           </div>
-        </div>
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-          <h3 className="text-lg font-semibold">Linked Outcomes</h3>
-          <div className="mt-4 space-y-3 text-sm text-slate-300">
-            <p>Commission: {detail.data.commission ? `${detail.data.commission.status} / Rs. ${detail.data.commission.commissionAmount}` : "Not created"}</p>
-            <p>Project: {detail.data.project ? detail.data.project.status.replaceAll("_", " ") : "Not started"}</p>
-            <p>Revisions: {detail.data.revisions.length}</p>
-            <p>Duplicate flags: {detail.data.duplicateFlags.length}</p>
+        </PortalPanel>
+
+        <PortalPanel className="bg-[hsl(var(--surface))]">
+          <PortalSectionHeading title="Linked Outcomes" description="Downstream commercial and delivery impact." />
+          <div className="mt-5 space-y-4">
+            <div className="portal-list-card">
+              <p className="portal-eyebrow text-[11px]">Commission</p>
+              <p className="mt-2 text-sm text-foreground">
+                {detail.data.commission
+                  ? `${formatPortalLabel(detail.data.commission.status)} / ${formatPortalCurrency(detail.data.commission.commissionAmount)}`
+                  : "Not created"}
+              </p>
+            </div>
+            <div className="portal-list-card">
+              <p className="portal-eyebrow text-[11px]">Project</p>
+              <p className="mt-2 text-sm text-foreground">
+                {detail.data.project ? formatPortalLabel(detail.data.project.status) : "Not started"}
+              </p>
+            </div>
+            <div className="portal-list-card">
+              <p className="portal-eyebrow text-[11px]">Revision rounds</p>
+              <p className="mt-2 text-sm text-foreground">{detail.data.revisions.length}</p>
+            </div>
+            <div className="portal-list-card">
+              <p className="portal-eyebrow text-[11px]">Duplicate flags</p>
+              <p className="mt-2 text-sm text-foreground">{detail.data.duplicateFlags.length}</p>
+            </div>
           </div>
-        </div>
+        </PortalPanel>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-          <h3 className="text-lg font-semibold">Duplicate Checks</h3>
-          <div className="mt-4 space-y-3">
+        <PortalPanel>
+          <PortalSectionHeading title="Duplicate Checks" description="Resolve conflicts before the lead progresses." />
+          <div className="portal-card-list mt-5">
             {detail.data.duplicateFlags.map((flag) => (
-              <div key={flag.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <p className="font-medium">{flag.matchType.replaceAll("_", " ")}</p>
-                <p className="mt-1 text-sm text-slate-400">Conflicting lead: {flag.conflictingLeadId}</p>
-                <p className="mt-1 text-xs text-slate-500">Status: {flag.status}</p>
+              <div key={flag.id} className="portal-list-card">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-semibold text-foreground">{formatPortalLabel(flag.matchType)}</p>
+                  <PortalStatusBadge status={flag.status} />
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">Conflicting lead: {flag.conflictingLeadId}</p>
                 {flag.status === "open" && session.data?.user?.role === "admin" ? (
-                  <div className="mt-3 flex gap-3">
+                  <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
                     <input
                       value={duplicateNotes[flag.id] ?? ""}
-                      onChange={(event) => setDuplicateNotes((current) => ({ ...current, [flag.id]: event.target.value }))}
+                      onChange={(event) =>
+                        setDuplicateNotes((current) => ({ ...current, [flag.id]: event.target.value }))
+                      }
                       placeholder="Resolution note"
-                      className="flex-1 rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm"
+                      className={portalInputClass}
                     />
                     <button
                       type="button"
-                      onClick={() => resolveDuplicate.mutate({ flagId: flag.id, note: duplicateNotes[flag.id] ?? "" })}
-                      className="rounded-full border border-white/10 px-4 py-2 text-sm"
+                      onClick={() =>
+                        resolveDuplicate.mutate({ flagId: flag.id, note: duplicateNotes[flag.id] ?? "" })
+                      }
+                      className={portalButtonSecondaryClass}
                     >
                       Resolve
                     </button>
@@ -424,22 +588,29 @@ export default function PortalLeadDetailPage() {
                 ) : null}
               </div>
             ))}
-            {!detail.data.duplicateFlags.length ? <p className="text-sm text-slate-400">No duplicate conflicts on this lead.</p> : null}
+            {!detail.data.duplicateFlags.length ? (
+              <p className="text-sm text-muted-foreground">No duplicate conflicts on this lead.</p>
+            ) : null}
           </div>
-        </div>
+        </PortalPanel>
 
-        <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
-          <h3 className="text-lg font-semibold">Activity Log</h3>
-          <div className="mt-4 space-y-3">
+        <PortalPanel className="bg-[hsl(var(--surface))]">
+          <PortalSectionHeading title="Activity Log" description="System events recorded on this lead and its handoffs." />
+          <div className="portal-card-list mt-5">
             {detail.data.activityLog.map((entry) => (
-              <div key={entry.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <p className="font-medium">{entry.action.replaceAll("_", " ")}</p>
-                <p className="mt-1 text-sm text-slate-400">{entry.details ?? "No extra details"}</p>
+              <div key={entry.id} className="portal-list-card">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-semibold text-foreground">{formatPortalLabel(entry.action)}</p>
+                  {entry.createdAt ? (
+                    <span className="text-caption text-muted-foreground">{formatPortalDateTime(entry.createdAt)}</span>
+                  ) : null}
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">{entry.details ?? "No extra details"}</p>
               </div>
             ))}
-            {!detail.data.activityLog.length ? <p className="text-sm text-slate-400">No logged activity yet.</p> : null}
+            {!detail.data.activityLog.length ? <p className="text-sm text-muted-foreground">No logged activity yet.</p> : null}
           </div>
-        </section>
+        </PortalPanel>
       </section>
     </div>
   );
