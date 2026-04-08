@@ -6,7 +6,7 @@ const organizationSchema = {
   "name": "Shyara Marketing",
   "legalName": "Shyara Tech Solutions (OPC) Pvt. Ltd.",
   "url": "https://marketing.shyara.co.in",
-  "logo": "https://marketing.shyara.co.in/logo.png",
+  "logo": "https://marketing.shyara.co.in/android-chrome-s-20260408-512x512.png",
   "description": "Digital marketing and technology services company helping businesses grow through social media, advertising, websites, and apps.",
   "email": "marketing.shyara@gmail.com",
   "address": {
