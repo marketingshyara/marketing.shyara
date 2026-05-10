@@ -5,7 +5,7 @@ import session from "@fastify/session";
 import Fastify from "fastify";
 import { ZodError } from "zod";
 import type { AppConfig } from "./config.js";
-import { HttpError } from "./errors/httpError.js";
+import { isHttpError } from "./errors/httpError.js";
 import { prisma } from "./lib/prisma.js";
 import { registerActivityLogRoutes } from "./routes/activityLogs.js";
 import { registerAuthRoutes } from "./routes/auth.js";
@@ -67,7 +67,7 @@ export async function buildApp(options: BuildAppOptions) {
   });
 
   app.setErrorHandler((error: unknown, request, reply) => {
-    if (error instanceof HttpError) {
+    if (isHttpError(error)) {
       return reply.status(error.statusCode).send(error.toBody());
     }
     if (error instanceof ZodError) {
