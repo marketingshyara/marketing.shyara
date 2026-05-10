@@ -166,9 +166,20 @@ Vite reads these **during `npm run build`**. Changing them requires a **rebuild*
 
 If you use same-origin proxying later and bake empty API URL, set nothing — only for advanced setups.
 
-### SPA routing
+### SPA routing (reload `/portal/...` without 404)
 
-The repo includes **`frontend/public/_redirects`** (copied into `dist` by Vite) so client-side routes (e.g. `/portal/leads`) work on Render Static.
+React Router needs the static host to **rewrite** unknown paths to `index.html`. **Render Static Sites do not read `_redirects`** (that file helps Netlify / Cloudflare Pages).
+
+**On Render — pick one:**
+
+1. **Dashboard (fastest if you already have the static site):** open the static site → **Redirects / Rewrites** → add:
+   - **Source:** `/*`
+   - **Destination:** `/index.html`
+   - **Action:** **Rewrite** (not Redirect)
+
+2. **Blueprint:** the repo root [`render.yaml`](../render.yaml) defines the same rewrite for a service named `marketing.shyara-frontend`. Sync or apply the blueprint if you use IaC; rename the service in YAML if yours differs.
+
+**Also in the repo:** [`frontend/public/_redirects`](../frontend/public/_redirects) is copied into `dist` for hosts that support it (e.g. Netlify).
 
 ### Custom domain (optional)
 
@@ -217,7 +228,7 @@ Requires `BOOTSTRAP_ADMIN_*` in env and a working `DATABASE_URL`. Remove or rota
 | `DATABASE_URL` = external only | Prefer **Internal** URL for backend on Render |
 | Missing `ALLOWED_ORIGINS` | Add exact frontend URL(s) |
 | API on onrender.com + SPA on another domain, login broken | Set `COOKIE_SAMESITE=none`, `COOKIE_SECURE=true` |
-| SPA 404 on refresh | Ensure `_redirects` is in `frontend/public` (this repo) and rebuild |
+| SPA 404 on refresh (portal reload) | **Render:** Static site → Redirects/Rewrites → `/*` → `/index.html` **Rewrite**; or sync [`render.yaml`](../render.yaml). **Netlify/CF:** `_redirects` in `frontend/public` (copied to `dist`) and rebuild |
 
 ---
 

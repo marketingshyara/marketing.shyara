@@ -1,1 +1,2 @@
-/* /index.html 200
+# Netlify & Cloudflare Pages: serve SPA for all non-file routes (200 = rewrite).
+/*    /index.html   200

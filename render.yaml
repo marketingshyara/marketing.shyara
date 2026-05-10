@@ -1,0 +1,16 @@
+# Render Blueprint (optional): static site + SPA fallback so /portal/* reloads work.
+# If the static site already exists in the dashboard, sync this file or add the same rule manually:
+#   Redirects/Rewrites → Source: /* → Destination: /index.html → Action: Rewrite
+#
+# Adjust `name` if yours differs (e.g. marketing.shyara-frontend).
+version: "1"
+services:
+  - type: web
+    name: marketing.shyara-frontend
+    runtime: static
+    buildCommand: npm install && npm run build --workspace frontend
+    staticPublishPath: frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
