@@ -12,6 +12,24 @@ function readOptionalEnv(name: string, fallback: string): string {
   return process.env[name] ?? fallback;
 }
 
+/** Strip one pair of surrounding quotes often pasted into hosting env UIs. */
+function stripOuterQuotes(value: string): string {
+  const t = value.trim();
+  if (t.length >= 2 && ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'")))) {
+    return t.slice(1, -1);
+  }
+  return value;
+}
+
+function intEnv(name: string, fallback: string, min: number): number {
+  const fb = Math.trunc(Number(fallback));
+  const safeFb = Number.isFinite(fb) && fb >= min ? fb : min;
+  const raw = Number(readOptionalEnv(name, fallback));
+  if (!Number.isFinite(raw)) return safeFb;
+  const n = Math.trunc(raw);
+  return n < min ? safeFb : n;
+}
+
 function parseCookieSameSite(raw: string): "lax" | "strict" | "none" {
   const s = raw.trim().toLowerCase();
   if (s === "strict" || s === "none" || s === "lax") return s;
@@ -52,7 +70,7 @@ export function loadConfig(): AppConfig {
     nodeEnv,
     port: Number(readOptionalEnv("PORT", "4000")),
     databaseUrl: readEnv("DATABASE_URL"),
-    sessionSecret: readEnv("SESSION_SECRET"),
+    sessionSecret: stripOuterQuotes(readEnv("SESSION_SECRET")),
     cookieName: readOptionalEnv("COOKIE_NAME", "shyara_sales_session"),
     cookieSameSite,
     trustProxy: readOptionalEnv("TRUST_PROXY", isProd ? "true" : "false") === "true",
@@ -62,8 +80,8 @@ export function loadConfig(): AppConfig {
       .filter(Boolean),
     secureCookie,
     sessionMaxAgeSeconds: Number(readOptionalEnv("SESSION_MAX_AGE_SECONDS", "604800")),
-    loginRateLimitMax: Number(readOptionalEnv("LOGIN_RATE_LIMIT_MAX", "5")),
-    loginRateLimitWindowMs: Number(readOptionalEnv("LOGIN_RATE_LIMIT_WINDOW_MS", "900000")),
+    loginRateLimitMax: intEnv("LOGIN_RATE_LIMIT_MAX", "5", 1),
+    loginRateLimitWindowMs: intEnv("LOGIN_RATE_LIMIT_WINDOW_MS", "900000", 1000),
     bcryptRounds: Number(readOptionalEnv("BCRYPT_ROUNDS", "10")),
     bootstrapAdminEmail: process.env.BOOTSTRAP_ADMIN_EMAIL,
     bootstrapAdminPassword: process.env.BOOTSTRAP_ADMIN_PASSWORD,

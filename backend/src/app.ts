@@ -5,7 +5,7 @@ import session from "@fastify/session";
 import Fastify from "fastify";
 import { ZodError } from "zod";
 import type { AppConfig } from "./config.js";
-import { isHttpError } from "./errors/httpError.js";
+import { httpErrorToBody, isHttpError, type HttpError } from "./errors/httpError.js";
 import { prisma } from "./lib/prisma.js";
 import { registerActivityLogRoutes } from "./routes/activityLogs.js";
 import { registerAuthRoutes } from "./routes/auth.js";
@@ -68,7 +68,9 @@ export async function buildApp(options: BuildAppOptions) {
 
   app.setErrorHandler((error: unknown, request, reply) => {
     if (isHttpError(error)) {
-      return reply.status(error.statusCode).send(error.toBody());
+      const e = error as HttpError;
+      const body = httpErrorToBody(error)!;
+      return reply.status(e.statusCode).send(body);
     }
     if (error instanceof ZodError) {
       return reply.status(400).send({
@@ -83,6 +85,17 @@ export async function buildApp(options: BuildAppOptions) {
       return reply.status(403).send({
         error: { code: "CORS", message: "Origin not allowed." }
       });
+    }
+    if (error instanceof Error) {
+      const sc = (error as { statusCode?: unknown }).statusCode;
+      if (sc === 429) {
+        return reply.status(429).send({
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many requests. Try again later."
+          }
+        });
+      }
     }
     request.log.error(error);
     return reply.status(500).send({

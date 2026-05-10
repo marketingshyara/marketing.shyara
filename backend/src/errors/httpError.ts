@@ -34,11 +34,28 @@ export class HttpError extends Error {
 export function isHttpError(error: unknown): error is HttpError {
   if (error instanceof HttpError) return true;
   if (typeof error !== "object" || error === null) return false;
+  const e = error as Error & Partial<Pick<HttpError, "statusCode" | "code" | "toBody">>;
+  if (
+    typeof e.statusCode !== "number" ||
+    typeof e.code !== "string" ||
+    typeof e.message !== "string"
+  ) {
+    return false;
+  }
+  if (e.name === "HttpError") return true;
+  return typeof e.toBody === "function";
+}
+
+/** Serialize an HttpError-shaped value even if `toBody` is missing (e.g. odd class copies). */
+export function httpErrorToBody(error: unknown): ErrorBody | null {
+  if (!isHttpError(error)) return null;
   const e = error as HttpError;
-  return (
-    typeof e.statusCode === "number" &&
-    typeof e.code === "string" &&
-    typeof e.message === "string" &&
-    typeof e.toBody === "function"
-  );
+  if (typeof e.toBody === "function") return e.toBody();
+  return {
+    error: {
+      code: e.code,
+      message: e.message,
+      ...(e.details !== undefined ? { details: e.details } : {})
+    }
+  };
 }
