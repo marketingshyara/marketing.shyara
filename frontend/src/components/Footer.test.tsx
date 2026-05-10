@@ -10,4 +10,5 @@ test("shows quick links in the footer", () => {
   );
 
   expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/contact");
+  expect(screen.getByRole("link", { name: "Sales portal" })).toHaveAttribute("href", "/portal/login");
 });
