@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -21,6 +21,7 @@ export function PortalLoginPage() {
     (location.state as { from?: string } | null)?.from
   );
   const login = useLoginMutation();
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (searchParams.get("reason") !== "session_expired" || sessionToastShown.current) return;
@@ -46,9 +47,11 @@ export function PortalLoginPage() {
         <CardContent>
           <form
             className="space-y-4"
-            onSubmit={form.handleSubmit((values) =>
+            onSubmit={form.handleSubmit((values) => {
+              setSubmitError(null);
               login.mutate(values, {
                 onSuccess: (data) => {
+                  setSubmitError(null);
                   if (data.user.mustChangePassword) {
                     navigate("/portal/change-password", { replace: true });
                   } else {
@@ -56,12 +59,30 @@ export function PortalLoginPage() {
                   }
                 },
                 onError: (e) => {
-                  if (e instanceof ApiError && e.code === "INVALID_CREDENTIALS") {
+                  if (e instanceof ApiError) {
+                    if (e.code === "INVALID_CREDENTIALS") {
+                      setSubmitError(e.message);
+                      toast.error(e.message);
+                      return;
+                    }
+                    if (e.code === "INTERNAL" || e.code === "UNKNOWN") {
+                      const msg =
+                        "Something went wrong on the server. Try again in a moment or contact support.";
+                      setSubmitError(msg);
+                      toast.error(msg);
+                      return;
+                    }
+                    setSubmitError(e.message);
                     toast.error(e.message);
+                    return;
                   }
+                  const msg =
+                    "Could not reach the server. Check your connection and that the API URL is configured.";
+                  setSubmitError(msg);
+                  toast.error(msg);
                 }
-              })
-            )}
+              });
+            })}
           >
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -96,6 +117,9 @@ export function PortalLoginPage() {
             <Button type="submit" className="min-h-11 w-full" disabled={login.isPending}>
               {login.isPending ? "Signing in…" : "Sign in"}
             </Button>
+            <p className="min-h-[1.25rem] text-sm text-destructive" aria-live="polite">
+              {submitError}
+            </p>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             <Link

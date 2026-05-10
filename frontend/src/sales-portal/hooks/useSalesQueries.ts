@@ -5,7 +5,7 @@ import { salesApi } from "../api/salesApi";
 import { qk } from "../queryKeys";
 import type { LeadStatus, PortalSettingsValues, SessionUser } from "../types";
 
-function errToast(e: unknown) {
+export function errToast(e: unknown) {
   if (e instanceof ApiError) toast.error(e.message);
   else toast.error("Something went wrong");
 }
@@ -32,8 +32,7 @@ export function useLoginMutation() {
   return useMutation({
     mutationFn: salesApi.login,
     meta: { skipAuthRedirect: true },
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.session }),
-    onError: errToast
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.session })
   });
 }
 
@@ -96,11 +95,8 @@ export function useCreateUserMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: salesApi.createUser,
-    onSuccess: (data) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] });
-      if (data.temporaryPassword) {
-        toast.success(`User created. Temporary password: ${data.temporaryPassword}`);
-      } else toast.success("User created");
     },
     onError: errToast
   });

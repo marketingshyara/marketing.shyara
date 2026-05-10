@@ -92,4 +92,78 @@ d("integration: auth and RBAC", () => {
     expect(body.total).toBeGreaterThanOrEqual(2);
     await app.close();
   });
+
+  it("admin create user without password sets mustChangePassword true even if client sends false", async () => {
+    await prisma.user.deleteMany({ where: { email: "it-created-nopw@test.local" } });
+    const config = loadConfig();
+    const app = await buildApp({ config });
+
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "it-admin@test.local", password: "AdminPass123!" }
+    });
+    expect(login.statusCode).toBe(200);
+    const cookie = login.cookies.find((c) => c.name === config.cookieName);
+    expect(cookie).toBeDefined();
+
+    const create = await app.inject({
+      method: "POST",
+      url: "/api/users",
+      headers: {
+        cookie: `${config.cookieName}=${cookie!.value}`,
+        "content-type": "application/json"
+      },
+      payload: {
+        email: "it-created-nopw@test.local",
+        role: "SALES_REP",
+        mustChangePassword: false
+      }
+    });
+
+    expect(create.statusCode).toBe(201);
+    const created = JSON.parse(create.body);
+    expect(created.temporaryPassword).toBeDefined();
+    expect(created.user.mustChangePassword).toBe(true);
+
+    const row = await prisma.user.findUnique({ where: { email: "it-created-nopw@test.local" } });
+    expect(row?.mustChangePassword).toBe(true);
+
+    await prisma.user.deleteMany({ where: { email: "it-created-nopw@test.local" } });
+    await app.close();
+  });
+
+  it("admin create duplicate email returns 409", async () => {
+    const config = loadConfig();
+    const app = await buildApp({ config });
+
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "it-admin@test.local", password: "AdminPass123!" }
+    });
+    expect(login.statusCode).toBe(200);
+    const cookie = login.cookies.find((c) => c.name === config.cookieName);
+    expect(cookie).toBeDefined();
+
+    const dup = await app.inject({
+      method: "POST",
+      url: "/api/users",
+      headers: {
+        cookie: `${config.cookieName}=${cookie!.value}`,
+        "content-type": "application/json"
+      },
+      payload: {
+        email: "it-rep@test.local",
+        role: "SALES_REP",
+        password: "SomePass123456!"
+      }
+    });
+
+    expect(dup.statusCode).toBe(409);
+    const body = JSON.parse(dup.body);
+    expect(body.error.code).toBe("EMAIL_IN_USE");
+
+    await app.close();
+  });
 });

@@ -218,3 +218,15 @@ Requires `BOOTSTRAP_ADMIN_*` in env and a working `DATABASE_URL`. Remove or rota
 | Missing `ALLOWED_ORIGINS` | Add exact frontend URL(s) |
 | API on onrender.com + SPA on another domain, login broken | Set `COOKIE_SAMESITE=none`, `COOKIE_SECURE=true` |
 | SPA 404 on refresh | Ensure `_redirects` is in `frontend/public` (this repo) and rebuild |
+
+---
+
+## 8. Smoke tests (login and sales rep onboarding)
+
+After each deploy or env change, verify:
+
+1. **API health:** `GET https://<backend>/api/health` → `{"ok":true}`. Optional: `?deep=1` → `"database":"ok"`.
+2. **Env sanity:** Backend `SESSION_SECRET` at least **32 characters** (required by `@fastify/session`). `TRUST_PROXY=true`, `COOKIE_SECURE=true`, and `ALLOWED_ORIGINS` listing the **exact** static-site origin(s). Frontend build has `VITE_API_BASE_URL` = backend URL with **no** trailing slash.
+3. **Login:** Open the SPA → Sales portal → sign in with a known user. Expect **200** on `POST .../api/auth/login` and redirect into the app (or to change-password if `mustChangePassword` is set).
+4. **Create sales rep (admin):** As admin, **Users** → **Add user** → role **Sales rep**, leave password empty → **Create**. A dialog must show the **temporary password**; the new user must have **must change password** on first login. Creating the same email again must return **409** with a clear error (duplicate email).
+5. **Cross-origin cookies:** If the static site origin and API origin are different **sites** (e.g. custom domain vs `*.onrender.com`), set **`COOKIE_SAMESITE=none`** on the backend and confirm the session cookie is sent on subsequent API calls (browser DevTools → Network → request headers).

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -38,7 +39,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "../types";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
-
 export function UsersPage() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
@@ -73,6 +73,7 @@ export function UsersPage() {
 
   const [resetOpen, setResetOpen] = useState(false);
   const [resetUserId, setResetUserId] = useState<string | null>(null);
+  const [newUserTempPassword, setNewUserTempPassword] = useState<string | null>(null);
   const resetForm = useForm({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: { temporaryPassword: "" }
@@ -112,7 +113,16 @@ export function UsersPage() {
                     role: v.role,
                     mustChangePassword: v.mustChangePassword
                   },
-                  { onSuccess: () => createForm.reset() }
+                  {
+                    onSuccess: (data) => {
+                      createForm.reset();
+                      if (data.temporaryPassword) {
+                        setNewUserTempPassword(data.temporaryPassword);
+                      } else {
+                        toast.success("User created");
+                      }
+                    }
+                  }
                 )
               )}
             >
@@ -375,6 +385,41 @@ export function UsersPage() {
               Reset
             </Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={newUserTempPassword !== null}
+        onOpenChange={(open) => {
+          if (!open) setNewUserTempPassword(null);
+        }}
+      >
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Temporary password</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Share this password with the user once. They must change it when they sign in.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input readOnly className="min-h-11 font-mono text-sm" value={newUserTempPassword ?? ""} />
+            <Button
+              type="button"
+              variant="secondary"
+              className="min-h-11 shrink-0"
+              onClick={() => {
+                if (newUserTempPassword) {
+                  void navigator.clipboard.writeText(newUserTempPassword);
+                  toast.success("Copied to clipboard");
+                }
+              }}
+            >
+              Copy
+            </Button>
+          </div>
+          <Button type="button" className="min-h-11 w-full" onClick={() => setNewUserTempPassword(null)}>
+            Done
+          </Button>
         </DialogContent>
       </Dialog>
     </div>

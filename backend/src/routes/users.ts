@@ -6,6 +6,7 @@ import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
 import { clampPage } from "../lib/pagination.js";
+import { mapUserCreateError } from "../lib/prismaErrors.js";
 import { logActivity } from "../services/activityLog.js";
 import {
   createUserBodySchema,
@@ -53,30 +54,35 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       const body = createUserBodySchema.parse(request.body);
       const email = body.email.toLowerCase().trim();
 
+      const usedExplicitPassword = body.password != null && body.password.length > 0;
       const passwordPlain =
-        body.password ??
-        `Temp-${randomBytes(8).toString("base64url")}!1`;
+        usedExplicitPassword ? body.password! : `Temp-${randomBytes(8).toString("base64url")}!1`;
       const passwordHash = await bcrypt.hash(passwordPlain, app.appConfig.bcryptRounds);
-      const mustChange = body.mustChangePassword ?? !body.password;
+      const mustChangePassword = usedExplicitPassword ? (body.mustChangePassword ?? false) : true;
 
-      const user = await app.prisma.user.create({
-        data: {
-          email,
-          passwordHash,
-          displayName: body.displayName,
-          role: body.role,
-          mustChangePassword: mustChange
-        },
-        select: {
-          id: true,
-          email: true,
-          displayName: true,
-          role: true,
-          isActive: true,
-          mustChangePassword: true,
-          createdAt: true
-        }
-      });
+      let user;
+      try {
+        user = await app.prisma.user.create({
+          data: {
+            email,
+            passwordHash,
+            displayName: body.displayName,
+            role: body.role,
+            mustChangePassword
+          },
+          select: {
+            id: true,
+            email: true,
+            displayName: true,
+            role: true,
+            isActive: true,
+            mustChangePassword: true,
+            createdAt: true
+          }
+        });
+      } catch (err) {
+        mapUserCreateError(err);
+      }
 
       await logActivity({
         prisma: app.prisma,
@@ -90,7 +96,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
 
       return reply.status(201).send({
         user,
-        ...(body.password ? {} : { temporaryPassword: passwordPlain })
+        ...(usedExplicitPassword ? {} : { temporaryPassword: passwordPlain })
       });
     }
   );
