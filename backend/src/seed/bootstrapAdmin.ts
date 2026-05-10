@@ -1,18 +1,46 @@
-import { PrismaClient } from "@prisma/client";
-import { readConfig } from "../config";
-import { PrismaPortalRepository } from "../store/prismaPortalRepository";
+import "dotenv/config";
+import bcrypt from "bcryptjs";
+import { UserRole } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 
-const config = readConfig();
-const prisma = new PrismaClient();
-const repository = new PrismaPortalRepository(prisma, {
-  adminName: config.bootstrapAdminName,
-  adminEmail: config.bootstrapAdminEmail,
-  adminPassword: config.bootstrapAdminPassword
-});
+async function main(): Promise<void> {
+  const email = process.env.BOOTSTRAP_ADMIN_EMAIL;
+  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+  if (!email || !password) {
+    console.error("Set BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD in .env");
+    process.exit(1);
+  }
 
-await repository.load();
+  const bcryptRounds = Number(process.env.BCRYPT_ROUNDS ?? "10");
+  const passwordHash = await bcrypt.hash(password, bcryptRounds);
+  const displayName = process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME ?? "Admin";
 
-console.log("Portal bootstrap data is ready in Postgres.");
-console.log(`Admin email: ${config.bootstrapAdminEmail}`);
+  await prisma.user.upsert({
+    where: { email: email.toLowerCase().trim() },
+    create: {
+      email: email.toLowerCase().trim(),
+      passwordHash,
+      displayName,
+      role: UserRole.ADMIN,
+      isActive: true,
+      mustChangePassword: false
+    },
+    update: {
+      passwordHash,
+      displayName,
+      role: UserRole.ADMIN,
+      isActive: true
+    }
+  });
 
-await prisma.$disconnect();
+  console.log("Bootstrap admin ready:", email.toLowerCase().trim());
+}
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

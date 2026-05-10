@@ -55,7 +55,6 @@ export function Footer() {
                 { to: "/careers", label: "Careers" },
                 { to: "/contact", label: "Contact" },
                 { to: "/offers", label: "Offers" },
-                { to: "/sales-portal/login", label: "Sales Portal" },
               ].map((link) => (
                 <li key={link.to}>
                   <Link to={link.to} className="text-sm text-muted-foreground hover:text-accent transition-colors">

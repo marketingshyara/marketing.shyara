@@ -1,57 +1,72 @@
-import path from "node:path";
-import dotenv from "dotenv";
-import { z } from "zod";
+import "dotenv/config";
 
-let envLoaded = false;
+function readEnv(name: string, fallback?: string): string {
+  const value = process.env[name] ?? fallback;
+  if (value === undefined || value === "") {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
 
-const envSchema = z.object({
-  HOST: z.string().default("0.0.0.0"),
-  PORT: z.coerce.number().int().positive().default(4000),
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  SESSION_SECRET: z.string().min(24, "SESSION_SECRET must be at least 24 characters."),
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required."),
-  ALLOWED_ORIGINS: z.string().min(1, "ALLOWED_ORIGINS is required."),
-  BOOTSTRAP_ADMIN_NAME: z.string().min(1, "BOOTSTRAP_ADMIN_NAME is required."),
-  BOOTSTRAP_ADMIN_EMAIL: z.string().email("BOOTSTRAP_ADMIN_EMAIL must be a valid email."),
-  BOOTSTRAP_ADMIN_PASSWORD: z.string().min(12, "BOOTSTRAP_ADMIN_PASSWORD must be at least 12 characters.")
-});
+function readOptionalEnv(name: string, fallback: string): string {
+  return process.env[name] ?? fallback;
+}
 
-export interface RuntimeConfig {
-  host: string;
+function parseCookieSameSite(raw: string): "lax" | "strict" | "none" {
+  const s = raw.trim().toLowerCase();
+  if (s === "strict" || s === "none" || s === "lax") return s;
+  return "lax";
+}
+
+export type AppConfig = {
+  nodeEnv: string;
   port: number;
-  nodeEnv: "development" | "test" | "production";
-  sessionSecret: string;
   databaseUrl: string;
+  sessionSecret: string;
+  cookieName: string;
+  /** Session cookie SameSite. Use `none` when the browser origin is a different site than the API (e.g. SPA on your domain, API on onrender.com). Requires `secureCookie: true`. */
+  cookieSameSite: "lax" | "strict" | "none";
+  trustProxy: boolean;
   allowedOrigins: string[];
-  bootstrapAdminName: string;
-  bootstrapAdminEmail: string;
-  bootstrapAdminPassword: string;
-  secureCookies: boolean;
-}
+  secureCookie: boolean;
+  /** Session cookie max-age in seconds (converted to ms for the cookie). */
+  sessionMaxAgeSeconds: number;
+  loginRateLimitMax: number;
+  loginRateLimitWindowMs: number;
+  bcryptRounds: number;
+  bootstrapAdminEmail: string | undefined;
+  bootstrapAdminPassword: string | undefined;
+  bootstrapAdminDisplayName: string | undefined;
+};
 
-function loadEnv() {
-  if (envLoaded) return;
-  dotenv.config({ path: path.resolve(process.cwd(), "..", ".env") });
-  dotenv.config();
-  envLoaded = true;
-}
-
-export function readConfig(): RuntimeConfig {
-  loadEnv();
-  const env = envSchema.parse(process.env);
+export function loadConfig(): AppConfig {
+  const nodeEnv = readOptionalEnv("NODE_ENV", "development");
+  const isProd = nodeEnv === "production";
+  const cookieSameSite = parseCookieSameSite(readOptionalEnv("COOKIE_SAMESITE", "lax"));
+  let secureCookie = readOptionalEnv("COOKIE_SECURE", isProd ? "true" : "false") === "true";
+  if (cookieSameSite === "none" && !secureCookie) {
+    secureCookie = true;
+  }
 
   return {
-    host: env.HOST,
-    port: env.PORT,
-    nodeEnv: env.NODE_ENV,
-    sessionSecret: env.SESSION_SECRET,
-    databaseUrl: env.DATABASE_URL,
-    allowedOrigins: env.ALLOWED_ORIGINS.split(",")
-      .map((entry) => entry.trim())
+    nodeEnv,
+    port: Number(readOptionalEnv("PORT", "4000")),
+    databaseUrl: readEnv("DATABASE_URL"),
+    sessionSecret: readEnv("SESSION_SECRET"),
+    cookieName: readOptionalEnv("COOKIE_NAME", "shyara_sales_session"),
+    cookieSameSite,
+    trustProxy: readOptionalEnv("TRUST_PROXY", isProd ? "true" : "false") === "true",
+    allowedOrigins: readOptionalEnv("ALLOWED_ORIGINS", "http://localhost:8080")
+      .split(",")
+      .map((origin) => origin.trim())
       .filter(Boolean),
-    bootstrapAdminName: env.BOOTSTRAP_ADMIN_NAME,
-    bootstrapAdminEmail: env.BOOTSTRAP_ADMIN_EMAIL,
-    bootstrapAdminPassword: env.BOOTSTRAP_ADMIN_PASSWORD,
-    secureCookies: env.NODE_ENV === "production"
+    secureCookie,
+    sessionMaxAgeSeconds: Number(readOptionalEnv("SESSION_MAX_AGE_SECONDS", "604800")),
+    loginRateLimitMax: Number(readOptionalEnv("LOGIN_RATE_LIMIT_MAX", "5")),
+    loginRateLimitWindowMs: Number(readOptionalEnv("LOGIN_RATE_LIMIT_WINDOW_MS", "900000")),
+    bcryptRounds: Number(readOptionalEnv("BCRYPT_ROUNDS", "10")),
+    bootstrapAdminEmail: process.env.BOOTSTRAP_ADMIN_EMAIL,
+    bootstrapAdminPassword: process.env.BOOTSTRAP_ADMIN_PASSWORD,
+    bootstrapAdminDisplayName: process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME
   };
 }

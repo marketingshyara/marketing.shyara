@@ -1,11 +1,13 @@
-import { buildApp } from "./app";
-import { readConfig } from "./config";
+import "dotenv/config";
+import { buildApp } from "./app.js";
+import { loadConfig } from "./config.js";
 
-const config = readConfig();
+const config = loadConfig();
+const app = await buildApp({ config });
 
-const app = buildApp();
-
-app.listen({ port: config.port, host: config.host }).catch((error) => {
+try {
+  await app.listen({ port: config.port, host: "0.0.0.0" });
+} catch (error) {
   app.log.error(error);
   process.exit(1);
-});
+}

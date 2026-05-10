@@ -1,0 +1,300 @@
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { useLeadsQuery } from "../hooks/useSalesQueries";
+import type { LeadStatus } from "../types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import { formatMinorUnits } from "../lib/money";
+import { QueryErrorAlert } from "../components/QueryErrorAlert";
+import { useDebounced } from "../hooks/useDebounced";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+
+const STATUSES: LeadStatus[] = [
+  "NEW",
+  "ADVANCE_PAID",
+  "BUILDING",
+  "PREVIEW_SENT",
+  "FINAL_PAID",
+  "DEPLOYED",
+  "COMMISSION_PAID"
+];
+
+function parseDateStartLocal(s: string): Date | undefined {
+  if (!s.trim()) return undefined;
+  const d = new Date(`${s}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
+function parseDateEndLocal(s: string): Date | undefined {
+  if (!s.trim()) return undefined;
+  const d = new Date(`${s}T23:59:59.999`);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
+export function LeadsListPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+  const [status, setStatus] = useState<LeadStatus | "all">("all");
+  const [searchInput, setSearchInput] = useState("");
+  const [fromInput, setFromInput] = useState("");
+  const [toInput, setToInput] = useState("");
+  const search = useDebounced(searchInput, 300);
+
+  const fromD = parseDateStartLocal(fromInput);
+  const toD = parseDateEndLocal(toInput);
+  const rangeInvalid = fromD != null && toD != null && fromD.getTime() > toD.getTime();
+
+  useEffect(() => {
+    const st = location.state as { adminForbidden?: boolean } | null;
+    if (st?.adminForbidden) {
+      toast.message("That page is for admins only.");
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.pathname, location.state, navigate]);
+
+  const { data, isLoading, isError, refetch } = useLeadsQuery({
+    page,
+    pageSize,
+    status: status === "all" ? undefined : status,
+    search: search.trim() || undefined,
+    from: rangeInvalid ? undefined : fromD,
+    to: rangeInvalid ? undefined : toD,
+    enabled: !rangeInvalid
+  });
+
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
+
+  useEffect(() => {
+    if (data == null) return;
+    const tp = Math.max(1, Math.ceil(data.total / pageSize));
+    setPage((p) => Math.min(p, tp));
+  }, [data, pageSize]);
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Leads</h1>
+          <p className="text-sm text-muted-foreground">Search and manage pipeline leads.</p>
+        </div>
+        <Button asChild className="min-h-11 shrink-0">
+          <Link to="/portal/leads/new">
+            <Plus className="mr-2 h-4 w-4" />
+            New lead
+          </Link>
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search name, email, phone…"
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              setPage(1);
+            }}
+            className="min-h-11 pl-9"
+          />
+        </div>
+        <Select
+          value={status}
+            onValueChange={(v) => {
+            setStatus(v as LeadStatus | "all");
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="min-h-11 w-full sm:w-[200px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s.replace(/_/g, " ")}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <div className="space-y-2">
+          <Label className="text-muted-foreground">Created from</Label>
+          <Input
+            type="date"
+            className="min-h-11 w-full sm:w-[200px]"
+            value={fromInput}
+            onChange={(e) => {
+              setFromInput(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-muted-foreground">Created to</Label>
+          <Input
+            type="date"
+            className="min-h-11 w-full sm:w-[200px]"
+            value={toInput}
+            onChange={(e) => {
+              setToInput(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+      </div>
+      {rangeInvalid && (
+        <p className="text-sm text-destructive" role="alert">
+          &quot;Created from&quot; must be on or before &quot;Created to&quot;.
+        </p>
+      )}
+
+      {isError && (
+        <QueryErrorAlert
+          message="Could not load leads."
+          onRetry={() => void refetch()}
+        />
+      )}
+
+      {isLoading && (
+        <div className="space-y-2">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      )}
+
+      {!isLoading && data && data.items.length === 0 && (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            No leads match your filters.
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cards — mobile */}
+      <div className="space-y-3 md:hidden">
+        {data?.items.map((lead) => (
+          <Link key={lead.id} to={`/portal/leads/${lead.id}`}>
+            <Card className="transition-colors hover:bg-muted/40">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-medium leading-snug">{lead.clientName}</span>
+                  <Badge variant="secondary" className="shrink-0 text-xs">
+                    {lead.status.replace(/_/g, " ")}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-1 text-sm text-muted-foreground">
+                {lead.clientEmail && <p>{lead.clientEmail}</p>}
+                {lead.clientPhone && <p>{lead.clientPhone}</p>}
+                <p>
+                  Advance {formatMinorUnits(lead.advanceAmountCents)} · Final quote{" "}
+                  {formatMinorUnits(lead.finalQuoteCents)}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+
+      {/* Table — md+ */}
+      <div className="hidden overflow-x-auto rounded-md border md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Client</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Advance</TableHead>
+              <TableHead className="text-right">Final quote</TableHead>
+              <TableHead>Updated</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data?.items.map((lead) => (
+              <TableRow key={lead.id} className="cursor-pointer">
+                <TableCell>
+                  <Link
+                    to={`/portal/leads/${lead.id}`}
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {lead.clientName}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{lead.status.replace(/_/g, " ")}</Badge>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatMinorUnits(lead.advanceAmountCents)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {formatMinorUnits(lead.finalQuoteCents)}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {new Date(lead.updatedAt).toLocaleString()}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {data && data.total > pageSize && (
+        <nav
+          className="flex flex-wrap items-center justify-center gap-2"
+          aria-label="Leads pagination"
+        >
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11 gap-1"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden />
+            Previous
+          </Button>
+          <span className="w-full basis-full px-2 text-center text-sm text-muted-foreground sm:w-auto sm:basis-auto">
+            Page {page} of {totalPages} ({data.total} total)
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11 gap-1"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Next
+            <ChevronRight className="h-4 w-4" aria-hidden />
+          </Button>
+        </nav>
+      )}
+    </div>
+  );
+}

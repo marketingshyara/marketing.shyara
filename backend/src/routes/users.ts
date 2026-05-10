@@ -1,0 +1,209 @@
+import type { FastifyInstance } from "fastify";
+import bcrypt from "bcryptjs";
+import { ActivityAction, UserRole } from "@prisma/client";
+import { randomBytes } from "node:crypto";
+import { requireAdmin } from "../auth/requireRole.js";
+import { requireUser } from "../auth/requireUser.js";
+import { HttpError } from "../errors/httpError.js";
+import { clampPage } from "../lib/pagination.js";
+import { logActivity } from "../services/activityLog.js";
+import {
+  createUserBodySchema,
+  patchUserBodySchema,
+  resetPasswordBodySchema,
+  usersListQuerySchema
+} from "../validators/schemas.js";
+
+export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
+  app.get(
+    "/api/users",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      requireAdmin(request);
+      const query = usersListQuerySchema.parse(request.query);
+
+      const total = await app.prisma.user.count();
+      const page = clampPage(query.page, query.pageSize, total);
+      const skip = (page - 1) * query.pageSize;
+      const items = await app.prisma.user.findMany({
+        skip,
+        take: query.pageSize,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          role: true,
+          isActive: true,
+          mustChangePassword: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      return reply.send({ items, total, page, pageSize: query.pageSize });
+    }
+  );
+
+  app.post(
+    "/api/users",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      requireAdmin(request);
+      const body = createUserBodySchema.parse(request.body);
+      const email = body.email.toLowerCase().trim();
+
+      const passwordPlain =
+        body.password ??
+        `Temp-${randomBytes(8).toString("base64url")}!1`;
+      const passwordHash = await bcrypt.hash(passwordPlain, app.appConfig.bcryptRounds);
+      const mustChange = body.mustChangePassword ?? !body.password;
+
+      const user = await app.prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          displayName: body.displayName,
+          role: body.role,
+          mustChangePassword: mustChange
+        },
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          role: true,
+          isActive: true,
+          mustChangePassword: true,
+          createdAt: true
+        }
+      });
+
+      await logActivity({
+        prisma: app.prisma,
+        userId: request.currentUser!.id,
+        action: ActivityAction.CREATE,
+        entityType: "User",
+        entityId: user.id,
+        after: { email: user.email, role: user.role },
+        request
+      });
+
+      return reply.status(201).send({
+        user,
+        ...(body.password ? {} : { temporaryPassword: passwordPlain })
+      });
+    }
+  );
+
+  app.patch(
+    "/api/users/:id",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      requireAdmin(request);
+      const { id } = request.params as { id: string };
+      const body = patchUserBodySchema.parse(request.body);
+
+      const existing = await app.prisma.user.findUnique({ where: { id } });
+      if (!existing) {
+        throw new HttpError(404, "NOT_FOUND", "User not found.");
+      }
+
+      if (body.role !== undefined && body.role !== UserRole.ADMIN && existing.role === UserRole.ADMIN) {
+        const adminCount = await app.prisma.user.count({
+          where: { role: UserRole.ADMIN, isActive: true }
+        });
+        if (adminCount <= 1) {
+          throw new HttpError(400, "LAST_ADMIN", "Cannot remove the last admin role.");
+        }
+      }
+
+      if (body.isActive === false && existing.role === UserRole.ADMIN) {
+        const adminCount = await app.prisma.user.count({
+          where: { role: UserRole.ADMIN, isActive: true }
+        });
+        if (adminCount <= 1) {
+          throw new HttpError(400, "LAST_ADMIN", "Cannot deactivate the last active admin.");
+        }
+      }
+
+      if (body.isActive === false && id === request.currentUser!.id) {
+        throw new HttpError(400, "SELF_DEACTIVATE", "You cannot deactivate your own account.");
+      }
+
+      const updated = await app.prisma.user.update({
+        where: { id },
+        data: {
+          ...(body.isActive !== undefined ? { isActive: body.isActive } : {}),
+          ...(body.role !== undefined ? { role: body.role } : {}),
+          ...(body.displayName !== undefined ? { displayName: body.displayName } : {})
+        },
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          role: true,
+          isActive: true,
+          mustChangePassword: true,
+          updatedAt: true
+        }
+      });
+
+      await logActivity({
+        prisma: app.prisma,
+        userId: request.currentUser!.id,
+        action: ActivityAction.UPDATE,
+        entityType: "User",
+        entityId: id,
+        before: {
+          isActive: existing.isActive,
+          role: existing.role,
+          displayName: existing.displayName
+        },
+        after: {
+          isActive: updated.isActive,
+          role: updated.role,
+          displayName: updated.displayName
+        },
+        request
+      });
+
+      return reply.send({ user: updated });
+    }
+  );
+
+  app.post(
+    "/api/users/:id/reset-password",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      requireAdmin(request);
+      const { id } = request.params as { id: string };
+      const body = resetPasswordBodySchema.parse(request.body);
+
+      const existing = await app.prisma.user.findUnique({ where: { id } });
+      if (!existing) {
+        throw new HttpError(404, "NOT_FOUND", "User not found.");
+      }
+
+      const passwordHash = await bcrypt.hash(body.temporaryPassword, app.appConfig.bcryptRounds);
+      await app.prisma.user.update({
+        where: { id },
+        data: {
+          passwordHash,
+          mustChangePassword: true
+        }
+      });
+
+      await logActivity({
+        prisma: app.prisma,
+        userId: request.currentUser!.id,
+        action: ActivityAction.UPDATE,
+        entityType: "User",
+        entityId: id,
+        after: { resetPassword: true },
+        request
+      });
+
+      return reply.send({ ok: true });
+    }
+  );
+}
