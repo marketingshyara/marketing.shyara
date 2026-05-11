@@ -267,12 +267,12 @@ export function PortalLoginPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Password</Label>
-                    <div className="relative">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
                       <Input
                         id="login-password"
                         type={showPassword ? "text" : "password"}
                         autoComplete="current-password"
-                        className="min-h-11 pr-12"
+                        className="min-h-11 flex-1"
                         aria-invalid={!!form.formState.errors.password}
                         aria-describedby={
                           form.formState.errors.password ? "login-password-error" : "login-password-hint"
@@ -281,18 +281,18 @@ export function PortalLoginPage() {
                       />
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0.5 top-1/2 min-h-10 min-w-10 -translate-y-1/2"
+                        variant="outline"
+                        size="sm"
+                        className="min-h-11 shrink-0 gap-1.5 px-3 sm:min-w-[8.5rem]"
                         aria-pressed={showPassword}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
                         onClick={() => setShowPassword((v) => !v)}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? <EyeOff className="h-4 w-4 shrink-0" aria-hidden /> : <Eye className="h-4 w-4 shrink-0" aria-hidden />}
+                        {showPassword ? "Hide password" : "Show password"}
                       </Button>
                     </div>
                     <p id="login-password-hint" className="sr-only">
-                      Password visibility can be toggled with the adjacent button.
+                      Use Show password or Hide password to reveal or conceal what you typed.
                     </p>
                     {form.formState.errors.password && (
                       <p id="login-password-error" className="text-sm font-medium text-destructive">

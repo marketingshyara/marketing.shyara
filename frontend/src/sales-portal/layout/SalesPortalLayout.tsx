@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   ClipboardList,
@@ -30,9 +31,48 @@ import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { userRoleLabel } from "../lib/copy";
 
-const navClass = ({ isActive }: { isActive: boolean }) =>
+type NavItem = {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  end?: boolean;
+  /** Approvals row shows pending count badge when &gt; 0 */
+  approvalsBadge?: boolean;
+};
+
+const MAIN_NAV: NavItem[] = [
+  { to: "/portal/leads", label: "Leads", icon: ClipboardList, end: true },
+  { to: "/portal/projects", label: "Projects", icon: FolderKanban },
+  { to: "/portal/commissions", label: "Commissions", icon: IndianRupee }
+];
+
+const ADMIN_NAV: NavItem[] = [
+  { to: "/portal/users", label: "Users", icon: Users },
+  { to: "/portal/approvals", label: "Approvals", icon: FileCheck2, approvalsBadge: true },
+  { to: "/portal/activity", label: "Activity", icon: ScrollText },
+  { to: "/portal/settings", label: "Settings", icon: Settings },
+  { to: "/portal/exports", label: "Exports", icon: FileSpreadsheet }
+];
+
+const sidebarNavClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     "flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar md:justify-start",
+    isActive
+      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+  );
+
+const mobileTabNavClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1 text-center text-xs font-medium leading-tight transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+    isActive
+      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+  );
+
+const sheetNavClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    "flex min-h-11 w-full flex-row items-center justify-start gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
     isActive
       ? "bg-sidebar-accent text-sidebar-accent-foreground"
       : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -54,32 +94,12 @@ export function SalesPortalLayout() {
     });
   };
 
-  const mainLinks = (
-    <>
-      <NavLink to="/portal/leads" className={navClass} end>
-        <ClipboardList className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
-        <span className="hidden md:inline">Leads</span>
-      </NavLink>
-      <NavLink to="/portal/projects" className={navClass}>
-        <FolderKanban className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
-        <span className="hidden md:inline">Projects</span>
-      </NavLink>
-      <NavLink to="/portal/commissions" className={navClass}>
-        <IndianRupee className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
-        <span className="hidden md:inline">Commissions</span>
-      </NavLink>
-    </>
-  );
-
-  const adminLinks = (
-    <>
-      <NavLink to="/portal/users" className={navClass} onClick={() => setMoreOpen(false)}>
-        <Users className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
-        <span className="hidden md:inline">Users</span>
-      </NavLink>
-      <NavLink to="/portal/approvals" className={navClass} onClick={() => setMoreOpen(false)}>
+  const renderNavIcon = (item: NavItem) => {
+    const Icon = item.icon;
+    if (item.approvalsBadge) {
+      return (
         <span className="relative inline-flex shrink-0">
-          <FileCheck2 className="h-5 w-5 md:h-4 md:w-4" aria-hidden />
+          <Icon className="h-5 w-5 shrink-0 md:h-4 md:w-4" aria-hidden />
           {pendingTotal > 0 ? (
             <Badge
               variant="destructive"
@@ -90,22 +110,52 @@ export function SalesPortalLayout() {
             </Badge>
           ) : null}
         </span>
-        <span className="hidden md:inline">Approvals</span>
-      </NavLink>
-      <NavLink to="/portal/activity" className={navClass} onClick={() => setMoreOpen(false)}>
-        <ScrollText className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
-        <span className="hidden md:inline">Activity</span>
-      </NavLink>
-      <NavLink to="/portal/settings" className={navClass} onClick={() => setMoreOpen(false)}>
-        <Settings className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
-        <span className="hidden md:inline">Settings</span>
-      </NavLink>
-      <NavLink to="/portal/exports" className={navClass} onClick={() => setMoreOpen(false)}>
-        <FileSpreadsheet className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
-        <span className="hidden md:inline">Exports</span>
-      </NavLink>
-    </>
-  );
+      );
+    }
+    return <Icon className="h-5 w-5 shrink-0 md:h-4 md:w-4" aria-hidden />;
+  };
+
+  const renderMobileTabIcon = (item: NavItem) => {
+    const Icon = item.icon;
+    if (item.approvalsBadge) {
+      return (
+        <span className="relative inline-flex shrink-0">
+          <Icon className="h-5 w-5" aria-hidden />
+          {pendingTotal > 0 ? (
+            <Badge
+              variant="destructive"
+              className="absolute -right-2 -top-2 h-5 min-w-5 justify-center px-1 text-[10px] leading-none"
+              aria-label={`${pendingTotal} pending payment approvals`}
+            >
+              {pendingTotal > 99 ? "99+" : pendingTotal}
+            </Badge>
+          ) : null}
+        </span>
+      );
+    }
+    return <Icon className="h-5 w-5 shrink-0" aria-hidden />;
+  };
+
+  const renderSheetIcon = (item: NavItem) => {
+    const Icon = item.icon;
+    if (item.approvalsBadge) {
+      return (
+        <span className="relative inline-flex shrink-0">
+          <Icon className="h-5 w-5 shrink-0" aria-hidden />
+          {pendingTotal > 0 ? (
+            <Badge
+              variant="destructive"
+              className="absolute -right-2 -top-2 h-5 min-w-5 justify-center px-1 text-[10px] leading-none"
+              aria-label={`${pendingTotal} pending payment approvals`}
+            >
+              {pendingTotal > 99 ? "99+" : pendingTotal}
+            </Badge>
+          ) : null}
+        </span>
+      );
+    }
+    return <Icon className="h-5 w-5 shrink-0" aria-hidden />;
+  };
 
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0 md:pl-56">
@@ -135,11 +185,11 @@ export function SalesPortalLayout() {
               <Button
                 variant="outline"
                 size="sm"
-                className="min-h-11 shrink-0 gap-1.5 px-2 sm:px-3 md:min-h-9"
+                className="min-h-11 shrink-0 gap-1.5 px-2 md:min-h-9"
                 aria-label="Account menu"
               >
-                <UserCircle className="h-4 w-4 sm:hidden" aria-hidden />
-                <span className="hidden sm:inline">Account</span>
+                <UserCircle className="h-4 w-4 shrink-0" aria-hidden />
+                <span>Account</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
@@ -157,28 +207,22 @@ export function SalesPortalLayout() {
       </header>
 
       <aside className="fixed bottom-0 left-0 right-0 z-50 flex h-[calc(4.5rem+env(safe-area-inset-bottom,0px))] items-start justify-around border-t bg-sidebar px-1 pt-1 md:hidden">
-        <NavLink to="/portal/leads" className={navClass} end>
-          <ClipboardList className="h-5 w-5" aria-hidden />
-          <span className="sr-only">Leads</span>
-        </NavLink>
-        <NavLink to="/portal/projects" className={navClass}>
-          <FolderKanban className="h-5 w-5" aria-hidden />
-          <span className="sr-only">Projects</span>
-        </NavLink>
-        <NavLink to="/portal/commissions" className={navClass}>
-          <IndianRupee className="h-5 w-5" aria-hidden />
-          <span className="sr-only">Commissions</span>
-        </NavLink>
+        {MAIN_NAV.map((item) => (
+          <NavLink key={item.to} to={item.to} end={item.end} className={mobileTabNavClass}>
+            {renderMobileTabIcon(item)}
+            <span className="max-w-[5rem] truncate text-[10px] font-medium leading-tight">{item.label}</span>
+          </NavLink>
+        ))}
         <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
           <SheetTrigger asChild>
             <Button
               variant="ghost"
               size="sm"
-              className={cn(navClass({ isActive: false }), "flex-col gap-0.5")}
+              className={cn(mobileTabNavClass({ isActive: false }), "gap-0.5")}
               aria-label="Open more menu"
             >
-              <Menu className="h-5 w-5" aria-hidden />
-              <span className="text-xs font-medium leading-none">More</span>
+              <Menu className="h-5 w-5 shrink-0" aria-hidden />
+              <span className="text-[10px] font-medium leading-tight">More</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="pb-[env(safe-area-inset-bottom,0px)]">
@@ -186,7 +230,18 @@ export function SalesPortalLayout() {
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <div className="mt-4 flex flex-col gap-1">
-              {isAdmin && adminLinks}
+              {isAdmin &&
+                ADMIN_NAV.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={sheetNavClass}
+                    onClick={() => setMoreOpen(false)}
+                  >
+                    {renderSheetIcon(item)}
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
               {isAdmin ? <Separator className="my-2" /> : null}
               <Button variant="ghost" className="min-h-11 justify-start" asChild>
                 <Link to="/portal/change-password" onClick={() => setMoreOpen(false)}>
@@ -210,11 +265,21 @@ export function SalesPortalLayout() {
 
       <aside className="fixed left-0 top-0 z-30 hidden h-dvh w-56 flex-col border-r bg-sidebar md:flex">
         <nav className="flex flex-1 flex-col gap-1 p-3">
-          {mainLinks}
+          {MAIN_NAV.map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.end} className={sidebarNavClass}>
+              {renderNavIcon(item)}
+              <span className="hidden md:inline">{item.label}</span>
+            </NavLink>
+          ))}
           {isAdmin && (
             <>
               <Separator className="my-2" />
-              {adminLinks}
+              {ADMIN_NAV.map((item) => (
+                <NavLink key={item.to} to={item.to} className={sidebarNavClass}>
+                  {renderNavIcon(item)}
+                  <span className="hidden md:inline">{item.label}</span>
+                </NavLink>
+              ))}
             </>
           )}
         </nav>

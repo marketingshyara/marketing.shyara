@@ -231,13 +231,13 @@ export function SettingsPage() {
                 </div>
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="min-h-11 min-w-11"
-                  aria-label="Remove transition"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11 w-full gap-1.5 sm:w-auto sm:shrink-0"
                   onClick={() => remove(i)}
                 >
-                  <Trash2 className="h-4 w-4" aria-hidden />
+                  <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+                  Remove
                 </Button>
               </div>
             ))}
