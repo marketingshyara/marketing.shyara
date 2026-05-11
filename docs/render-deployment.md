@@ -31,6 +31,25 @@ Monorepo: **`marketingshyara/marketing.shyara`**, branch **`main`**. Workspaces:
 
 **Migrations:** Applied by the **backend Pre-Deploy** command (below), not manually on the DB dashboard.
 
+#### If Pre-Deploy fails with `P3005` (schema is not empty)
+
+This means Postgres already has tables (for example from an earlier `prisma db push` or manual setup), but Prisma Migrate has **no** `_prisma_migrations` history yet, so `migrate deploy` refuses to run.
+
+**Only do this if the live database schema already matches** what your committed migrations would create (same tables/columns as `backend/prisma/migrations/`). If you are unsure, inspect the DB or compare with a fresh `migrate deploy` on an empty database.
+
+1. Open **Render → your Backend → Shell** (or use `render psql` / any client with `DATABASE_URL`).
+2. From the **repository root** on the service (same cwd Pre-Deploy uses), run **once**:
+
+   ```bash
+   npm run backend:db:migrate:baseline
+   ```
+
+   That runs `prisma migrate resolve --applied …` for each migration folder so Prisma records them as already applied **without** re-running SQL.
+
+3. Trigger a **new deploy** (or let auto-deploy run). `npm run db:migrate:deploy --workspace backend` should then exit successfully.
+
+If the database schema does **not** match the migration files, do **not** baseline blindly: fix the schema (or reset a disposable DB), then use normal `migrate deploy`.
+
 ---
 
 ## 2. Backend Web Service (`marketing.shyara-backend`)
