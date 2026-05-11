@@ -11,7 +11,7 @@ export function ExportsPage() {
       <div>
         <h1 className="text-xl font-semibold md:text-2xl">Exports</h1>
         <p className="text-sm text-muted-foreground">
-          Download XLSX files (row caps follow portal settings).
+          Download spreadsheet reports. Row limits follow your portal settings.
         </p>
       </div>
       <Card>
@@ -30,8 +30,8 @@ export function ExportsPage() {
             disabled={exp.isPending}
             onClick={() => exp.mutate("leads")}
           >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Leads
+            <FileSpreadsheet className="mr-2 h-4 w-4" aria-hidden />
+            Export Leads
           </Button>
           <Button
             variant="outline"
@@ -39,8 +39,8 @@ export function ExportsPage() {
             disabled={exp.isPending}
             onClick={() => exp.mutate("commissions")}
           >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Commissions
+            <FileSpreadsheet className="mr-2 h-4 w-4" aria-hidden />
+            Export Commissions
           </Button>
           <Button
             variant="outline"
@@ -48,8 +48,8 @@ export function ExportsPage() {
             disabled={exp.isPending}
             onClick={() => exp.mutate("users")}
           >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Users
+            <FileSpreadsheet className="mr-2 h-4 w-4" aria-hidden />
+            Export Users
           </Button>
         </CardContent>
       </Card>

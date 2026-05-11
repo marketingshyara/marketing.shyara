@@ -30,6 +30,18 @@ function intEnv(name: string, fallback: string, min: number): number {
   return n < min ? safeFb : n;
 }
 
+function requiredIntEnv(name: string, fallback: string, min: number): number {
+  const raw = readOptionalEnv(name, fallback).trim();
+  if (!/^-?\d+$/.test(raw)) {
+    throw new Error(`Environment variable ${name} must be an integer.`);
+  }
+  const n = Number(raw);
+  if (!Number.isSafeInteger(n) || n < min) {
+    throw new Error(`Environment variable ${name} must be an integer >= ${min}.`);
+  }
+  return n;
+}
+
 function parseCookieSameSite(raw: string): "lax" | "strict" | "none" {
   const s = raw.trim().toLowerCase();
   if (s === "strict" || s === "none" || s === "lax") return s;
@@ -51,6 +63,10 @@ export type AppConfig = {
   sessionMaxAgeSeconds: number;
   loginRateLimitMax: number;
   loginRateLimitWindowMs: number;
+  /** Consecutive failed logins for a single account before the account is locked. */
+  loginLockoutThreshold: number;
+  /** Lock duration in seconds applied once the threshold is reached. */
+  loginLockoutWindowSeconds: number;
   bcryptRounds: number;
   bootstrapAdminEmail: string | undefined;
   bootstrapAdminPassword: string | undefined;
@@ -68,7 +84,7 @@ export function loadConfig(): AppConfig {
 
   return {
     nodeEnv,
-    port: Number(readOptionalEnv("PORT", "4000")),
+    port: requiredIntEnv("PORT", "4000", 1),
     databaseUrl: readEnv("DATABASE_URL"),
     sessionSecret: stripOuterQuotes(readEnv("SESSION_SECRET")),
     cookieName: readOptionalEnv("COOKIE_NAME", "shyara_sales_session"),
@@ -79,10 +95,12 @@ export function loadConfig(): AppConfig {
       .map((origin) => origin.trim())
       .filter(Boolean),
     secureCookie,
-    sessionMaxAgeSeconds: Number(readOptionalEnv("SESSION_MAX_AGE_SECONDS", "604800")),
+    sessionMaxAgeSeconds: requiredIntEnv("SESSION_MAX_AGE_SECONDS", "604800", 60),
     loginRateLimitMax: intEnv("LOGIN_RATE_LIMIT_MAX", "5", 1),
     loginRateLimitWindowMs: intEnv("LOGIN_RATE_LIMIT_WINDOW_MS", "900000", 1000),
-    bcryptRounds: Number(readOptionalEnv("BCRYPT_ROUNDS", "10")),
+    loginLockoutThreshold: intEnv("LOGIN_LOCKOUT_THRESHOLD", "5", 1),
+    loginLockoutWindowSeconds: intEnv("LOGIN_LOCKOUT_WINDOW_SECONDS", "900", 60),
+    bcryptRounds: requiredIntEnv("BCRYPT_ROUNDS", "10", 4),
     bootstrapAdminEmail: process.env.BOOTSTRAP_ADMIN_EMAIL,
     bootstrapAdminPassword: process.env.BOOTSTRAP_ADMIN_PASSWORD,
     bootstrapAdminDisplayName: process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME

@@ -6,7 +6,8 @@ import Fastify from "fastify";
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import type { AppConfig } from "./config.js";
-import { httpErrorToBody, isHttpError, type HttpError } from "./errors/httpError.js";
+import { HttpError, httpErrorToBody, isHttpError } from "./errors/httpError.js";
+import { makeOriginGuard } from "./auth/originGuard.js";
 import { prisma } from "./lib/prisma.js";
 import { registerActivityLogRoutes } from "./routes/activityLogs.js";
 import { registerAuthRoutes } from "./routes/auth.js";
@@ -24,13 +25,17 @@ export type BuildAppOptions = {
   prismaClient?: typeof prisma;
 };
 
+/** Bound the request body globally - all our writes are small JSON payloads. */
+const BODY_LIMIT_BYTES = 64 * 1024;
+
 export async function buildApp(options: BuildAppOptions) {
   const { config } = options;
   const db = options.prismaClient ?? prisma;
 
   const app = Fastify({
     logger: true,
-    trustProxy: config.trustProxy
+    trustProxy: config.trustProxy,
+    bodyLimit: BODY_LIMIT_BYTES
   });
 
   app.decorate("prisma", db);
@@ -48,7 +53,7 @@ export async function buildApp(options: BuildAppOptions) {
         callback(null, true);
         return;
       }
-      callback(new Error("Not allowed by CORS"), false);
+      callback(new HttpError(403, "CORS", "Origin not allowed."), false);
     },
     credentials: true,
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"]
@@ -70,6 +75,10 @@ export async function buildApp(options: BuildAppOptions) {
       maxAge: options.config.sessionMaxAgeSeconds * 1000
     }
   });
+
+  // CSRF defence: reject POST/PATCH/PUT/DELETE without a known Origin. Registered after CORS so
+  // preflights and headers are still handled, but before routes so it short-circuits early.
+  app.addHook("onRequest", makeOriginGuard(config.allowedOrigins));
 
   app.setErrorHandler((error: unknown, request, reply) => {
     if (isHttpError(error)) {
@@ -99,11 +108,6 @@ export async function buildApp(options: BuildAppOptions) {
         }
       });
     }
-    if (error instanceof Error && error.message === "Not allowed by CORS") {
-      return reply.status(403).send({
-        error: { code: "CORS", message: "Origin not allowed." }
-      });
-    }
     if (error instanceof Error) {
       const sc = (error as { statusCode?: unknown }).statusCode;
       if (typeof sc === "number" && Number.isInteger(sc) && sc >= 400 && sc < 500) {
@@ -112,6 +116,8 @@ export async function buildApp(options: BuildAppOptions) {
         const message =
           sc === 429
             ? "Too many requests. Try again later."
+            : sc === 413
+            ? "Payload too large."
             : error.message || "Request failed";
         return reply.status(sc).send({
           error: { code, message }

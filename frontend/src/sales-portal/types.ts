@@ -122,6 +122,7 @@ export interface ManualTransition {
 export interface PortalSettingsValues {
   commissionRateBps: number;
   commissionBasis: "VERIFIED_FINAL_PAYMENT" | "FINAL_QUOTE";
+  commissionRounding: "floor" | "round" | "bankers";
   manualTransitions: ManualTransition[];
   advancePaymentRequiredLeadStatus: LeadStatus;
   finalPaymentRequiredLeadStatus: LeadStatus;

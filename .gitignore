@@ -19,6 +19,21 @@ dist-check-*/
 # Internal audit/report files
 GEO-AUDIT-REPORT.md
 
+# Compiled backend output
+backend/dist/
+
+# Ad-hoc API probe artifacts (live curl bodies, cookies, etc.) - never commit
+/cookies.txt
+/create-rep.json
+/lead-create.json
+/login.json
+/payment.json
+/project-create.json
+/settings-patch.json
+/verify-payment.json
+/backend/tmp-probe.mjs
+/backend/prisma/production-introspected.prisma
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

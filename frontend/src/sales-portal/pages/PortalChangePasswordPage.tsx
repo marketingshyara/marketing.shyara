@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function PortalChangePasswordPage() {
   const navigate = useNavigate();
@@ -21,8 +22,9 @@ export function PortalChangePasswordPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex min-h-dvh items-center justify-center gap-2" role="status" aria-live="polite">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
+        <span className="text-sm text-muted-foreground">Loading…</span>
       </div>
     );
   }
@@ -47,7 +49,10 @@ export function PortalChangePasswordPage() {
             className="space-y-4"
             onSubmit={form.handleSubmit((values) =>
               change.mutate(values, {
-                onSuccess: () => navigate("/portal/leads", { replace: true })
+                onSuccess: () => {
+                  toast.success("Password Updated Successfully.");
+                  navigate("/portal/leads", { replace: true });
+                }
               })
             )}
           >
@@ -75,6 +80,9 @@ export function PortalChangePasswordPage() {
                 className="min-h-11"
                 {...form.register("newPassword")}
               />
+              <p className="text-xs text-muted-foreground">
+                Use at least 8 characters. A longer password is usually safer.
+              </p>
               {form.formState.errors.newPassword && (
                 <p className="text-sm font-medium text-destructive">
                   {form.formState.errors.newPassword.message}

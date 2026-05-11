@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useActivityLogsQuery } from "../hooks/useSalesQueries";
 import { useDebounced } from "../hooks/useDebounced";
 import { Button } from "@/components/ui/button";
@@ -16,11 +17,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
 
 export function ActivityLogsPage() {
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(() => Number(searchParams.get("page") ?? "1") || 1);
   const pageSize = 20;
-  const [userId, setUserId] = useState("");
-  const [entityType, setEntityType] = useState("");
-  const [entityId, setEntityId] = useState("");
+  const [userId, setUserId] = useState(searchParams.get("userId") ?? "");
+  const [entityType, setEntityType] = useState(searchParams.get("entityType") ?? "");
+  const [entityId, setEntityId] = useState(searchParams.get("entityId") ?? "");
   const debouncedUserId = useDebounced(userId, 300);
   const debouncedEntityType = useDebounced(entityType, 300);
   const debouncedEntityId = useDebounced(entityId, 300);
@@ -41,6 +43,26 @@ export function ActivityLogsPage() {
   }, [debouncedUserId, debouncedEntityType, debouncedEntityId]);
 
   useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (page > 1) next.set("page", String(page));
+    else next.delete("page");
+    if (debouncedUserId.trim()) next.set("userId", debouncedUserId.trim());
+    else next.delete("userId");
+    if (debouncedEntityType.trim()) next.set("entityType", debouncedEntityType.trim());
+    else next.delete("entityType");
+    if (debouncedEntityId.trim()) next.set("entityId", debouncedEntityId.trim());
+    else next.delete("entityId");
+    setSearchParams(next, { replace: true });
+  }, [
+    debouncedEntityId,
+    debouncedEntityType,
+    debouncedUserId,
+    page,
+    searchParams,
+    setSearchParams
+  ]);
+
+  useEffect(() => {
     if (data == null) return;
     const tp = Math.max(1, Math.ceil(data.total / pageSize));
     setPage((p) => Math.min(p, tp));
@@ -55,28 +77,33 @@ export function ActivityLogsPage() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="space-y-2">
-          <Label>User ID</Label>
+          <Label htmlFor="activity-user-id">User ID</Label>
           <Input
+            id="activity-user-id"
             className="min-h-11"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
+            placeholder="Filter by user ID…"
           />
         </div>
         <div className="space-y-2">
-          <Label>Entity type</Label>
+          <Label htmlFor="activity-entity-type">Area</Label>
           <Input
+            id="activity-entity-type"
             className="min-h-11"
             value={entityType}
             onChange={(e) => setEntityType(e.target.value)}
-            placeholder="Lead, User, …"
+            placeholder="Lead, User, Payment…"
           />
         </div>
         <div className="space-y-2">
-          <Label>Entity ID</Label>
+          <Label htmlFor="activity-entity-id">Item ID</Label>
           <Input
+            id="activity-entity-id"
             className="min-h-11"
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
+            placeholder="Filter by item ID…"
           />
         </div>
       </div>

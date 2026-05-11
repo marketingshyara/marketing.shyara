@@ -2,7 +2,7 @@ import type { FastifyBaseLogger } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 
 const CHECKS: Array<{ name: string; sql: string }> = [
-  { name: "User core columns", sql: 'SELECT "id","email","passwordHash","role","isActive" FROM "User" LIMIT 0' },
+  { name: "User core columns", sql: 'SELECT "id","email","passwordHash","role","isActive","failedLoginAttempts","lockedUntil" FROM "User" LIMIT 0' },
   { name: "Lead core columns", sql: 'SELECT "id","clientName","status","createdByUserId" FROM "Lead" LIMIT 0' },
   { name: "PortalSettings core columns", sql: 'SELECT "id","values","updatedAt" FROM "PortalSettings" LIMIT 0' },
   { name: "LeadPayment table", sql: 'SELECT "id","leadId","kind","verificationStatus" FROM "LeadPayment" LIMIT 0' },

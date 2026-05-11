@@ -23,6 +23,10 @@ export async function ensureBootstrapAdmin(
   const passwordHash = await bcrypt.hash(input.password, input.bcryptRounds);
   const displayName = input.displayName?.trim() || "Admin";
 
+  // Only clobber the password on update when explicitly opted in, so production restarts don't
+  // silently overwrite a rotated admin password with the value stuck in the env var.
+  const resetPasswordOnUpdate = process.env.BOOTSTRAP_ADMIN_RESET_PASSWORD === "true";
+
   await prisma.user.upsert({
     where: { email: emailNorm },
     create: {
@@ -34,10 +38,10 @@ export async function ensureBootstrapAdmin(
       mustChangePassword: false
     },
     update: {
-      passwordHash,
       displayName,
       role: UserRole.ADMIN,
-      isActive: true
+      isActive: true,
+      ...(resetPasswordOnUpdate ? { passwordHash, mustChangePassword: false } : {})
     }
   });
 }

@@ -39,6 +39,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "../types";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
+import { userRoleLabel } from "../lib/copy";
 export function UsersPage() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
@@ -127,26 +128,26 @@ export function UsersPage() {
               )}
             >
               <div className="space-y-2">
-                <Label>Email</Label>
-                <Input className="min-h-11" {...createForm.register("email")} />
+                <Label htmlFor="create-user-email">Email</Label>
+                <Input id="create-user-email" type="email" autoComplete="email" className="min-h-11" {...createForm.register("email")} />
               </div>
               <div className="space-y-2">
-                <Label>Password (optional — generated if empty)</Label>
-                <Input type="password" className="min-h-11" {...createForm.register("password")} />
+                <Label htmlFor="create-user-password">Password (optional — generated if empty)</Label>
+                <Input id="create-user-password" type="password" className="min-h-11" {...createForm.register("password")} />
               </div>
               <div className="space-y-2">
-                <Label>Display name</Label>
-                <Input className="min-h-11" {...createForm.register("displayName")} />
+                <Label htmlFor="create-user-display-name">Display name</Label>
+                <Input id="create-user-display-name" className="min-h-11" {...createForm.register("displayName")} />
               </div>
               <div className="space-y-2">
-                <Label>Role</Label>
+                <Label htmlFor="create-user-role">Role</Label>
                 <Select
                   value={createForm.watch("role")}
                   onValueChange={(r) =>
                     createForm.setValue("role", r as "ADMIN" | "SALES_REP")
                   }
                 >
-                  <SelectTrigger className="min-h-11">
+                  <SelectTrigger id="create-user-role" className="min-h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -157,10 +158,11 @@ export function UsersPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Switch
+                  id="create-user-must-change-password"
                   checked={createForm.watch("mustChangePassword")}
                   onCheckedChange={(c) => createForm.setValue("mustChangePassword", c)}
                 />
-                <Label>Must change password</Label>
+                <Label htmlFor="create-user-must-change-password">Password reset required</Label>
               </div>
               <Button type="submit" className="min-h-11 w-full" disabled={createUser.isPending}>
                 Create
@@ -187,11 +189,11 @@ export function UsersPage() {
           >
             <p className="break-words font-medium">{u.email}</p>
             <div className="mt-2">
-              <Badge variant="outline">{u.role}</Badge>
+              <Badge variant="outline">{userRoleLabel(u.role)}</Badge>
             </div>
             <dl className="mt-3 space-y-1 text-sm text-muted-foreground">
               <div>Active: {u.isActive ? "Yes" : "No"}</div>
-              <div>Must change password: {u.mustChangePassword ? "Yes" : "No"}</div>
+              <div>Password reset required: {u.mustChangePassword ? "Yes" : "No"}</div>
             </dl>
             <div className="mt-3 flex flex-col gap-2">
               <Button
@@ -228,7 +230,7 @@ export function UsersPage() {
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Active</TableHead>
-              <TableHead>Must change pw</TableHead>
+              <TableHead>Password Reset Required</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -237,7 +239,7 @@ export function UsersPage() {
               <TableRow key={u.id}>
                 <TableCell className="font-medium">{u.email}</TableCell>
                 <TableCell>
-                  <Badge variant="outline">{u.role}</Badge>
+                  <Badge variant="outline">{userRoleLabel(u.role)}</Badge>
                 </TableCell>
                 <TableCell>{u.isActive ? "Yes" : "No"}</TableCell>
                 <TableCell>{u.mustChangePassword ? "Yes" : "No"}</TableCell>
@@ -323,18 +325,18 @@ export function UsersPage() {
               )}
             >
               <div className="space-y-2">
-                <Label>Display name</Label>
-                <Input className="min-h-11" {...editForm.register("displayName")} />
+                <Label htmlFor="edit-user-display-name">Display name</Label>
+                <Input id="edit-user-display-name" className="min-h-11" {...editForm.register("displayName")} />
               </div>
               <div className="space-y-2">
-                <Label>Role</Label>
+                <Label htmlFor="edit-user-role">Role</Label>
                 <Select
                   value={editForm.watch("role")}
                   onValueChange={(r) =>
                     editForm.setValue("role", r as "ADMIN" | "SALES_REP")
                   }
                 >
-                  <SelectTrigger className="min-h-11">
+                  <SelectTrigger id="edit-user-role" className="min-h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -345,10 +347,11 @@ export function UsersPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Switch
+                  id="edit-user-active"
                   checked={editForm.watch("isActive")}
                   onCheckedChange={(c) => editForm.setValue("isActive", c)}
                 />
-                <Label>Active</Label>
+                <Label htmlFor="edit-user-active">Active</Label>
               </div>
               <Button type="submit" className="min-h-11 w-full" disabled={patchUser.isPending}>
                 Save
@@ -378,8 +381,8 @@ export function UsersPage() {
             )}
           >
             <div className="space-y-2">
-              <Label>New temporary password (8–128 chars)</Label>
-              <Input type="password" className="min-h-11" {...resetForm.register("temporaryPassword")} />
+              <Label htmlFor="reset-user-password">New temporary password (8–128 chars)</Label>
+              <Input id="reset-user-password" type="password" className="min-h-11" {...resetForm.register("temporaryPassword")} />
             </div>
             <Button type="submit" className="min-h-11 w-full" disabled={resetPw.isPending || !resetUserId}>
               Reset

@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApp } from "../../src/app.js";
 import { loadConfig } from "../../src/config.js";
 import { prisma } from "../../src/lib/prisma.js";
+import { inject } from "../helpers/inject.js";
 
 const run = Boolean(process.env.DATABASE_URL && process.env.SESSION_SECRET);
 const d = run ? describe : describe.skip;
@@ -49,7 +50,7 @@ d("integration: auth and RBAC", () => {
     const config = loadConfig();
     const app = await buildApp({ config });
 
-    const login = await app.inject({
+    const login = await inject(app, {
       method: "POST",
       url: "/api/auth/login",
       payload: { email: "it-rep@test.local", password: "RepPass123!" }
@@ -58,7 +59,7 @@ d("integration: auth and RBAC", () => {
     const cookie = login.cookies.find((c) => c.name === config.cookieName);
     expect(cookie).toBeDefined();
 
-    const users = await app.inject({
+    const users = await inject(app, {
       method: "GET",
       url: "/api/users",
       headers: { cookie: `${config.cookieName}=${cookie!.value}` }
@@ -72,7 +73,7 @@ d("integration: auth and RBAC", () => {
     const config = loadConfig();
     const app = await buildApp({ config });
 
-    const login = await app.inject({
+    const login = await inject(app, {
       method: "POST",
       url: "/api/auth/login",
       payload: { email: "it-admin@test.local", password: "AdminPass123!" }
@@ -81,7 +82,7 @@ d("integration: auth and RBAC", () => {
     const cookie = login.cookies.find((c) => c.name === config.cookieName);
     expect(cookie).toBeDefined();
 
-    const users = await app.inject({
+    const users = await inject(app, {
       method: "GET",
       url: "/api/users",
       headers: { cookie: `${config.cookieName}=${cookie!.value}` }
@@ -98,7 +99,7 @@ d("integration: auth and RBAC", () => {
     const config = loadConfig();
     const app = await buildApp({ config });
 
-    const login = await app.inject({
+    const login = await inject(app, {
       method: "POST",
       url: "/api/auth/login",
       payload: { email: "it-admin@test.local", password: "AdminPass123!" }
@@ -107,7 +108,7 @@ d("integration: auth and RBAC", () => {
     const cookie = login.cookies.find((c) => c.name === config.cookieName);
     expect(cookie).toBeDefined();
 
-    const create = await app.inject({
+    const create = await inject(app, {
       method: "POST",
       url: "/api/users",
       headers: {
@@ -137,7 +138,7 @@ d("integration: auth and RBAC", () => {
     const config = loadConfig();
     const app = await buildApp({ config });
 
-    const login = await app.inject({
+    const login = await inject(app, {
       method: "POST",
       url: "/api/auth/login",
       payload: { email: "it-admin@test.local", password: "AdminPass123!" }
@@ -146,7 +147,7 @@ d("integration: auth and RBAC", () => {
     const cookie = login.cookies.find((c) => c.name === config.cookieName);
     expect(cookie).toBeDefined();
 
-    const dup = await app.inject({
+    const dup = await inject(app, {
       method: "POST",
       url: "/api/users",
       headers: {
@@ -163,6 +164,87 @@ d("integration: auth and RBAC", () => {
     expect(dup.statusCode).toBe(409);
     const body = JSON.parse(dup.body);
     expect(body.error.code).toBe("EMAIL_IN_USE");
+
+    await app.close();
+  });
+
+  it("mustChangePassword user is blocked from protected routes until password is changed", async () => {
+    await prisma.user.deleteMany({ where: { email: "it-mustchange@test.local" } });
+    await prisma.user.create({
+      data: {
+        email: "it-mustchange@test.local",
+        passwordHash: await bcrypt.hash("TempPass123!", 10),
+        role: UserRole.SALES_REP,
+        mustChangePassword: true
+      }
+    });
+    const config = loadConfig();
+    const app = await buildApp({ config });
+
+    const login = await inject(app, {
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "it-mustchange@test.local", password: "TempPass123!" }
+    });
+    expect(login.statusCode).toBe(200);
+    const cookie = login.cookies.find((c) => c.name === config.cookieName);
+    expect(cookie).toBeDefined();
+    const cookieHeader = `${config.cookieName}=${cookie!.value}`;
+
+    const blocked = await inject(app, {
+      method: "GET",
+      url: "/api/leads",
+      headers: { cookie: cookieHeader }
+    });
+    expect(blocked.statusCode).toBe(403);
+    expect(JSON.parse(blocked.body).error.code).toBe("PASSWORD_CHANGE_REQUIRED");
+
+    const change = await inject(app, {
+      method: "POST",
+      url: "/api/auth/change-password",
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: { currentPassword: "TempPass123!", newPassword: "ChangedPass123!" }
+    });
+    expect(change.statusCode).toBe(200);
+
+    const allowed = await inject(app, {
+      method: "GET",
+      url: "/api/leads",
+      headers: { cookie: cookieHeader }
+    });
+    expect(allowed.statusCode).toBe(200);
+
+    await prisma.user.deleteMany({ where: { email: "it-mustchange@test.local" } });
+    await app.close();
+  });
+
+  it("reset-password returns updated user payload", async () => {
+    const config = loadConfig();
+    const app = await buildApp({ config });
+
+    const login = await inject(app, {
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "it-admin@test.local", password: "AdminPass123!" }
+    });
+    expect(login.statusCode).toBe(200);
+    const cookie = login.cookies.find((c) => c.name === config.cookieName);
+    expect(cookie).toBeDefined();
+
+    const reset = await inject(app, {
+      method: "POST",
+      url: `/api/users/${repId}/reset-password`,
+      headers: {
+        cookie: `${config.cookieName}=${cookie!.value}`,
+        "content-type": "application/json"
+      },
+      payload: { temporaryPassword: "RepPass456!" }
+    });
+    expect(reset.statusCode).toBe(200);
+    const body = JSON.parse(reset.body);
+    expect(body.user).toBeDefined();
+    expect(body.user.id).toBe(repId);
+    expect(body.user.mustChangePassword).toBe(true);
 
     await app.close();
   });

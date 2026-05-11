@@ -1,6 +1,7 @@
 import { LeadStatus, UserRole } from "@prisma/client";
 import type { Lead } from "@prisma/client";
 import { HttpError } from "../errors/httpError.js";
+import { divideCentsWithRounding } from "../lib/money.js";
 import type { PortalSettingsValues } from "../validators/schemas.js";
 
 export function assertManualTransition(
@@ -48,5 +49,5 @@ export function commissionAmountCents(
     );
   }
 
-  return Math.floor((base * rate) / 10000);
+  return divideCentsWithRounding(base * rate, 10000, settings.commissionRounding);
 }

@@ -27,9 +27,9 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
       const admin = request.currentUser!;
       const { paymentId } = request.params as { paymentId: string };
       const body = verifyPaymentBodySchema.parse(request.body);
-      const settings = await getPortalSettings(app.prisma);
 
       const result = await app.prisma.$transaction(async (tx) => {
+        const settings = await getPortalSettings(tx);
         const payment = await tx.leadPayment.findUnique({
           where: { id: paymentId },
           include: { lead: true }
@@ -46,8 +46,9 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
             ? PaymentVerificationStatus.VERIFIED
             : PaymentVerificationStatus.REJECTED;
 
-        const updatedPayment = await tx.leadPayment.update({
-          where: { id: paymentId },
+        // Atomic: only flip a still-PENDING payment. Concurrent verifies see 0 rows and bail.
+        const payClaim = await tx.leadPayment.updateMany({
+          where: { id: paymentId, verificationStatus: PaymentVerificationStatus.PENDING },
           data: {
             verificationStatus: decision,
             verifiedByUserId: admin.id,
@@ -55,84 +56,105 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
             adminNote: body.adminNote ?? undefined
           }
         });
+        if (payClaim.count === 0) {
+          throw new HttpError(400, "ALREADY_PROCESSED", "This payment was already verified or rejected.");
+        }
+        const updatedPayment = await tx.leadPayment.findUniqueOrThrow({ where: { id: paymentId } });
 
         if (decision === PaymentVerificationStatus.REJECTED) {
+          await logActivity({
+            prisma: app.prisma,
+            tx,
+            userId: admin.id,
+            action: ActivityAction.PAYMENT_VERIFIED,
+            entityType: "LeadPayment",
+            entityId: paymentId,
+            after: { decision: body.decision, leadStatus: payment.lead.status },
+            request
+          });
           return { payment: updatedPayment, lead: payment.lead };
         }
 
-        const requiredAdvance = getRequiredLeadStatusForVerify(settings, "ADVANCE");
-        const requiredFinal = getRequiredLeadStatusForVerify(settings, "FINAL");
-
         if (payment.kind === PaymentKind.ADVANCE) {
-          if (payment.lead.status !== requiredAdvance) {
-            throw new HttpError(
-              400,
-              "INVALID_STATE",
-              `Lead must be ${requiredAdvance} to verify an advance payment.`
-            );
-          }
+          const required = getRequiredLeadStatusForVerify(settings, "ADVANCE");
           assertPaymentMatchesQuoteTolerance(
             payment.amountCents,
             payment.lead.advanceAmountCents,
             settings.enforcePaymentQuoteToleranceBps,
             "Advance payment"
           );
-          const lead = await tx.lead.update({
-            where: { id: payment.leadId },
+          // Atomic state transition - eliminates the read-then-write race.
+          const leadFlip = await tx.lead.updateMany({
+            where: { id: payment.leadId, status: required },
             data: { status: LeadStatus.ADVANCE_PAID }
           });
-          return { payment: updatedPayment, lead };
-        }
-
-        if (payment.kind === PaymentKind.FINAL) {
-          if (payment.lead.status !== requiredFinal) {
+          if (leadFlip.count === 0) {
             throw new HttpError(
               400,
               "INVALID_STATE",
-              `Lead must be ${requiredFinal} to verify a final payment.`
+              `Lead must be ${required} to verify an advance payment.`
             );
           }
-          assertPaymentMatchesQuoteTolerance(
-            payment.amountCents,
-            payment.lead.finalQuoteCents,
-            settings.enforcePaymentQuoteToleranceBps,
-            "Final payment"
-          );
-          const lead = await tx.lead.update({
-            where: { id: payment.leadId },
-            data: { status: LeadStatus.FINAL_PAID }
-          });
-          const repId = getCommissionRepUserId(payment.lead);
-          const amountCents = commissionAmountCents(payment.lead, payment.amountCents, settings);
-          await tx.commission.upsert({
-            where: { leadId: payment.leadId },
-            create: {
-              leadId: payment.leadId,
-              repUserId: repId,
-              amountCents
-            },
-            update: {
-              repUserId: repId,
-              amountCents
-            }
+          const lead = await tx.lead.findUniqueOrThrow({ where: { id: payment.leadId } });
+          await logActivity({
+            prisma: app.prisma,
+            tx,
+            userId: admin.id,
+            action: ActivityAction.PAYMENT_VERIFIED,
+            entityType: "LeadPayment",
+            entityId: paymentId,
+            after: { decision: body.decision, leadStatus: lead.status },
+            request
           });
           return { payment: updatedPayment, lead };
         }
 
-        return { payment: updatedPayment, lead: payment.lead };
-      });
-
-      await logActivity({
-        prisma: app.prisma,
-        userId: admin.id,
-        action: ActivityAction.PAYMENT_VERIFIED,
-        entityType: "LeadPayment",
-        entityId: paymentId,
-        after: {
-          decision: body.decision,
-          leadStatus: result.lead.status
-        },
-        request
+        // FINAL
+        const required = getRequiredLeadStatusForVerify(settings, "FINAL");
+        assertPaymentMatchesQuoteTolerance(
+          payment.amountCents,
+          payment.lead.finalQuoteCents,
+          settings.enforcePaymentQuoteToleranceBps,
+          "Final payment"
+        );
+        const leadFlip = await tx.lead.updateMany({
+          where: { id: payment.leadId, status: required },
+          data: { status: LeadStatus.FINAL_PAID }
+        });
+        if (leadFlip.count === 0) {
+          throw new HttpError(
+            400,
+            "INVALID_STATE",
+            `Lead must be ${required} to verify a final payment.`
+          );
+        }
+        // Re-read so commission math uses the latest finalQuoteCents (defends against a concurrent PATCH).
+        const lead = await tx.lead.findUniqueOrThrow({ where: { id: payment.leadId } });
+        const repId = getCommissionRepUserId(lead);
+        const amountCents = commissionAmountCents(lead, payment.amountCents, settings);
+        await tx.commission.upsert({
+          where: { leadId: payment.leadId },
+          create: {
+            leadId: payment.leadId,
+            repUserId: repId,
+            amountCents
+          },
+          update: {
+            repUserId: repId,
+            amountCents
+          }
+        });
+        await logActivity({
+          prisma: app.prisma,
+          tx,
+          userId: admin.id,
+          action: ActivityAction.PAYMENT_VERIFIED,
+          entityType: "LeadPayment",
+          entityId: paymentId,
+          after: { decision: body.decision, leadStatus: lead.status },
+          request
+        });
+        return { payment: updatedPayment, lead };
       });
 
       return reply.send(result);

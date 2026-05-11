@@ -26,6 +26,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
+import { userRoleLabel } from "../lib/copy";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -89,6 +90,12 @@ export function SalesPortalLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0 md:pl-56">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[60] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground"
+      >
+        Skip to main content
+      </a>
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="flex min-w-0 items-center gap-2">
           <Shield className="h-6 w-6 shrink-0 text-accent" aria-hidden />
@@ -98,7 +105,7 @@ export function SalesPortalLayout() {
             </Link>
             <p className="truncate text-xs text-muted-foreground">
               {user?.displayName ?? user?.email}
-              {user?.role === "ADMIN" ? " · Admin" : " · Sales rep"}
+              {user?.role ? ` · ${userRoleLabel(user.role)}` : ""}
             </p>
           </div>
         </div>
@@ -122,7 +129,7 @@ export function SalesPortalLayout() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} disabled={logout.isPending}>
-                <LogOut className="mr-2 h-4 w-4" />
+                <LogOut className="mr-2 h-4 w-4" aria-hidden />
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -132,15 +139,15 @@ export function SalesPortalLayout() {
 
       <aside className="fixed bottom-0 left-0 right-0 z-50 flex h-[calc(4.5rem+env(safe-area-inset-bottom,0px))] items-start justify-around border-t bg-sidebar px-1 pt-1 md:hidden">
         <NavLink to="/portal/leads" className={navClass} end>
-          <ClipboardList className="h-5 w-5" />
+          <ClipboardList className="h-5 w-5" aria-hidden />
           <span className="sr-only">Leads</span>
         </NavLink>
         <NavLink to="/portal/projects" className={navClass}>
-          <FolderKanban className="h-5 w-5" />
+          <FolderKanban className="h-5 w-5" aria-hidden />
           <span className="sr-only">Projects</span>
         </NavLink>
         <NavLink to="/portal/commissions" className={navClass}>
-          <IndianRupee className="h-5 w-5" />
+          <IndianRupee className="h-5 w-5" aria-hidden />
           <span className="sr-only">Commissions</span>
         </NavLink>
         <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
@@ -149,8 +156,9 @@ export function SalesPortalLayout() {
               variant="ghost"
               size="sm"
               className={cn(navClass({ isActive: false }), "flex-col gap-0.5")}
+              aria-label="Open more menu"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-5 w-5" aria-hidden />
               <span className="text-xs font-medium leading-none">More</span>
             </Button>
           </SheetTrigger>
@@ -193,8 +201,10 @@ export function SalesPortalLayout() {
         </nav>
       </aside>
 
-      <main className="flex-1 overflow-x-hidden px-3 py-4 md:px-6">
-        <Outlet />
+      <main id="main-content" className="flex-1 overflow-x-hidden px-3 py-4 md:px-6">
+        <div className="mx-auto w-full max-w-[1200px]">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

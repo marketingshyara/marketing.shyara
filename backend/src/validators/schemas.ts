@@ -39,7 +39,14 @@ export const resetPasswordBodySchema = z.object({
 export const leadsListQuerySchema = paginationQuerySchema
   .extend({
     status: z.nativeEnum(LeadStatus).optional(),
-    search: z.string().max(200).optional(),
+    /**
+     * Server-side minimum length defends the functional `lower(...)` indexes from degenerate
+     * 1-char ILIKE queries that would scan the whole table.
+     */
+    search: z.preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+      z.string().min(2).max(200).optional()
+    ),
     from: z.coerce.date().optional(),
     to: z.coerce.date().optional()
   })
@@ -94,13 +101,17 @@ export const commissionsListQuerySchema = paginationQuerySchema.extend({
     .transform((value) => (value === undefined ? undefined : value === "true"))
 });
 
-export const activityLogsQuerySchema = paginationQuerySchema.extend({
-  userId: z.string().min(1).optional(),
-  entityType: z.string().min(1).max(64).optional(),
-  entityId: z.string().min(1).optional(),
-  from: z.coerce.date().optional(),
-  to: z.coerce.date().optional()
-});
+export const activityLogsQuerySchema = paginationQuerySchema
+  .extend({
+    userId: z.string().min(1).optional(),
+    entityType: z.string().min(1).max(64).optional(),
+    entityId: z.string().min(1).optional(),
+    from: z.coerce.date().optional(),
+    to: z.coerce.date().optional()
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: "Query parameter 'from' must be on or before 'to'."
+  });
 
 export const patchProjectBodySchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -139,7 +150,8 @@ export const portalSettingsSchema = z
       .array(z.nativeEnum(LeadStatus))
       .default([LeadStatus.COMMISSION_PAID]),
     enforcePaymentQuoteToleranceBps: z.number().int().min(0).max(10000).nullable().default(null),
-    exportMaxRows: z.number().int().min(100).max(500000).default(50_000)
+    exportMaxRows: z.number().int().min(100).max(500000).default(50_000),
+    commissionRounding: z.enum(["floor", "round", "bankers"]).default("bankers")
   })
   .strict();
 
@@ -156,7 +168,8 @@ const PORTAL_SETTINGS_INPUT_KEYS = [
   "finalVerifyRequiredLeadStatus",
   "terminalNoMutationStatuses",
   "enforcePaymentQuoteToleranceBps",
-  "exportMaxRows"
+  "exportMaxRows",
+  "commissionRounding"
 ] as const satisfies readonly (keyof PortalSettingsValues)[];
 
 function pickKnownPortalSettings(

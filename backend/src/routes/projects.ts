@@ -5,7 +5,6 @@ import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
 import { clampPage } from "../lib/pagination.js";
-import { assertLeadAccess } from "../services/leadAccess.js";
 import { logActivity } from "../services/activityLog.js";
 import { createProjectBodySchema, paginationQuerySchema, patchProjectBodySchema } from "../validators/schemas.js";
 
@@ -58,14 +57,25 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
       const user = request.currentUser!;
       const { id } = request.params as { id: string };
 
-      const project = await app.prisma.project.findUnique({
-        where: { id },
-        include: { lead: true }
-      });
+      // Scope the lookup so non-members get a uniform 404 (no existence enumeration via 403).
+      const project =
+        user.role === UserRole.ADMIN
+          ? await app.prisma.project.findUnique({
+              where: { id },
+              include: { lead: true }
+            })
+          : await app.prisma.project.findFirst({
+              where: {
+                id,
+                lead: {
+                  OR: [{ createdByUserId: user.id }, { assignedToUserId: user.id }]
+                }
+              },
+              include: { lead: true }
+            });
       if (!project) {
         throw new HttpError(404, "NOT_FOUND", "Project not found.");
       }
-      assertLeadAccess(project.lead, user);
       return reply.send({ project });
     }
   );

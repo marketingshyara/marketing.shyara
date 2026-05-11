@@ -2,8 +2,15 @@ import type { FastifyInstance } from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import bcrypt from "bcryptjs";
 import { ActivityAction } from "@prisma/client";
-import { requireUser } from "../auth/requireUser.js";
+import { requireUser, requireUserAllowPasswordChange } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
+import { DUMMY_BCRYPT_HASH, safeBcryptCompare } from "../lib/bcrypt.js";
+import {
+  isLocked,
+  recordLoginFailure,
+  recordLoginSuccess,
+  remainingLockSeconds
+} from "../lib/loginLockout.js";
 import { logActivity } from "../services/activityLog.js";
 import {
   changePasswordBodySchema,
@@ -20,24 +27,43 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
 
       scope.post("/login", async (request, reply) => {
         const body = loginBodySchema.parse(request.body);
+        const lockoutConfig = {
+          threshold: app.appConfig.loginLockoutThreshold,
+          windowSeconds: app.appConfig.loginLockoutWindowSeconds
+        };
+
         const user = await app.prisma.user.findUnique({
           where: { email: body.email.toLowerCase().trim() }
         });
+
+        // Always run bcrypt - even on missing user - so timing doesn't reveal account existence.
+        const hash = user?.passwordHash ?? DUMMY_BCRYPT_HASH;
+        const passwordOk = await safeBcryptCompare(body.password, hash, request);
 
         if (!user || !user.isActive) {
           throw new HttpError(401, "INVALID_CREDENTIALS", "Invalid email or password.");
         }
 
-        let valid: boolean;
-        try {
-          valid = await bcrypt.compare(body.password, user.passwordHash);
-        } catch (err) {
-          request.log.error({ err }, "bcrypt.compare failed (invalid stored hash?)");
+        // Lockout check after bcrypt: if the account is currently locked we surface a generic
+        // INVALID_CREDENTIALS (don't reveal the lock state to attackers) but include Retry-After
+        // so legitimate clients can back off gracefully.
+        if (isLocked(user)) {
+          const retryAfter = remainingLockSeconds(user);
+          reply.header("Retry-After", String(Math.max(1, retryAfter)));
           throw new HttpError(401, "INVALID_CREDENTIALS", "Invalid email or password.");
         }
-        if (!valid) {
+
+        if (!passwordOk) {
+          // Fire and forget the counter increment; never block the response on it.
+          await recordLoginFailure(app.prisma, user.id, lockoutConfig).catch((err) => {
+            request.log.warn({ err }, "recordLoginFailure failed");
+          });
           throw new HttpError(401, "INVALID_CREDENTIALS", "Invalid email or password.");
         }
+
+        await recordLoginSuccess(app.prisma, user.id).catch((err) => {
+          request.log.warn({ err }, "recordLoginSuccess failed");
+        });
 
         await request.session.regenerate();
         request.session.set("userId", user.id);
@@ -67,7 +93,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     { prefix: "/api/auth" }
   );
 
-  app.post("/api/auth/logout", { preHandler: [requireUser] }, async (request, reply) => {
+  app.post("/api/auth/logout", { preHandler: [requireUserAllowPasswordChange] }, async (request, reply) => {
     const userId = request.currentUser?.id;
     await logActivity({
       prisma: app.prisma,
@@ -112,17 +138,11 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     });
   });
 
-  app.post("/api/auth/change-password", { preHandler: [requireUser] }, async (request, reply) => {
+  app.post("/api/auth/change-password", { preHandler: [requireUserAllowPasswordChange] }, async (request, reply) => {
     const body = changePasswordBodySchema.parse(request.body);
     const user = request.currentUser!;
 
-    let valid: boolean;
-    try {
-      valid = await bcrypt.compare(body.currentPassword, user.passwordHash);
-    } catch (err) {
-      request.log.error({ err }, "bcrypt.compare failed on change-password");
-      throw new HttpError(400, "INVALID_PASSWORD", "Current password is incorrect.");
-    }
+    const valid = await safeBcryptCompare(body.currentPassword, user.passwordHash, request);
     if (!valid) {
       throw new HttpError(400, "INVALID_PASSWORD", "Current password is incorrect.");
     }

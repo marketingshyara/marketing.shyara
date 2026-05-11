@@ -3,6 +3,7 @@ import { UserRole } from "@prisma/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildApp } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
+import { inject } from "./helpers/inject.js";
 
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = "postgresql://u:p@127.0.0.1:5432/db";
@@ -25,15 +26,18 @@ describe("auth login bcrypt edge cases", () => {
       displayName: "X",
       role: UserRole.ADMIN,
       isActive: true,
-      mustChangePassword: false
+      mustChangePassword: false,
+      failedLoginAttempts: 0,
+      lockedUntil: null
     });
+    const update = vi.fn().mockResolvedValue({});
     const mockPrisma = {
-      user: { findUnique },
+      user: { findUnique, update },
       activityLog: { create: vi.fn().mockResolvedValue({}) }
     } as unknown as PrismaClient;
 
     const app = await buildApp({ config, prismaClient: mockPrisma });
-    const res = await app.inject({
+    const res = await inject(app, {
       method: "POST",
       url: "/api/auth/login",
       payload: { email: "bad-hash@test.local", password: "whatever" }

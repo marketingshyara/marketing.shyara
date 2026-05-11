@@ -44,9 +44,9 @@ export const createUserSchema = z.object({
 });
 
 export const patchUserSchema = z.object({
-  isActive: z.boolean(),
-  role: userRoleSchema,
-  displayName: z.string().max(120)
+  isActive: z.boolean().optional(),
+  role: userRoleSchema.optional(),
+  displayName: z.union([z.string().min(1).max(120), z.literal(""), z.null()]).optional()
 });
 
 export const resetPasswordSchema = z.object({
@@ -99,6 +99,7 @@ export const portalSettingsSchema = z
   .object({
     commissionRateBps: z.number().int().min(0).max(10000),
     commissionBasis: z.enum(["VERIFIED_FINAL_PAYMENT", "FINAL_QUOTE"]),
+    commissionRounding: z.enum(["floor", "round", "bankers"]),
     manualTransitions: z.array(manualTransitionSchema),
     advancePaymentRequiredLeadStatus: leadStatusSchema,
     finalPaymentRequiredLeadStatus: leadStatusSchema,

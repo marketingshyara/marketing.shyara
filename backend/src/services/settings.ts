@@ -1,4 +1,4 @@
-import type { LeadStatus, PrismaClient } from "@prisma/client";
+import type { LeadStatus, Prisma, PrismaClient } from "@prisma/client";
 import { HttpError } from "../errors/httpError.js";
 import {
   parsePortalSettings,
@@ -8,22 +8,36 @@ import {
   type PortalSettingsValues
 } from "../validators/schemas.js";
 
-const CACHE_TTL_MS = 45_000;
-let cache: { expiresAt: number; value: PortalSettingsValues } | null = null;
+/**
+ * Cache keyed by the row's `updatedAt`. Every read still does a single PK lookup so that other
+ * instances/processes never serve a stale settings value after an admin PATCH — the previous
+ * 45s TTL allowed multi-instance drift which is unacceptable for money-affecting settings.
+ * The lookup selects only `updatedAt` + `values` to keep it cheap.
+ */
+let cache: { updatedAt: number; value: PortalSettingsValues } | null = null;
 
 export function invalidatePortalSettingsCache(): void {
   cache = null;
 }
 
-export async function getPortalSettings(prisma: PrismaClient): Promise<PortalSettingsValues> {
-  const now = Date.now();
-  if (cache && cache.expiresAt > now) {
+export async function getPortalSettings(prisma: PrismaClient): Promise<PortalSettingsValues>;
+export async function getPortalSettings(
+  prisma: Prisma.TransactionClient
+): Promise<PortalSettingsValues>;
+
+export async function getPortalSettings(
+  prisma: PrismaClient | Prisma.TransactionClient
+): Promise<PortalSettingsValues> {
+  const row = await prisma.portalSettings.findUnique({
+    where: { id: "default" },
+    select: { values: true, updatedAt: true }
+  });
+  const ts = row?.updatedAt.getTime() ?? 0;
+  if (cache && cache.updatedAt === ts) {
     return cache.value;
   }
-
-  const row = await prisma.portalSettings.findUnique({ where: { id: "default" } });
   const value = parsePortalSettings(row?.values);
-  cache = { expiresAt: now + CACHE_TTL_MS, value };
+  cache = { updatedAt: ts, value };
   return value;
 }
 
@@ -32,7 +46,10 @@ export async function updatePortalSettingsValues(
   patch: unknown
 ): Promise<PortalSettingsValues> {
   const parsedPatch = patchPortalSettingsSchema.parse(pickPortalSettingsPatchInput(patch));
-  const row = await prisma.portalSettings.findUnique({ where: { id: "default" } });
+  const row = await prisma.portalSettings.findUnique({
+    where: { id: "default" },
+    select: { values: true }
+  });
   const current = parsePortalSettings(row?.values);
   const merged = portalSettingsSchema.parse({
     ...current,

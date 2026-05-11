@@ -1,0 +1,21 @@
+---
+description: Keep frontend-backend contracts and tests synchronized
+globs:
+  - backend/src/**/*.ts
+  - frontend/src/sales-portal/**/*.ts
+  - frontend/src/sales-portal/**/*.tsx
+  - backend/tests/**/*.test.ts
+alwaysApply: true
+---
+
+- API contract rule:
+  - If backend response/request shape changes, update frontend `salesApi`, `types`, and zod schemas in same change.
+- Search/filter parity rule:
+  - Frontend must enforce backend query constraints before request where UX-relevant (e.g., minimum search length).
+- Settings parity rule:
+  - Keep portal settings keys/types in sync across backend and frontend.
+- Test rule:
+  - Add regression tests for each newly enforced invariant and each fixed bug branch.
+  - Include negative-path assertions for auth and role checks.
+- Quality gate rule:
+  - Before merge, run backend tests and ensure no new lint/type issues in touched files.

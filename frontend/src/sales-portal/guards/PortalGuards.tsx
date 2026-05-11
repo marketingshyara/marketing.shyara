@@ -5,9 +5,9 @@ import { useSessionQuery } from "../hooks/useSalesQueries";
 
 function PortalLoading() {
   return (
-    <div className="flex min-h-[50vh] items-center justify-center bg-background">
+    <div className="flex min-h-[50vh] items-center justify-center gap-2 bg-background" role="status" aria-live="polite">
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
-      <span className="sr-only">Loading</span>
+      <span className="text-sm text-muted-foreground">Loading…</span>
     </div>
   );
 }
@@ -44,9 +44,13 @@ export function RequirePortalUnlocked() {
 }
 
 export function PublicLoginGate({ children }: { children: ReactNode }) {
-  const { data, isLoading } = useSessionQuery();
+  const { data, isLoading, isFetching } = useSessionQuery();
 
-  if (isLoading) return <PortalLoading />;
+  // Match the other gates: wait out the first background refetch when no cached data yet, so a
+  // stale login form doesn't flash before an authed user is redirected away.
+  if (isLoading || (isFetching && data === undefined)) {
+    return <PortalLoading />;
+  }
 
   if (data?.user) {
     if (data.user.mustChangePassword) {
@@ -60,13 +64,14 @@ export function PublicLoginGate({ children }: { children: ReactNode }) {
 
 export function RequireAdmin() {
   const { data, isLoading, isFetching } = useSessionQuery();
+  const location = useLocation();
 
   if (isLoading || (isFetching && data === undefined)) {
     return <PortalLoading />;
   }
 
   if (data?.user?.role !== "ADMIN") {
-    return <Navigate to="/portal/leads" replace state={{ adminForbidden: true }} />;
+    return <Navigate to="/portal/no-access" replace state={{ from: location.pathname }} />;
   }
 
   return <Outlet />;
@@ -79,7 +84,7 @@ export function PortalCatchAll() {
   if (isLoading) return <PortalLoading />;
 
   if (data?.user) {
-    return <Navigate to="/portal/leads" replace />;
+    return <Navigate to="/portal/not-found" replace />;
   }
 
   return <Navigate to="/portal/login" replace />;

@@ -37,6 +37,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { leadStatusLabel } from "../lib/copy";
 
 export function ProjectsPage() {
   const { data: session } = useSessionQuery();
@@ -105,7 +106,7 @@ export function ProjectsPage() {
                 })}
               >
                 <div className="space-y-2">
-                  <Label>Lead</Label>
+                  <Label htmlFor="new-project-lead">Lead</Label>
                   {leadsError && (
                     <QueryErrorAlert
                       message="Could not load leads for this form."
@@ -117,25 +118,26 @@ export function ProjectsPage() {
                     onValueChange={(id) => form.setValue("leadId", id)}
                     disabled={leadsError}
                   >
-                    <SelectTrigger className="min-h-11">
+                    <SelectTrigger id="new-project-lead" className="min-h-11">
                       <SelectValue placeholder="Select lead" />
                     </SelectTrigger>
                     <SelectContent>
                       {leadChoices.map((l) => (
                         <SelectItem key={l.id} value={l.id}>
-                          {l.clientName} ({l.status})
+                          {l.clientName} ({leadStatusLabel(l.status)})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input className="min-h-11" {...form.register("title")} />
+                  <Label htmlFor="new-project-title">Title</Label>
+                  <Input id="new-project-title" className="min-h-11" {...form.register("title")} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Metadata (JSON object, optional)</Label>
+                  <Label htmlFor="new-project-metadata">Metadata (Optional JSON)</Label>
                   <Textarea
+                    id="new-project-metadata"
                     rows={4}
                     className="min-w-0 break-words font-mono text-sm"
                     {...form.register("metadataJson")}
@@ -163,7 +165,7 @@ export function ProjectsPage() {
       )}
       {isLoading && <Skeleton className="h-48 w-full" />}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {data?.items.map((p) => (
           <Link key={p.id} to={`/portal/projects/${p.id}`}>
             <Card className="h-full transition-colors hover:bg-muted/40">
@@ -174,7 +176,7 @@ export function ProjectsPage() {
                 )}
                 {p.lead && (
                   <Badge variant="secondary" className="mt-2 text-xs">
-                    {p.lead.status.replace(/_/g, " ")}
+                    {leadStatusLabel(p.lead.status)}
                   </Badge>
                 )}
               </CardContent>

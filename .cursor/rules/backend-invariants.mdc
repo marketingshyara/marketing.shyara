@@ -1,0 +1,17 @@
+---
+description: Enforce backend invariants, atomicity, and contract safety
+globs:
+  - backend/src/**/*.ts
+  - backend/tests/**/*.test.ts
+alwaysApply: true
+---
+
+- Treat auth/workflow checks as server-owned invariants; frontend guards are advisory.
+- For race-prone writes, prefer:
+  - transaction + CAS (`updateMany` with prior state in `where`)
+  - or DB constraint/index + deterministic error mapping.
+- Never implement read-then-write checks for uniqueness/invariants without DB-level enforcement.
+- Keep machine-readable error codes stable and explicit (`PASSWORD_CHANGE_REQUIRED`, `PENDING_PAYMENT`, etc.).
+- Changes to route request/response shape must include matching tests.
+- For settings-dependent mutations, read settings in the same transaction scope used for the mutation.
+- For admin/permission invariants, include concurrent-modification handling (`409` style errors where appropriate).

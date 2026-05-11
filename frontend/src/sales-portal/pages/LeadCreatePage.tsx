@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
@@ -54,6 +55,16 @@ export function LeadCreatePage() {
       assignedToUserId: ""
     }
   });
+
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => {
+      if (!form.formState.isDirty || create.isPending) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [create.isPending, form.formState.isDirty]);
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
@@ -122,7 +133,7 @@ export function LeadCreatePage() {
           >
             {isAdmin && (
               <div className="space-y-2">
-                <Label>Assigned sales rep</Label>
+                <Label htmlFor="lead-assignee">Assigned Sales Representative</Label>
                 {usersError && (
                   <QueryErrorAlert
                     message="Could not load sales reps."
@@ -143,7 +154,7 @@ export function LeadCreatePage() {
                   onValueChange={(v) => form.setValue("assignedToUserId", v)}
                   disabled={usersLoading || usersError}
                 >
-                  <SelectTrigger className="min-h-11">
+                  <SelectTrigger id="lead-assignee" className="min-h-11">
                     <SelectValue
                       placeholder={usersLoading ? "Loading reps…" : "Select rep"}
                     />
@@ -174,7 +185,7 @@ export function LeadCreatePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="ce">Client email</Label>
-              <Input id="ce" type="email" className="min-h-11" {...form.register("clientEmail")} />
+              <Input id="ce" type="email" autoComplete="email" className="min-h-11" {...form.register("clientEmail")} />
               {form.formState.errors.clientEmail && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.clientEmail.message}
@@ -183,7 +194,7 @@ export function LeadCreatePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="cp">Client phone</Label>
-              <Input id="cp" className="min-h-11" {...form.register("clientPhone")} />
+              <Input id="cp" type="tel" autoComplete="tel" className="min-h-11" {...form.register("clientPhone")} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -210,7 +221,7 @@ export function LeadCreatePage() {
               <Textarea id="no" rows={4} {...form.register("notes")} />
             </div>
             <Button type="submit" className="min-h-11 w-full" disabled={create.isPending}>
-              {create.isPending ? "Creating…" : "Create lead"}
+              {create.isPending ? "Creating…" : "Create Lead"}
             </Button>
           </form>
         </CardContent>

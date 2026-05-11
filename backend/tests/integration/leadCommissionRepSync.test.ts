@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApp } from "../../src/app.js";
 import { loadConfig } from "../../src/config.js";
 import { prisma } from "../../src/lib/prisma.js";
+import { inject } from "../helpers/inject.js";
 
 const run = Boolean(process.env.DATABASE_URL && process.env.SESSION_SECRET);
 const d = run ? describe : describe.skip;
@@ -61,7 +62,7 @@ d("integration: commission rep sync on lead assignment patch", () => {
     const config = loadConfig();
     const app = await buildApp({ config });
 
-    const login = await app.inject({
+    const login = await inject(app, {
       method: "POST",
       url: "/api/auth/login",
       payload: { email: "sync-admin@test.local", password: "AdminPass123!" }
@@ -88,7 +89,7 @@ d("integration: commission rep sync on lead assignment patch", () => {
       }
     });
 
-    const patch = await app.inject({
+    const patch = await inject(app, {
       method: "PATCH",
       url: `/api/leads/${lead.id}`,
       headers: { cookie: `${config.cookieName}=${cookie!.value}` },

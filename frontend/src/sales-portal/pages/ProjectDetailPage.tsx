@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -104,16 +105,20 @@ export function ProjectDetailPage() {
                 } else {
                   metadata = null;
                 }
-                patch.mutate({ title: v.title, metadata });
+                patch.mutate(
+                  { title: v.title, metadata },
+                  { onSuccess: () => toast.success("Project Updated.") }
+                );
               })}
             >
               <div className="space-y-2">
-                <Label>Title</Label>
-                <Input className="min-h-11" {...form.register("title")} />
+                <Label htmlFor="project-title">Title</Label>
+                <Input id="project-title" className="min-h-11" {...form.register("title")} />
               </div>
               <div className="space-y-2">
-                <Label>Metadata (JSON)</Label>
+                <Label htmlFor="project-metadata">Metadata (JSON)</Label>
                 <Textarea
+                  id="project-metadata"
                   rows={10}
                   className="min-w-0 break-words font-mono text-sm"
                   {...form.register("metadataJson")}

@@ -90,11 +90,14 @@ export function PortalLoginPage() {
                 id="email"
                 type="email"
                 autoComplete="email"
+                spellCheck={false}
+                name="email"
                 className="min-h-11"
+                aria-describedby={form.formState.errors.email ? "login-email-error" : undefined}
                 {...form.register("email")}
               />
               {form.formState.errors.email && (
-                <p className="text-sm font-medium text-destructive">
+                <p id="login-email-error" className="text-sm font-medium text-destructive">
                   {form.formState.errors.email.message}
                 </p>
               )}
@@ -105,11 +108,13 @@ export function PortalLoginPage() {
                 id="password"
                 type="password"
                 autoComplete="current-password"
+                name="password"
                 className="min-h-11"
+                aria-describedby={form.formState.errors.password ? "login-password-error" : undefined}
                 {...form.register("password")}
               />
               {form.formState.errors.password && (
-                <p className="text-sm font-medium text-destructive">
+                <p id="login-password-error" className="text-sm font-medium text-destructive">
                   {form.formState.errors.password.message}
                 </p>
               )}
@@ -119,6 +124,9 @@ export function PortalLoginPage() {
             </Button>
             <p className="min-h-[1.25rem] text-sm text-destructive" aria-live="polite">
               {submitError}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              If you cannot sign in, ask an administrator to reset your password.
             </p>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">

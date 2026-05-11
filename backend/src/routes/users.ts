@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import bcrypt from "bcryptjs";
-import { ActivityAction, UserRole } from "@prisma/client";
+import { ActivityAction, Prisma, UserRole } from "@prisma/client";
 import { randomBytes } from "node:crypto";
 import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
@@ -109,50 +109,70 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       const { id } = request.params as { id: string };
       const body = patchUserBodySchema.parse(request.body);
 
-      const existing = await app.prisma.user.findUnique({ where: { id } });
-      if (!existing) {
-        throw new HttpError(404, "NOT_FOUND", "User not found.");
-      }
+      const { existing, updated } = await app.prisma.$transaction(
+        async (tx) => {
+          const existing = await tx.user.findUnique({ where: { id } });
+          if (!existing) {
+            throw new HttpError(404, "NOT_FOUND", "User not found.");
+          }
 
-      if (body.role !== undefined && body.role !== UserRole.ADMIN && existing.role === UserRole.ADMIN) {
-        const adminCount = await app.prisma.user.count({
-          where: { role: UserRole.ADMIN, isActive: true }
-        });
-        if (adminCount <= 1) {
-          throw new HttpError(400, "LAST_ADMIN", "Cannot remove the last admin role.");
-        }
-      }
+          if (body.isActive === false && id === request.currentUser!.id) {
+            throw new HttpError(400, "SELF_DEACTIVATE", "You cannot deactivate your own account.");
+          }
 
-      if (body.isActive === false && existing.role === UserRole.ADMIN) {
-        const adminCount = await app.prisma.user.count({
-          where: { role: UserRole.ADMIN, isActive: true }
-        });
-        if (adminCount <= 1) {
-          throw new HttpError(400, "LAST_ADMIN", "Cannot deactivate the last active admin.");
-        }
-      }
+          const wouldLoseAdmin =
+            existing.role === UserRole.ADMIN &&
+            ((body.role !== undefined && body.role !== UserRole.ADMIN) || body.isActive === false);
+          if (wouldLoseAdmin) {
+            const adminCount = await tx.user.count({
+              where: { role: UserRole.ADMIN, isActive: true }
+            });
+            if (adminCount <= 1) {
+              throw new HttpError(
+                400,
+                "LAST_ADMIN",
+                body.isActive === false
+                  ? "Cannot deactivate the last active admin."
+                  : "Cannot remove the last admin role."
+              );
+            }
+          }
 
-      if (body.isActive === false && id === request.currentUser!.id) {
-        throw new HttpError(400, "SELF_DEACTIVATE", "You cannot deactivate your own account.");
-      }
+          const claim = await tx.user.updateMany({
+            where: {
+              id,
+              updatedAt: existing.updatedAt
+            },
+            data: {
+              ...(body.isActive !== undefined ? { isActive: body.isActive } : {}),
+              ...(body.role !== undefined ? { role: body.role } : {}),
+              ...(body.displayName !== undefined ? { displayName: body.displayName } : {})
+            }
+          });
+          if (claim.count === 0) {
+            throw new HttpError(
+              409,
+              "CONCURRENT_MODIFICATION",
+              "User was modified concurrently; refresh and retry."
+            );
+          }
 
-      const updated = await app.prisma.user.update({
-        where: { id },
-        data: {
-          ...(body.isActive !== undefined ? { isActive: body.isActive } : {}),
-          ...(body.role !== undefined ? { role: body.role } : {}),
-          ...(body.displayName !== undefined ? { displayName: body.displayName } : {})
+          const updated = await tx.user.findUniqueOrThrow({
+            where: { id },
+            select: {
+              id: true,
+              email: true,
+              displayName: true,
+              role: true,
+              isActive: true,
+              mustChangePassword: true,
+              updatedAt: true
+            }
+          });
+          return { existing, updated };
         },
-        select: {
-          id: true,
-          email: true,
-          displayName: true,
-          role: true,
-          isActive: true,
-          mustChangePassword: true,
-          updatedAt: true
-        }
-      });
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+      );
 
       await logActivity({
         prisma: app.prisma,
@@ -191,11 +211,20 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       }
 
       const passwordHash = await bcrypt.hash(body.temporaryPassword, app.appConfig.bcryptRounds);
-      await app.prisma.user.update({
+      const updated = await app.prisma.user.update({
         where: { id },
         data: {
           passwordHash,
           mustChangePassword: true
+        },
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          role: true,
+          isActive: true,
+          mustChangePassword: true,
+          updatedAt: true
         }
       });
 
@@ -209,7 +238,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
         request
       });
 
-      return reply.send({ ok: true });
+      return reply.send({ user: updated });
     }
   );
 }

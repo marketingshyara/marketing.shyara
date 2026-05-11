@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 import { useLeadsQuery } from "../hooks/useSalesQueries";
 import type { LeadStatus } from "../types";
@@ -28,6 +28,7 @@ import { QueryErrorAlert } from "../components/QueryErrorAlert";
 import { useDebounced } from "../hooks/useDebounced";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { leadStatusLabel } from "../lib/copy";
 
 const STATUSES: LeadStatus[] = [
   "NEW",
@@ -54,13 +55,29 @@ function parseDateEndLocal(s: string): Date | undefined {
 export function LeadsListPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(() => Number(searchParams.get("page") ?? "1") || 1);
   const pageSize = 20;
-  const [status, setStatus] = useState<LeadStatus | "all">("all");
-  const [searchInput, setSearchInput] = useState("");
+  const [status, setStatus] = useState<LeadStatus | "all">(
+    (searchParams.get("status") as LeadStatus | "all" | null) ?? "all"
+  );
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") ?? "");
   const [fromInput, setFromInput] = useState("");
   const [toInput, setToInput] = useState("");
   const search = useDebounced(searchInput, 300);
+  const searchTrimmed = search.trim();
+  const searchTooShort = searchTrimmed.length > 0 && searchTrimmed.length < 2;
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (page > 1) next.set("page", String(page));
+    else next.delete("page");
+    if (status !== "all") next.set("status", status);
+    else next.delete("status");
+    if (searchTrimmed.length >= 2) next.set("search", searchTrimmed);
+    else next.delete("search");
+    setSearchParams(next, { replace: true });
+  }, [page, searchParams, searchTrimmed, setSearchParams, status]);
 
   const fromD = parseDateStartLocal(fromInput);
   const toD = parseDateEndLocal(toInput);
@@ -78,10 +95,10 @@ export function LeadsListPage() {
     page,
     pageSize,
     status: status === "all" ? undefined : status,
-    search: search.trim() || undefined,
+    search: searchTooShort ? undefined : searchTrimmed || undefined,
     from: rangeInvalid ? undefined : fromD,
     to: rangeInvalid ? undefined : toD,
-    enabled: !rangeInvalid
+    enabled: !rangeInvalid && !searchTooShort
   });
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
@@ -109,8 +126,12 @@ export function LeadsListPage() {
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
+          <Label htmlFor="lead-search" className="sr-only">
+            Search Leads
+          </Label>
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            id="lead-search"
             placeholder="Search name, email, phone…"
             value={searchInput}
             onChange={(e) => {
@@ -127,14 +148,14 @@ export function LeadsListPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="min-h-11 w-full sm:w-[200px]">
+          <SelectTrigger id="lead-status-filter" className="min-h-11 w-full sm:w-[200px]" aria-label="Filter by stage">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             {STATUSES.map((s) => (
               <SelectItem key={s} value={s}>
-                {s.replace(/_/g, " ")}
+                {leadStatusLabel(s)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -172,6 +193,11 @@ export function LeadsListPage() {
           &quot;Created from&quot; must be on or before &quot;Created to&quot;.
         </p>
       )}
+      {searchTooShort && (
+        <p className="text-sm text-muted-foreground" role="status">
+          Enter at least 2 characters to search.
+        </p>
+      )}
 
       {isError && (
         <QueryErrorAlert
@@ -205,7 +231,7 @@ export function LeadsListPage() {
                 <div className="flex items-start justify-between gap-2">
                   <span className="font-medium leading-snug">{lead.clientName}</span>
                   <Badge variant="secondary" className="shrink-0 text-xs">
-                    {lead.status.replace(/_/g, " ")}
+                    {leadStatusLabel(lead.status)}
                   </Badge>
                 </div>
               </CardHeader>
@@ -246,7 +272,7 @@ export function LeadsListPage() {
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{lead.status.replace(/_/g, " ")}</Badge>
+                  <Badge variant="outline">{leadStatusLabel(lead.status)}</Badge>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {formatMinorUnits(lead.advanceAmountCents)}

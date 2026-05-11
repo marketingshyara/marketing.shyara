@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
+import { leadStatusLabel } from "../lib/copy";
 
 const LEAD_STATUSES: LeadStatus[] = [
   "NEW",
@@ -78,7 +79,7 @@ export function SettingsPage() {
       <div>
         <h1 className="text-xl font-semibold md:text-2xl">Portal settings</h1>
         <p className="text-sm text-muted-foreground">
-          Workflow gates and commission calculation. Unknown keys are rejected by the API.
+          Configure lead flow, commissions, and admin safeguards for this portal.
         </p>
       </div>
 
@@ -94,8 +95,9 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Commission rate (basis points, 10000 = 100%)</Label>
+              <Label htmlFor="settings-commission-rate">Commission rate (basis points, 10000 = 100%)</Label>
               <Input
+                id="settings-commission-rate"
                 type="number"
                 className="min-h-11"
                 {...form.register("commissionRateBps", { valueAsNumber: true })}
@@ -105,14 +107,14 @@ export function SettingsPage() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label>Commission basis</Label>
+              <Label htmlFor="settings-commission-basis">Commission basis</Label>
               <Select
                 value={form.watch("commissionBasis")}
                 onValueChange={(v) =>
                   form.setValue("commissionBasis", v as PortalSettingsValues["commissionBasis"])
                 }
               >
-                <SelectTrigger className="min-h-11">
+                <SelectTrigger id="settings-commission-basis" className="min-h-11">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -120,6 +122,27 @@ export function SettingsPage() {
                   <SelectItem value="FINAL_QUOTE">Final quote on lead</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="settings-commission-rounding">Commission rounding</Label>
+              <Select
+                value={form.watch("commissionRounding")}
+                onValueChange={(v) =>
+                  form.setValue("commissionRounding", v as PortalSettingsValues["commissionRounding"])
+                }
+              >
+                <SelectTrigger id="settings-commission-rounding" className="min-h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bankers">Banker's rounding</SelectItem>
+                  <SelectItem value="round">Round half up</SelectItem>
+                  <SelectItem value="floor">Floor</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Use banker's rounding for balanced finance calculations across large volumes.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -160,7 +183,7 @@ export function SettingsPage() {
                     <SelectContent>
                       {LEAD_STATUSES.map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s}
+                          {leadStatusLabel(s)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -178,7 +201,7 @@ export function SettingsPage() {
                     <SelectContent>
                       {LEAD_STATUSES.map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s}
+                          {leadStatusLabel(s)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -203,9 +226,10 @@ export function SettingsPage() {
                   variant="ghost"
                   size="icon"
                   className="min-h-11 min-w-11"
+                  aria-label="Remove transition"
                   onClick={() => remove(i)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" aria-hidden />
                 </Button>
               </div>
             ))}
@@ -237,7 +261,7 @@ export function SettingsPage() {
                   <SelectContent>
                     {LEAD_STATUSES.map((s) => (
                       <SelectItem key={s} value={s}>
-                        {s}
+                        {leadStatusLabel(s)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -266,7 +290,7 @@ export function SettingsPage() {
                       form.setValue("terminalNoMutationStatuses", next);
                     }}
                   />
-                  {s}
+                  {leadStatusLabel(s)}
                 </label>
               );
             })}
@@ -279,8 +303,9 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Payment vs quote tolerance (basis points, empty = disabled)</Label>
+              <Label htmlFor="settings-payment-tolerance">Payment vs quote tolerance (basis points, empty = disabled)</Label>
               <Input
+                id="settings-payment-tolerance"
                 className="min-h-11"
                 inputMode="numeric"
                 value={form.watch("enforcePaymentQuoteToleranceBps") ?? ""}
@@ -300,8 +325,9 @@ export function SettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Export max rows (100–500000)</Label>
+              <Label htmlFor="settings-export-max-rows">Export max rows (100–500000)</Label>
               <Input
+                id="settings-export-max-rows"
                 type="number"
                 className="min-h-11"
                 {...form.register("exportMaxRows", { valueAsNumber: true })}

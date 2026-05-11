@@ -1,10 +1,28 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply } from "fastify";
 import ExcelJS from "exceljs";
 import { ActivityAction } from "@prisma/client";
 import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings } from "../services/settings.js";
+
+/**
+ * Stream the workbook directly to the response instead of buffering the full xlsx in memory.
+ * For 50K row exports the buffered path could allocate >100 MB on the Node heap; streaming caps
+ * the resident set even when exportMaxRows is bumped.
+ */
+async function streamWorkbook(reply: FastifyReply, workbook: ExcelJS.Workbook, filename: string): Promise<FastifyReply> {
+  reply.hijack();
+  reply.raw.statusCode = 200;
+  reply.raw.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  reply.raw.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  await workbook.xlsx.write(reply.raw);
+  reply.raw.end();
+  return reply;
+}
 
 export async function registerExportRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -40,8 +58,6 @@ export async function registerExportRoutes(app: FastifyInstance): Promise<void> 
         });
       }
 
-      const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
-
       await logActivity({
         prisma: app.prisma,
         userId: request.currentUser!.id,
@@ -57,10 +73,7 @@ export async function registerExportRoutes(app: FastifyInstance): Promise<void> 
         request
       });
 
-      return reply
-        .header("Content-Disposition", 'attachment; filename="leads.xlsx"')
-        .type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        .send(buffer);
+      return streamWorkbook(reply, workbook, "leads.xlsx");
     }
   );
 
@@ -106,8 +119,6 @@ export async function registerExportRoutes(app: FastifyInstance): Promise<void> 
         });
       }
 
-      const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
-
       await logActivity({
         prisma: app.prisma,
         userId: request.currentUser!.id,
@@ -123,10 +134,7 @@ export async function registerExportRoutes(app: FastifyInstance): Promise<void> 
         request
       });
 
-      return reply
-        .header("Content-Disposition", 'attachment; filename="commissions.xlsx"')
-        .type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        .send(buffer);
+      return streamWorkbook(reply, workbook, "commissions.xlsx");
     }
   );
 
@@ -169,8 +177,6 @@ export async function registerExportRoutes(app: FastifyInstance): Promise<void> 
         });
       }
 
-      const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
-
       await logActivity({
         prisma: app.prisma,
         userId: request.currentUser!.id,
@@ -186,10 +192,7 @@ export async function registerExportRoutes(app: FastifyInstance): Promise<void> 
         request
       });
 
-      return reply
-        .header("Content-Disposition", 'attachment; filename="users.xlsx"')
-        .type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        .send(buffer);
+      return streamWorkbook(reply, workbook, "users.xlsx");
     }
   );
 }

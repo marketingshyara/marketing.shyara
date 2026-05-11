@@ -12,10 +12,26 @@ function leadStub(partial: Partial<Lead>): Lead {
 }
 
 describe("commissionAmountCents", () => {
-  it("uses verified final payment and default 20% bps", () => {
+  it("uses verified final payment and default 20% bps (bankers rounding)", () => {
     const lead = leadStub({ finalQuoteCents: 999 });
     expect(commissionAmountCents(lead, 100_000, defaultSettings)).toBe(20_000);
-    expect(commissionAmountCents(lead, 99, defaultSettings)).toBe(19);
+    // 99c * 20% = 19.8c -> rounds up to 20 with bankers (closer to 20 than 19).
+    expect(commissionAmountCents(lead, 99, defaultSettings)).toBe(20);
+  });
+
+  it("respects floor rounding when configured", () => {
+    const settings = portalSettingsSchema.parse({ commissionRounding: "floor" });
+    const lead = leadStub({ finalQuoteCents: 999 });
+    expect(commissionAmountCents(lead, 99, settings)).toBe(19);
+  });
+
+  it("rounds exact halves to even with bankers", () => {
+    // 5c * 1000bps = 5000 / 10000 = 0.5 -> bankers picks 0 (even).
+    const lead = leadStub({ finalQuoteCents: null });
+    const settings = portalSettingsSchema.parse({ commissionRateBps: 1000 });
+    expect(commissionAmountCents(lead, 5, settings)).toBe(0);
+    // 15c * 1000bps = 15000 / 10000 = 1.5 -> bankers picks 2 (even).
+    expect(commissionAmountCents(lead, 15, settings)).toBe(2);
   });
 
   it("uses final quote when commissionBasis is FINAL_QUOTE", () => {

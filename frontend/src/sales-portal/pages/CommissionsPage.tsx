@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import {
   useCommissionsQuery,
@@ -42,13 +42,18 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { LeadStatus } from "../types";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
+import { leadStatusLabel } from "../lib/copy";
 
 export function CommissionsPage() {
   const { data: session } = useSessionQuery();
   const isAdmin = session?.user?.role === "ADMIN";
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(() => Number(searchParams.get("page") ?? "1") || 1);
   const pageSize = 20;
-  const [paidFilter, setPaidFilter] = useState<"all" | "true" | "false">("all");
+  const [paidFilter, setPaidFilter] = useState<"all" | "true" | "false">(
+    (searchParams.get("paid") as "all" | "true" | "false" | null) ?? "all"
+  );
+  const [adjustAmountError, setAdjustAmountError] = useState<string | null>(null);
   const isPaid =
     paidFilter === "all" ? undefined : paidFilter === "true" ? true : false;
 
@@ -68,6 +73,15 @@ export function CommissionsPage() {
     const tp = Math.max(1, Math.ceil(data.total / pageSize));
     setPage((p) => Math.min(p, tp));
   }, [data, pageSize]);
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (page > 1) next.set("page", String(page));
+    else next.delete("page");
+    if (paidFilter !== "all") next.set("paid", paidFilter);
+    else next.delete("paid");
+    setSearchParams(next, { replace: true });
+  }, [page, paidFilter, searchParams, setSearchParams]);
 
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustCommissionId, setAdjustCommissionId] = useState<string | null>(null);
@@ -91,8 +105,10 @@ export function CommissionsPage() {
         </p>
       </div>
 
-      <Select value={paidFilter} onValueChange={(v) => setPaidFilter(v as typeof paidFilter)}>
-        <SelectTrigger className="min-h-11 w-full sm:w-56">
+      <div className="space-y-2">
+        <Label htmlFor="commission-paid-filter">Payment Status</Label>
+        <Select value={paidFilter} onValueChange={(v) => setPaidFilter(v as typeof paidFilter)}>
+        <SelectTrigger id="commission-paid-filter" className="min-h-11 w-full sm:w-56">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -101,6 +117,7 @@ export function CommissionsPage() {
           <SelectItem value="true">Paid</SelectItem>
         </SelectContent>
       </Select>
+      </div>
 
       {isError && (
         <QueryErrorAlert
@@ -129,7 +146,7 @@ export function CommissionsPage() {
               </Badge>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              {row.lead.status.replace(/_/g, " ")}
+              {leadStatusLabel(row.lead.status)}
             </p>
             <p className="mt-1 tabular-nums font-medium">{formatMinorUnits(row.amountCents)}</p>
             {isAdmin && !row.isPaid && row.lead.status !== "COMMISSION_PAID" && (
@@ -159,7 +176,7 @@ export function CommissionsPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Mark commission paid?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Sets commission paid and moves the lead to COMMISSION_PAID.
+                          This marks the commission as paid and moves the lead to Commission Settled.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -204,7 +221,7 @@ export function CommissionsPage() {
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">
-                    {(row.lead.status as LeadStatus).replace(/_/g, " ")}
+                    {leadStatusLabel(row.lead.status as LeadStatus)}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
@@ -236,7 +253,7 @@ export function CommissionsPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Mark commission paid?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Lead must be DEPLOYED. This sets COMMISSION_PAID on the lead.
+                                  The lead must be at Site Deployed. This marks the lead stage as Commission Settled.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -276,7 +293,12 @@ export function CommissionsPage() {
             className="space-y-4"
             onSubmit={amountForm.handleSubmit((v) => {
               const cents = parseRupeeInputToCents(String(v.rupees ?? ""));
-              if (cents == null || !adjustCommissionId) return;
+              if (!adjustCommissionId) return;
+              if (cents == null || cents <= 0) {
+                setAdjustAmountError("Enter a valid amount greater than 0.");
+                return;
+              }
+              setAdjustAmountError(null);
               patchCommission.mutate(
                 { id: adjustCommissionId, amountCents: cents },
                 {
@@ -289,8 +311,9 @@ export function CommissionsPage() {
             })}
           >
             <div className="space-y-2">
-              <Label>Amount (₹)</Label>
-              <Input className="min-h-11" {...amountForm.register("rupees")} />
+              <Label htmlFor="adjust-commission-amount">Amount (₹)</Label>
+              <Input id="adjust-commission-amount" className="min-h-11" {...amountForm.register("rupees")} />
+              {adjustAmountError && <p className="text-sm text-destructive">{adjustAmountError}</p>}
             </div>
             <Button type="submit" className="min-h-11 w-full" disabled={patchCommission.isPending}>
               Save
