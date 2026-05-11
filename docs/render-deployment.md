@@ -37,14 +37,39 @@ This means Postgres already has tables (for example from an earlier `prisma db p
 
 **Only do this if the live database schema already matches** what your committed migrations would create (same tables/columns as `backend/prisma/migrations/`). If you are unsure, inspect the DB or compare with a fresh `migrate deploy` on an empty database.
 
-1. Open **Render → your Backend → Shell** (or use `render psql` / any client with `DATABASE_URL`).
-2. From the **repository root** on the service (same cwd Pre-Deploy uses), run **once**:
+1. Open **Render → your Backend → Shell**. The service injects **`DATABASE_URL`** automatically (same DB Pre-Deploy uses).
+
+2. Run **one** of the following **once**. Prefer the Prisma CLI block: it works even when the Shell’s disk is still on an **older deploy** that does not include the workspace npm scripts yet (a failed Pre-Deploy can leave you in that state).
+
+   **Option A — Prisma CLI (recommended in Shell)**
+
+   ```bash
+   cd ~/project/src/backend
+   npx prisma migrate resolve --applied 20260210150000_init --schema prisma/schema.prisma
+   npx prisma migrate resolve --applied 20260211120000_hardening --schema prisma/schema.prisma
+   ```
+
+   If `npx prisma` is slow or fails offline, try the local binary after a successful build:
+
+   ```bash
+   cd ~/project/src/backend
+   ./node_modules/.bin/prisma migrate resolve --applied 20260210150000_init --schema prisma/schema.prisma
+   ./node_modules/.bin/prisma migrate resolve --applied 20260211120000_hardening --schema prisma/schema.prisma
+   ```
+
+   **Option B — npm (needs a checkout that includes the script in `backend/package.json`)**
+
+   From repo root `~/project/src`:
+
+   ```bash
+   npm run db:migrate:baseline-existing --workspace backend
+   ```
+
+   If your root `package.json` already has the helper, you can instead run:
 
    ```bash
    npm run backend:db:migrate:baseline
    ```
-
-   That runs `prisma migrate resolve --applied …` for each migration folder so Prisma records them as already applied **without** re-running SQL.
 
 3. Trigger a **new deploy** (or let auto-deploy run). `npm run db:migrate:deploy --workspace backend` should then exit successfully.
 
