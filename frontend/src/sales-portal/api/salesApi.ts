@@ -15,7 +15,7 @@ import type { LeadStatus } from "../types";
 export const salesApi = {
   session: () => apiJson<{ user: SessionUser | null }>("GET", "/auth/session"),
 
-  login: (body: { email: string; password: string }) =>
+  login: (body: { email: string; password: string; rememberDevice?: boolean }) =>
     apiJson<{ user: SessionUser }>("POST", "/auth/login", body),
 
   logout: () => apiJson<{ ok: boolean }>("POST", "/auth/logout"),

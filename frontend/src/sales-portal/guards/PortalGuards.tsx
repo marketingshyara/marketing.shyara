@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useSessionQuery } from "../hooks/useSalesQueries";
+import { getSafePortalReturnPath, normalizePortalReturnCandidate } from "../lib/sanitizeRedirect";
 
 function PortalLoading() {
   return (
@@ -21,7 +22,8 @@ export function RequireAuth() {
   }
 
   if (!data?.user) {
-    return <Navigate to="/portal/login" replace state={{ from: location.pathname }} />;
+    const from = `${location.pathname}${location.search}`;
+    return <Navigate to="/portal/login" replace state={{ from }} />;
   }
 
   return <Outlet />;
@@ -37,7 +39,10 @@ export function RequirePortalUnlocked() {
   }
 
   if (data?.user?.mustChangePassword && location.pathname !== "/portal/change-password") {
-    return <Navigate to="/portal/change-password" replace />;
+    const full = `${location.pathname}${location.search}`;
+    const intended = getSafePortalReturnPath("/portal/leads", normalizePortalReturnCandidate(full));
+    const search = `?returnTo=${encodeURIComponent(intended)}`;
+    return <Navigate to={{ pathname: "/portal/change-password", search }} replace state={{ from: intended }} />;
   }
 
   return <Outlet />;
@@ -45,6 +50,8 @@ export function RequirePortalUnlocked() {
 
 export function PublicLoginGate({ children }: { children: ReactNode }) {
   const { data, isLoading, isFetching } = useSessionQuery();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
 
   // Match the other gates: wait out the first background refetch when no cached data yet, so a
   // stale login form doesn't flash before an authed user is redirected away.
@@ -54,9 +61,20 @@ export function PublicLoginGate({ children }: { children: ReactNode }) {
 
   if (data?.user) {
     if (data.user.mustChangePassword) {
-      return <Navigate to="/portal/change-password" replace />;
+      const intended = getSafePortalReturnPath(
+        "/portal/leads",
+        searchParams.get("returnTo"),
+        (location.state as { from?: string } | null)?.from
+      );
+      const search = `?returnTo=${encodeURIComponent(intended)}`;
+      return <Navigate to={{ pathname: "/portal/change-password", search }} replace state={{ from: intended }} />;
     }
-    return <Navigate to="/portal/leads" replace />;
+    const target = getSafePortalReturnPath(
+      "/portal/leads",
+      searchParams.get("returnTo"),
+      (location.state as { from?: string } | null)?.from
+    );
+    return <Navigate to={target} replace />;
   }
 
   return <>{children}</>;
@@ -71,7 +89,8 @@ export function RequireAdmin() {
   }
 
   if (data?.user?.role !== "ADMIN") {
-    return <Navigate to="/portal/no-access" replace state={{ from: location.pathname }} />;
+    const from = `${location.pathname}${location.search}`;
+    return <Navigate to="/portal/no-access" replace state={{ from }} />;
   }
 
   return <Outlet />;

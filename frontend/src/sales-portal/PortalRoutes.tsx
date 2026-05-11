@@ -22,10 +22,14 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { ExportsPage } from "./pages/ExportsPage";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert, SearchX } from "lucide-react";
+import { getSafePortalReturnPath } from "./lib/sanitizeRedirect";
 
 function NoAccessPage() {
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? "/portal/leads";
+  const from = getSafePortalReturnPath(
+    "/portal/leads",
+    (location.state as { from?: string } | null)?.from
+  );
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-4 text-center">
       <ShieldAlert className="h-10 w-10 text-amber-600" aria-hidden />

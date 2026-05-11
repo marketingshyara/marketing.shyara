@@ -43,7 +43,10 @@ export function useSessionQuery() {
   return useQuery({
     queryKey: qk.session,
     queryFn: () => salesApi.session(),
-    staleTime: 60_000
+    /** Session is validated on mutations and 401 handlers; avoid refetch-on-focus storms vs global defaults in `queryClient.ts`. */
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 }
 
@@ -84,7 +87,6 @@ export function useChangePasswordMutation() {
     mutationFn: salesApi.changePassword,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.session });
-      toast.success("Password updated");
     },
     onError: (e) => errToast(e, qc)
   });

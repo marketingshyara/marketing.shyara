@@ -39,6 +39,8 @@ export interface WebsiteSample {
   clinicType?: string;
   clinicExperience?: ClinicExperience;
   waitingRoomPath?: string;
+  /** When set, grid shows this image and opens a single iframe in a dialog for live preview. */
+  posterUrl?: string;
 }
 
 export interface WebsitesManifest {

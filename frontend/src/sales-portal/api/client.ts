@@ -1,11 +1,20 @@
 import type { ApiErrorBody } from "../types";
 
+/** Parse `Retry-After` response header (seconds). Returns `undefined` if missing or invalid. */
+export function parseRetryAfterSeconds(header: string | null): number | undefined {
+  if (header == null || header.trim() === "") return undefined;
+  const n = Number.parseInt(header.trim(), 10);
+  if (!Number.isFinite(n) || n < 0) return undefined;
+  return n;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
     public code: string,
     message: string,
-    public details?: unknown
+    public details?: unknown,
+    public retryAfterSeconds?: number
   ) {
     super(message);
     this.name = "ApiError";
@@ -55,13 +64,15 @@ export async function apiJson<T>(
   });
 
   if (!res.ok) {
+    const retryAfterSeconds = parseRetryAfterSeconds(res.headers.get("Retry-After"));
     const parsed = (await parseJsonSafe(res)) as ApiErrorBody | null;
     const err = parsed?.error;
     throw new ApiError(
       res.status,
       err?.code ?? "UNKNOWN",
       (err?.message ?? res.statusText) || "Request failed",
-      err?.details
+      err?.details,
+      retryAfterSeconds
     );
   }
 
@@ -78,13 +89,15 @@ export async function apiBlob(
   });
 
   if (!res.ok) {
+    const retryAfterSeconds = parseRetryAfterSeconds(res.headers.get("Retry-After"));
     const parsed = (await parseJsonSafe(res)) as ApiErrorBody | null;
     const err = parsed?.error;
     throw new ApiError(
       res.status,
       err?.code ?? "UNKNOWN",
       (err?.message ?? res.statusText) || "Request failed",
-      err?.details
+      err?.details,
+      retryAfterSeconds
     );
   }
 

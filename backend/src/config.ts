@@ -61,6 +61,8 @@ export type AppConfig = {
   secureCookie: boolean;
   /** Session cookie max-age in seconds (converted to ms for the cookie). */
   sessionMaxAgeSeconds: number;
+  /** Longer session when user checks "remember this device" (seconds); must be >= sessionMaxAgeSeconds. */
+  sessionRememberMeMaxAgeSeconds: number;
   loginRateLimitMax: number;
   loginRateLimitWindowMs: number;
   /** Consecutive failed logins for a single account before the account is locked. */
@@ -82,6 +84,24 @@ export function loadConfig(): AppConfig {
     secureCookie = true;
   }
 
+  const sessionMaxAgeSeconds = requiredIntEnv("SESSION_MAX_AGE_SECONDS", "604800", 60);
+  const sessionRememberMeMaxAgeSeconds = (() => {
+    const raw = readOptionalEnv("SESSION_REMEMBER_ME_MAX_AGE_SECONDS", "").trim();
+    if (!raw) {
+      return Math.max(sessionMaxAgeSeconds, 30 * 24 * 60 * 60);
+    }
+    if (!/^-?\d+$/.test(raw)) {
+      throw new Error("Environment variable SESSION_REMEMBER_ME_MAX_AGE_SECONDS must be an integer.");
+    }
+    const n = Number(raw);
+    if (!Number.isSafeInteger(n) || n < sessionMaxAgeSeconds) {
+      throw new Error(
+        `Environment variable SESSION_REMEMBER_ME_MAX_AGE_SECONDS must be an integer >= SESSION_MAX_AGE_SECONDS (${sessionMaxAgeSeconds}).`
+      );
+    }
+    return n;
+  })();
+
   return {
     nodeEnv,
     port: requiredIntEnv("PORT", "4000", 1),
@@ -95,7 +115,8 @@ export function loadConfig(): AppConfig {
       .map((origin) => origin.trim())
       .filter(Boolean),
     secureCookie,
-    sessionMaxAgeSeconds: requiredIntEnv("SESSION_MAX_AGE_SECONDS", "604800", 60),
+    sessionMaxAgeSeconds,
+    sessionRememberMeMaxAgeSeconds,
     loginRateLimitMax: intEnv("LOGIN_RATE_LIMIT_MAX", "5", 1),
     loginRateLimitWindowMs: intEnv("LOGIN_RATE_LIMIT_WINDOW_MS", "900000", 1000),
     loginLockoutThreshold: intEnv("LOGIN_LOCKOUT_THRESHOLD", "5", 1),

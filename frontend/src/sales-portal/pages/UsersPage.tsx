@@ -41,6 +41,7 @@ import type { User } from "../types";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { userRoleLabel } from "../lib/copy";
+
 export function UsersPage() {
   const [page, setPage] = useState(1);
   const pageSize = 20;

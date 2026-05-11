@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { changePasswordSchema } from "../validation/schemas";
 import { useChangePasswordMutation, useSessionQuery } from "../hooks/useSalesQueries";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,20 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getSafePortalReturnPath } from "../lib/sanitizeRedirect";
 
 export function PortalChangePasswordPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { data, isLoading } = useSessionQuery();
   const change = useChangePasswordMutation();
+
+  const intendedDestination = getSafePortalReturnPath(
+    "/portal/leads",
+    searchParams.get("returnTo"),
+    (location.state as { from?: string } | null)?.from
+  );
 
   const form = useForm({
     resolver: zodResolver(changePasswordSchema),
@@ -51,7 +60,7 @@ export function PortalChangePasswordPage() {
               change.mutate(values, {
                 onSuccess: () => {
                   toast.success("Password Updated Successfully.");
-                  navigate("/portal/leads", { replace: true });
+                  navigate(intendedDestination, { replace: true });
                 }
               })
             )}
@@ -97,7 +106,7 @@ export function PortalChangePasswordPage() {
                 type="button"
                 variant="ghost"
                 className="min-h-11 w-full"
-                onClick={() => navigate("/portal/leads", { replace: true })}
+                onClick={() => navigate(intendedDestination, { replace: true })}
               >
                 Cancel
               </Button>

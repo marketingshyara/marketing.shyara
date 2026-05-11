@@ -1,5 +1,6 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { ApiError } from "./api/client";
+import { normalizePortalReturnCandidate } from "./lib/sanitizeRedirect";
 import { qk } from "./queryKeys";
 
 /**
@@ -12,6 +13,10 @@ import { qk } from "./queryKeys";
 let authRedirectScheduled = false;
 let passwordChangeRedirectScheduled = false;
 
+function currentPortalPathWithSearch(): string {
+  return `${window.location.pathname}${window.location.search}`;
+}
+
 function scheduleUnauthorizedRedirect(client: QueryClient) {
   if (authRedirectScheduled) return;
   if (typeof window === "undefined") return;
@@ -19,7 +24,14 @@ function scheduleUnauthorizedRedirect(client: QueryClient) {
   if (path.startsWith("/portal/login")) return;
   authRedirectScheduled = true;
   client.setQueryData(qk.session, { user: null });
-  window.location.assign("/portal/login?reason=session_expired");
+  const full = currentPortalPathWithSearch();
+  const safe = normalizePortalReturnCandidate(full);
+  const base = "/portal/login?reason=session_expired";
+  if (safe && !path.startsWith("/portal/login")) {
+    window.location.assign(`${base}&returnTo=${encodeURIComponent(safe)}`);
+  } else {
+    window.location.assign(base);
+  }
 }
 
 function schedulePasswordChangeRedirect(client: QueryClient) {
@@ -29,7 +41,17 @@ function schedulePasswordChangeRedirect(client: QueryClient) {
   if (path.startsWith("/portal/change-password")) return;
   passwordChangeRedirectScheduled = true;
   client.invalidateQueries({ queryKey: qk.session }).catch(() => {});
-  window.location.assign("/portal/change-password");
+  const full = currentPortalPathWithSearch();
+  const safe = normalizePortalReturnCandidate(full);
+  if (
+    safe &&
+    !path.startsWith("/portal/login") &&
+    !path.startsWith("/portal/change-password")
+  ) {
+    window.location.assign(`/portal/change-password?returnTo=${encodeURIComponent(safe)}`);
+  } else {
+    window.location.assign("/portal/change-password");
+  }
 }
 
 export function createPortalQueryClient() {
@@ -64,6 +86,7 @@ export function createPortalQueryClient() {
       queries: {
         staleTime: 0,
         refetchOnMount: "always",
+        /** Aggressive for data queries; `useSessionQuery` opts out to reduce false "logged out" UX on tab focus. */
         refetchOnWindowFocus: "always",
         refetchOnReconnect: "always",
         retry: (failureCount, error) => {

@@ -30,4 +30,11 @@ describe("loadConfig numeric parsing", () => {
     process.env.BCRYPT_ROUNDS = "10.5";
     expect(() => loadConfig()).toThrow(/BCRYPT_ROUNDS/);
   });
+
+  it("throws when SESSION_REMEMBER_ME_MAX_AGE_SECONDS is below SESSION_MAX_AGE_SECONDS", () => {
+    withRequiredEnv();
+    process.env.SESSION_MAX_AGE_SECONDS = "7200";
+    process.env.SESSION_REMEMBER_ME_MAX_AGE_SECONDS = "3600";
+    expect(() => loadConfig()).toThrow(/SESSION_REMEMBER_ME_MAX_AGE_SECONDS/);
+  });
 });

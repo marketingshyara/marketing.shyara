@@ -13,8 +13,9 @@ export const leadStatusSchema = z.enum([
 export const paymentKindSchema = z.enum(["ADVANCE", "FINAL"]);
 
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1)
+  email: z.string().trim().min(1).email(),
+  password: z.string().min(1),
+  rememberDevice: z.boolean().optional()
 });
 
 export const changePasswordSchema = z.object({

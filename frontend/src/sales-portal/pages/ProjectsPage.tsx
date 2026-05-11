@@ -11,12 +11,6 @@ import {
 } from "../hooks/useSalesQueries";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../components/DataStaleToolbar";
-
-const createProjectFormSchema = z.object({
-  leadId: z.string().min(1),
-  title: z.string().min(1).max(200),
-  metadataJson: z.string().optional()
-});
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +33,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { leadStatusLabel } from "../lib/copy";
+
+const createProjectFormSchema = z.object({
+  leadId: z.string().min(1),
+  title: z.string().min(1).max(200),
+  metadataJson: z.string().optional()
+});
 
 export function ProjectsPage() {
   const { data: session } = useSessionQuery();

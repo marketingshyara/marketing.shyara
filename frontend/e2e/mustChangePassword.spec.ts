@@ -44,15 +44,16 @@ test("mustChangePassword forces a password change before /portal/leads access", 
   // UI flow.
   await page.goto("/portal/login");
   await page.getByLabel(/Email/i).fill(NEW_REP_EMAIL);
-  await page.getByLabel(/Password/i).fill(NEW_REP_PASSWORD);
-  await page.getByRole("button", { name: /Sign in/i }).click();
+  await page.getByRole("button", { name: /Continue/i }).click();
+  await page.getByLabel(/^Password$/i).fill(NEW_REP_PASSWORD);
+  await page.getByRole("button", { name: /^Sign in$/i }).click();
 
   // Should be force-redirected to /portal/change-password.
   await page.waitForURL(/\/portal\/change-password/);
 
   await page.getByLabel(/Current password/i).fill(NEW_REP_PASSWORD);
   await page.getByLabel(/New password/i).fill(FINAL_PASSWORD);
-  await page.getByRole("button", { name: /Update password/i }).click();
+  await page.getByRole("button", { name: /Save password/i }).click();
 
   // After the change, the leads page should be reachable.
   await page.waitForURL(/\/portal\/leads/);

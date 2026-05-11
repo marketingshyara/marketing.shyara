@@ -66,6 +66,10 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         });
 
         await request.session.regenerate();
+        const sessionMaxAgeMs = body.rememberDevice
+          ? app.appConfig.sessionRememberMeMaxAgeSeconds * 1000
+          : app.appConfig.sessionMaxAgeSeconds * 1000;
+        request.session.options({ maxAge: sessionMaxAgeMs });
         request.session.set("userId", user.id);
         request.session.set("role", user.role);
 

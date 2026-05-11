@@ -1,0 +1,25 @@
+import { expect, test } from "@playwright/test";
+
+test.describe("website samples page", () => {
+  test("renders portfolio heading", async ({ page }) => {
+    await page.goto("/samples/websites", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: /website samples/i })).toBeVisible({
+      timeout: 60_000,
+    });
+  });
+
+  test("mobile viewport: last card gains iframe src after scroll into view", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 390, height: 720 });
+    await page.goto("/samples/websites", { waitUntil: "domcontentloaded" });
+    const lastCard = page.getByTestId("website-sample-card").last();
+    await expect(lastCard).toBeVisible({ timeout: 60_000 });
+
+    await page.waitForTimeout(400);
+    const initial = await page.locator('iframe[src^="/samples/websites"]').count();
+    expect(initial).toBeLessThanOrEqual(5);
+
+    await lastCard.scrollIntoViewIfNeeded();
+    await expect(lastCard.locator('iframe[src^="/samples/websites"]')).toHaveCount(1, { timeout: 90_000 });
+  });
+});
