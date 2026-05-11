@@ -124,7 +124,7 @@ Set **all** of these in the Render UI (or Blueprint). Do not commit secrets.
 | Key | Value |
 |-----|--------|
 | `TRUST_PROXY` | `true` |
-| `COOKIE_SECURE` | `true` |
+| `COOKIE_SECURE` | `true` (with `TRUST_PROXY=true`, the app uses the session plugin’s `secure: "auto"` so cookies still work if the proxy scheme is detected correctly) |
 
 #### Cross-site cookie (SPA on custom domain, API on `onrender.com`)
 

@@ -54,12 +54,16 @@ export async function buildApp(options: BuildAppOptions) {
   });
 
   await app.register(cookie);
+  /** Behind a reverse proxy (Render, etc.), `request.protocol` must reflect the client scheme. If `secure` is hard `true` but protocol is still `http`, @fastify/session treats the connection as "insecure" and skips the normal save/set-cookie path, which can break login. Using `auto` when trustProxy is on matches the plugin docs and fixes mis-detected HTTPS. */
+  const sessionCookieSecure: boolean | "auto" =
+    config.secureCookie && config.trustProxy ? "auto" : config.secureCookie;
+
   await app.register(session, {
     secret: config.sessionSecret,
     cookieName: config.cookieName,
     cookie: {
       httpOnly: true,
-      secure: config.secureCookie,
+      secure: sessionCookieSecure,
       sameSite: config.cookieSameSite,
       path: "/",
       maxAge: options.config.sessionMaxAgeSeconds * 1000
@@ -88,12 +92,15 @@ export async function buildApp(options: BuildAppOptions) {
     }
     if (error instanceof Error) {
       const sc = (error as { statusCode?: unknown }).statusCode;
-      if (sc === 429) {
-        return reply.status(429).send({
-          error: {
-            code: "RATE_LIMITED",
-            message: "Too many requests. Try again later."
-          }
+      if (typeof sc === "number" && Number.isInteger(sc) && sc >= 400 && sc < 500) {
+        const code =
+          sc === 429 ? "RATE_LIMITED" : sc === 403 ? "FORBIDDEN" : sc === 401 ? "UNAUTHORIZED" : "CLIENT_ERROR";
+        const message =
+          sc === 429
+            ? "Too many requests. Try again later."
+            : error.message || "Request failed";
+        return reply.status(sc).send({
+          error: { code, message }
         });
       }
     }
