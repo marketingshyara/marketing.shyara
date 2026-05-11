@@ -65,7 +65,7 @@ export function ApprovalsPage() {
     <div className="mx-auto max-w-6xl space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Payment approvals</h1>
+          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Payment reviews</h1>
           <p className="text-sm text-muted-foreground">
             Pending advance and final payments awaiting verification.
           </p>

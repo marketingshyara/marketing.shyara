@@ -19,6 +19,8 @@ import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ActivityLogsPage } from "./pages/ActivityLogsPage";
 import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { TeamHubPage } from "./pages/TeamHubPage";
+import { Rep360Page } from "./pages/Rep360Page";
 import { ExportsPage } from "./pages/ExportsPage";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert, SearchX } from "lucide-react";
@@ -84,6 +86,8 @@ export function PortalRoutes() {
             <Route path="no-access" element={<NoAccessPage />} />
             <Route path="not-found" element={<NotFoundPage />} />
             <Route element={<RequireAdmin />}>
+              <Route path="team" element={<TeamHubPage />} />
+              <Route path="team/:userId" element={<Rep360Page />} />
               <Route path="users" element={<UsersPage />} />
               <Route path="approvals" element={<ApprovalsPage />} />
               <Route path="activity" element={<ActivityLogsPage />} />

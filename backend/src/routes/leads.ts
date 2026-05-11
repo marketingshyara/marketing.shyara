@@ -1,9 +1,16 @@
 import type { FastifyInstance } from "fastify";
-import { ActivityAction, LeadStatus, PaymentKind, PaymentVerificationStatus, UserRole } from "@prisma/client";
+import {
+  ActivityAction,
+  LeadStatus,
+  PaymentKind,
+  PaymentVerificationStatus,
+  Prisma,
+  UserRole
+} from "@prisma/client";
 import type { User } from "@prisma/client";
-import { Prisma } from "@prisma/client";
 import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
+import { splitAgreedTotal5050Cents } from "../lib/money.js";
 import { clampPage } from "../lib/pagination.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
 import { assertManualTransition, commissionAmountCents } from "../services/leadFsm.js";
@@ -23,6 +30,25 @@ function repLeadScope(userId: string) {
   return {
     OR: [{ createdByUserId: userId }, { assignedToUserId: userId }]
   };
+}
+
+async function assertWebsiteTemplateExists(
+  prisma: Prisma.TransactionClient | FastifyInstance["prisma"],
+  websiteTemplateId: string | null | undefined
+): Promise<void> {
+  if (websiteTemplateId === undefined || websiteTemplateId === null) return;
+  const row = await prisma.websiteTemplate.findUnique({ where: { id: websiteTemplateId } });
+  if (!row) {
+    throw new HttpError(400, "INVALID_TEMPLATE", "Unknown website template.");
+  }
+}
+
+function hasVerifiedAdvance(lead: {
+  payments: { kind: PaymentKind; verificationStatus: PaymentVerificationStatus }[];
+}): boolean {
+  return lead.payments.some(
+    (p) => p.kind === PaymentKind.ADVANCE && p.verificationStatus === PaymentVerificationStatus.VERIFIED
+  );
 }
 
 async function resolveAssignedRepForCreate(
@@ -114,6 +140,17 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       const body = createLeadBodySchema.parse(request.body);
 
       const assignedToUserId = await resolveAssignedRepForCreate(app.prisma, user, body);
+      await assertWebsiteTemplateExists(app.prisma, body.websiteTemplateId);
+
+      let advanceAmountCents = body.advanceAmountCents ?? undefined;
+      let finalQuoteCents = body.finalQuoteCents ?? undefined;
+      let agreedTotalCents: number | undefined = body.agreedTotalCents ?? undefined;
+      if (body.agreedTotalCents != null) {
+        const split = splitAgreedTotal5050Cents(body.agreedTotalCents);
+        advanceAmountCents = split.advanceAmountCents;
+        finalQuoteCents = split.finalQuoteCents;
+        agreedTotalCents = body.agreedTotalCents;
+      }
 
       const lead = await app.prisma.lead.create({
         data: {
@@ -123,10 +160,13 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           clientEmail: body.clientEmail ?? undefined,
           clientPhone: body.clientPhone ?? undefined,
           notes: body.notes ?? undefined,
-          advanceAmountCents: body.advanceAmountCents ?? undefined,
-          finalQuoteCents: body.finalQuoteCents ?? undefined,
+          advanceAmountCents,
+          finalQuoteCents,
+          agreedTotalCents,
+          websiteTemplateId: body.websiteTemplateId ?? undefined,
           status: LeadStatus.NEW
-        }
+        },
+        include: { websiteTemplate: true }
       });
 
       await logActivity({
@@ -161,7 +201,8 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               include: {
                 payments: { orderBy: { markedAt: "desc" } },
                 commission: true,
-                project: true
+                project: true,
+                websiteTemplate: true
               }
             })
           : await app.prisma.lead.findFirst({
@@ -169,7 +210,8 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               include: {
                 payments: { orderBy: { markedAt: "desc" } },
                 commission: true,
-                project: true
+                project: true,
+                websiteTemplate: true
               }
             });
       if (!lead) {
@@ -188,7 +230,10 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       const body = patchLeadBodySchema.parse(request.body);
 
       const result = await app.prisma.$transaction(async (tx) => {
-        const lead = await tx.lead.findUnique({ where: { id } });
+        const lead = await tx.lead.findUnique({
+          where: { id },
+          include: { payments: true }
+        });
         if (!lead) {
           throw new HttpError(404, "NOT_FOUND", "Lead not found.");
         }
@@ -196,6 +241,8 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         const settings = await getPortalSettings(tx);
         assertLeadMutable(lead, settings);
         const commission = await tx.commission.findUnique({ where: { leadId: id } });
+
+        await assertWebsiteTemplateExists(tx, body.websiteTemplateId);
 
         let assignedToUserId: string | null | undefined = undefined;
         if (body.assignedToUserId !== undefined) {
@@ -220,13 +267,60 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           }
         }
 
+        if (body.markContentReceived === false && user.role !== UserRole.ADMIN) {
+          throw new HttpError(403, "FORBIDDEN", "Only an admin can clear content received.");
+        }
+        if (body.markContentReceived === true) {
+          if (!hasVerifiedAdvance(lead)) {
+            throw new HttpError(
+              400,
+              "INVALID_STATE",
+              "Advance payment must be verified before marking content received."
+            );
+          }
+          const templateId = body.websiteTemplateId ?? lead.websiteTemplateId;
+          if (!templateId) {
+            throw new HttpError(
+              400,
+              "TEMPLATE_REQUIRED",
+              "Select a website template before marking content received."
+            );
+          }
+        }
+
+        let agreedPatch: {
+          agreedTotalCents?: number | null;
+          advanceAmountCents?: number | null;
+          finalQuoteCents?: number | null;
+        } = {};
+        if (body.agreedTotalCents !== undefined) {
+          if (body.agreedTotalCents === null) {
+            agreedPatch = { agreedTotalCents: null };
+          } else {
+            const split = splitAgreedTotal5050Cents(body.agreedTotalCents);
+            agreedPatch = {
+              agreedTotalCents: body.agreedTotalCents,
+              advanceAmountCents: split.advanceAmountCents,
+              finalQuoteCents: split.finalQuoteCents
+            };
+          }
+        }
+
         const data: Prisma.LeadUncheckedUpdateManyInput = {
           ...(body.clientName !== undefined ? { clientName: body.clientName } : {}),
           ...(body.clientEmail !== undefined ? { clientEmail: body.clientEmail } : {}),
           ...(body.clientPhone !== undefined ? { clientPhone: body.clientPhone } : {}),
           ...(body.notes !== undefined ? { notes: body.notes } : {}),
-          ...(body.advanceAmountCents !== undefined ? { advanceAmountCents: body.advanceAmountCents } : {}),
-          ...(body.finalQuoteCents !== undefined ? { finalQuoteCents: body.finalQuoteCents } : {}),
+          ...agreedPatch,
+          ...(body.agreedTotalCents === undefined && body.advanceAmountCents !== undefined
+            ? { advanceAmountCents: body.advanceAmountCents }
+            : {}),
+          ...(body.agreedTotalCents === undefined && body.finalQuoteCents !== undefined
+            ? { finalQuoteCents: body.finalQuoteCents }
+            : {}),
+          ...(body.websiteTemplateId !== undefined ? { websiteTemplateId: body.websiteTemplateId } : {}),
+          ...(body.markContentReceived === true ? { contentReceivedAt: new Date() } : {}),
+          ...(body.markContentReceived === false ? { contentReceivedAt: null } : {}),
           ...(assignedToUserId !== undefined ? { assignedToUserId } : {})
         };
 
@@ -255,7 +349,10 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               commissionUpdate.repUserId = nextRepUserId;
             }
           }
-          if (body.finalQuoteCents !== undefined && settings.commissionBasis === "FINAL_QUOTE") {
+          if (
+            (settings.commissionBasis === "FINAL_QUOTE" && body.finalQuoteCents !== undefined) ||
+            (settings.commissionBasis === "AGREED_TOTAL" && body.agreedTotalCents !== undefined)
+          ) {
             const amountCents = commissionAmountCents(updated, 0, settings);
             if (amountCents !== commission.amountCents) {
               commissionUpdate.amountCents = amountCents;
@@ -294,7 +391,23 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         return updated;
       });
 
-      return reply.send({ lead: result });
+      const detailInclude = {
+        payments: { orderBy: { markedAt: "desc" as const } },
+        commission: true,
+        project: true,
+        websiteTemplate: true
+      } satisfies Prisma.LeadInclude;
+      const leadOut =
+        user.role === UserRole.ADMIN
+          ? await app.prisma.lead.findUnique({ where: { id }, include: detailInclude })
+          : await app.prisma.lead.findFirst({
+              where: { id, ...repLeadScope(user.id) },
+              include: detailInclude
+            });
+      if (!leadOut) {
+        throw new HttpError(404, "NOT_FOUND", "Lead not found.");
+      }
+      return reply.send({ lead: leadOut });
     }
   );
 

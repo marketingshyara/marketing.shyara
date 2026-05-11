@@ -58,6 +58,8 @@ export interface LeadPayment {
   verifiedByUserId: string | null;
   verifiedAt: string | null;
   adminNote: string | null;
+  /** Present once a payment is verified with a provider reference. */
+  externalReference?: string | null;
 }
 
 export interface Commission {
@@ -71,6 +73,13 @@ export interface Commission {
   createdAt: string;
 }
 
+export interface WebsiteTemplate {
+  id: string;
+  slug: string;
+  name: string;
+  sortOrder: number;
+}
+
 export interface Lead {
   id: string;
   createdByUserId: string;
@@ -82,11 +91,15 @@ export interface Lead {
   status: LeadStatus;
   advanceAmountCents: number | null;
   finalQuoteCents: number | null;
+  agreedTotalCents: number | null;
+  websiteTemplateId: string | null;
+  contentReceivedAt: string | null;
   createdAt: string;
   updatedAt: string;
   payments?: LeadPayment[];
   commission?: Commission | null;
   project?: Project | null;
+  websiteTemplate?: WebsiteTemplate | null;
 }
 
 /** Pending payment row from GET /api/payments/pending (admin queue). */
@@ -100,6 +113,10 @@ export interface Project {
   leadId: string;
   title: string;
   metadata: Record<string, unknown> | null;
+  previewUrl: string | null;
+  deployedUrl: string | null;
+  deploymentSubmittedAt: string | null;
+  deploymentVerifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
   lead?: Pick<Lead, "id" | "clientName" | "status" | "createdByUserId" | "assignedToUserId">;
@@ -127,7 +144,7 @@ export interface ManualTransition {
 
 export interface PortalSettingsValues {
   commissionRateBps: number;
-  commissionBasis: "VERIFIED_FINAL_PAYMENT" | "FINAL_QUOTE";
+  commissionBasis: "VERIFIED_FINAL_PAYMENT" | "FINAL_QUOTE" | "AGREED_TOTAL";
   commissionRounding: "floor" | "round" | "bankers";
   manualTransitions: ManualTransition[];
   advancePaymentRequiredLeadStatus: LeadStatus;

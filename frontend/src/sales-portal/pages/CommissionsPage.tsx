@@ -103,7 +103,9 @@ export function CommissionsPage() {
         <div>
           <h1 className="text-xl font-semibold md:text-2xl">Commissions</h1>
           <p className="text-sm text-muted-foreground">
-            {isAdmin ? "Adjust and mark paid when the lead is deployed." : "Your commissions."}
+            {isAdmin
+              ? "Commission rows are created when deployment is verified (from the lead’s agreed total and your commission rate). Adjust and mark paid when the lead is deployed."
+              : "Your commissions. Amounts are set when an administrator verifies deployment."}
           </p>
         </div>
         {!isLoading && (

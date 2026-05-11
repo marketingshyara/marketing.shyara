@@ -18,7 +18,9 @@ import { registerLeadRoutes } from "./routes/leads.js";
 import { registerPaymentRoutes } from "./routes/payments.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
+import { registerTeamRoutes } from "./routes/team.js";
 import { registerUserRoutes } from "./routes/users.js";
+import { registerWebsiteTemplateRoutes } from "./routes/websiteTemplates.js";
 
 export type BuildAppOptions = {
   config: AppConfig;
@@ -134,6 +136,8 @@ export async function buildApp(options: BuildAppOptions) {
   await registerAuthRoutes(app);
   await registerSettingsRoutes(app);
   await registerUserRoutes(app);
+  await registerTeamRoutes(app);
+  await registerWebsiteTemplateRoutes(app);
   await registerLeadRoutes(app);
   await registerPaymentRoutes(app);
   await registerCommissionRoutes(app);

@@ -56,3 +56,16 @@ export function divideCentsWithRounding(
   const isEven = quotient % 2n === 0n;
   return Number(isEven ? quotient : quotient + (n >= 0n ? 1n : -1n));
 }
+
+/** Split an agreed project total into a 50/50 advance / final pair that sums exactly to `total`. */
+export function splitAgreedTotal5050Cents(totalCents: number): {
+  advanceAmountCents: number;
+  finalQuoteCents: number;
+} {
+  if (!Number.isInteger(totalCents) || totalCents < 0) {
+    throw new Error("splitAgreedTotal5050Cents: totalCents must be a non-negative integer");
+  }
+  const advanceAmountCents = Math.floor(totalCents / 2);
+  const finalQuoteCents = totalCents - advanceAmountCents;
+  return { advanceAmountCents, finalQuoteCents };
+}

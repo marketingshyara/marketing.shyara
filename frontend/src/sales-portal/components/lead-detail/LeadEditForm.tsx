@@ -14,7 +14,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { QueryErrorAlert } from "../QueryErrorAlert";
-import { usePatchLeadMutation, useUsersQuery } from "../../hooks/useSalesQueries";
+import { usePatchLeadMutation, useUsersQuery, useWebsiteTemplatesQuery } from "../../hooks/useSalesQueries";
 import type { Lead, User } from "../../types";
 import { leadStatusLabel } from "../../lib/copy";
 
@@ -29,6 +29,8 @@ type FormShape = {
   clientEmail: string;
   clientPhone: string;
   notes: string;
+  agreedTotalRupees: string;
+  websiteTemplateId: string;
   advanceRupees: string;
   finalQuoteRupees: string;
   assignedToUserId: string;
@@ -47,8 +49,11 @@ export function LeadEditForm({ lead, isAdmin, terminal }: Props) {
     isLoading: usersLoading,
     refetch: refetchUsers
   } = useUsersQuery(1, 100, isAdmin);
+  const tplQr = useWebsiteTemplatesQuery(true);
   const reps: User[] =
     usersData?.items.filter((u) => u.role === "SALES_REP" && u.isActive) ?? [];
+  const templates = tplQr.data?.items ?? [];
+  const lockedSplit = lead.agreedTotalCents != null && lead.agreedTotalCents > 0;
 
   const form = useForm<FormShape>({
     defaultValues: {
@@ -56,6 +61,8 @@ export function LeadEditForm({ lead, isAdmin, terminal }: Props) {
       clientEmail: "",
       clientPhone: "",
       notes: "",
+      agreedTotalRupees: "",
+      websiteTemplateId: "",
       advanceRupees: "",
       finalQuoteRupees: "",
       assignedToUserId: ""
@@ -65,6 +72,9 @@ export function LeadEditForm({ lead, isAdmin, terminal }: Props) {
       clientEmail: lead.clientEmail ?? "",
       clientPhone: lead.clientPhone ?? "",
       notes: lead.notes ?? "",
+      agreedTotalRupees:
+        lead.agreedTotalCents != null ? String(lead.agreedTotalCents / 100) : "",
+      websiteTemplateId: lead.websiteTemplateId ?? "",
       advanceRupees:
         lead.advanceAmountCents != null ? String(lead.advanceAmountCents / 100) : "",
       finalQuoteRupees:
@@ -85,6 +95,13 @@ export function LeadEditForm({ lead, isAdmin, terminal }: Props) {
             if (terminal) return;
             let ok = true;
             if (
+              vals.agreedTotalRupees.trim() !== "" &&
+              parseRupeeInputToCents(vals.agreedTotalRupees) === null
+            ) {
+              form.setError("agreedTotalRupees", { message: "Enter a valid amount" });
+              ok = false;
+            }
+            if (
               vals.advanceRupees.trim() !== "" &&
               parseRupeeInputToCents(vals.advanceRupees) === null
             ) {
@@ -99,6 +116,7 @@ export function LeadEditForm({ lead, isAdmin, terminal }: Props) {
               ok = false;
             }
             if (!ok) return;
+            const agreed = parseRupeeInputToCents(vals.agreedTotalRupees);
             const adv = parseRupeeInputToCents(vals.advanceRupees);
             const fin = parseRupeeInputToCents(vals.finalQuoteRupees);
             const body: Record<string, unknown> = {
@@ -106,9 +124,17 @@ export function LeadEditForm({ lead, isAdmin, terminal }: Props) {
               clientEmail: vals.clientEmail.trim() === "" ? null : vals.clientEmail,
               clientPhone: vals.clientPhone.trim() === "" ? null : vals.clientPhone,
               notes: vals.notes.trim() === "" ? null : vals.notes,
-              advanceAmountCents: adv,
-              finalQuoteCents: fin
+              websiteTemplateId:
+                vals.websiteTemplateId === "" || vals.websiteTemplateId === "__none__"
+                  ? null
+                  : vals.websiteTemplateId
             };
+            if (vals.agreedTotalRupees.trim() !== "" && agreed != null) {
+              body.agreedTotalCents = agreed;
+            } else if (!lockedSplit) {
+              body.advanceAmountCents = adv;
+              body.finalQuoteCents = fin;
+            }
             if (isAdmin) {
               body.assignedToUserId =
                 vals.assignedToUserId === "" ? null : vals.assignedToUserId;
@@ -147,6 +173,50 @@ export function LeadEditForm({ lead, isAdmin, terminal }: Props) {
               disabled={terminal}
             />
           </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor={`agreed-${lead.id}`}>Agreed project total (₹)</Label>
+            <Input
+              id={`agreed-${lead.id}`}
+              className="min-h-11"
+              aria-invalid={!!form.formState.errors.agreedTotalRupees}
+              aria-describedby={
+                form.formState.errors.agreedTotalRupees ? `agreed-err-${lead.id}` : undefined
+              }
+              {...form.register("agreedTotalRupees")}
+              disabled={terminal}
+            />
+            {form.formState.errors.agreedTotalRupees && (
+              <p id={`agreed-err-${lead.id}`} className="text-sm text-destructive">
+                {form.formState.errors.agreedTotalRupees.message}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              When set, advance and final due are kept in a 50/50 split from this total.
+            </p>
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor={`tpl-edit-${lead.id}`}>Website template</Label>
+            {tplQr.isError && (
+              <QueryErrorAlert message="Could not load templates." onRetry={() => void tplQr.refetch()} />
+            )}
+            <Select
+              value={form.watch("websiteTemplateId") || "__none__"}
+              onValueChange={(v) => form.setValue("websiteTemplateId", v === "__none__" ? "" : v)}
+              disabled={terminal || tplQr.isLoading || tplQr.isError}
+            >
+              <SelectTrigger id={`tpl-edit-${lead.id}`} className="min-h-11">
+                <SelectValue placeholder={tplQr.isLoading ? "Loading…" : "Not set"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Not set</SelectItem>
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label htmlFor={`advance-${lead.id}`}>Advance (₹)</Label>
             <Input
@@ -157,7 +227,7 @@ export function LeadEditForm({ lead, isAdmin, terminal }: Props) {
                 form.formState.errors.advanceRupees ? `advance-err-${lead.id}` : undefined
               }
               {...form.register("advanceRupees")}
-              disabled={terminal}
+              disabled={terminal || lockedSplit}
             />
             {form.formState.errors.advanceRupees && (
               <p id={`advance-err-${lead.id}`} className="text-sm text-destructive">
@@ -175,7 +245,7 @@ export function LeadEditForm({ lead, isAdmin, terminal }: Props) {
                 form.formState.errors.finalQuoteRupees ? `final-quote-err-${lead.id}` : undefined
               }
               {...form.register("finalQuoteRupees")}
-              disabled={terminal}
+              disabled={terminal || lockedSplit}
             />
             {form.formState.errors.finalQuoteRupees && (
               <p id={`final-quote-err-${lead.id}`} className="text-sm text-destructive">

@@ -67,8 +67,10 @@ export const createLeadBodySchema = z.object({
   clientEmail: optionalLeadEmail,
   clientPhone: z.string().max(40).optional().nullable(),
   notes: z.string().max(8000).optional().nullable(),
+  agreedTotalCents: z.number().int().min(0).optional().nullable(),
   advanceAmountCents: z.number().int().min(0).optional().nullable(),
   finalQuoteCents: z.number().int().min(0).optional().nullable(),
+  websiteTemplateId: z.string().min(1).max(64).optional().nullable(),
   assignedToUserId: z.string().min(1).optional().nullable()
 });
 
@@ -77,8 +79,12 @@ export const patchLeadBodySchema = z.object({
   clientEmail: optionalLeadEmail,
   clientPhone: z.string().max(40).optional().nullable(),
   notes: z.string().max(8000).optional().nullable(),
+  agreedTotalCents: z.number().int().min(0).optional().nullable(),
   advanceAmountCents: z.number().int().min(0).optional().nullable(),
   finalQuoteCents: z.number().int().min(0).optional().nullable(),
+  websiteTemplateId: z.string().min(1).max(64).optional().nullable(),
+  /** When true, sets `contentReceivedAt` to now (rep, gated). When false, clears it (admin only). */
+  markContentReceived: z.boolean().optional(),
   assignedToUserId: z.string().min(1).optional().nullable()
 });
 
@@ -92,10 +98,18 @@ export const markPaymentBodySchema = z.object({
   repNote: z.string().max(2000).optional().nullable()
 });
 
-export const verifyPaymentBodySchema = z.object({
-  decision: z.enum(["VERIFIED", "REJECTED"]),
-  adminNote: z.string().max(2000).optional().nullable()
-});
+export const verifyPaymentBodySchema = z.discriminatedUnion("decision", [
+  z.object({
+    decision: z.literal("VERIFIED"),
+    /** Provider payment id (e.g. Razorpay); required when verifying. */
+    externalReference: z.string().trim().min(1).max(256),
+    adminNote: z.string().max(2000).optional().nullable()
+  }),
+  z.object({
+    decision: z.literal("REJECTED"),
+    adminNote: z.string().max(2000).optional().nullable()
+  })
+]);
 
 export const pendingPaymentsQuerySchema = paginationQuerySchema
   .extend({
@@ -133,7 +147,16 @@ export const activityLogsQuerySchema = paginationQuerySchema
 
 export const patchProjectBodySchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  metadata: z.record(z.unknown()).optional().nullable()
+  metadata: z.record(z.unknown()).optional().nullable(),
+  previewUrl: z.union([z.string().url().max(2000), z.null()]).optional(),
+  deployedUrl: z.union([z.string().url().max(2000), z.null()]).optional(),
+  markDeploymentSubmitted: z.boolean().optional()
+});
+
+/** Rep-only: submit live URL for admin deployment verification. */
+export const repSubmitDeploymentBodySchema = z.object({
+  deployedUrl: z.string().url().max(2000),
+  markDeploymentSubmitted: z.literal(true)
 });
 
 export const createProjectBodySchema = z.object({
@@ -144,7 +167,7 @@ export const createProjectBodySchema = z.object({
 
 const defaultManualTransitions = [
   { from: LeadStatus.ADVANCE_PAID, to: LeadStatus.BUILDING, adminOnly: false, enabled: true },
-  { from: LeadStatus.BUILDING, to: LeadStatus.PREVIEW_SENT, adminOnly: false, enabled: true },
+  { from: LeadStatus.BUILDING, to: LeadStatus.PREVIEW_SENT, adminOnly: true, enabled: true },
   { from: LeadStatus.FINAL_PAID, to: LeadStatus.DEPLOYED, adminOnly: true, enabled: true }
 ] as const;
 
@@ -158,7 +181,9 @@ export const manualTransitionSchema = z.object({
 export const portalSettingsSchema = z
   .object({
     commissionRateBps: z.number().int().min(0).max(10000).default(2000),
-    commissionBasis: z.enum(["VERIFIED_FINAL_PAYMENT", "FINAL_QUOTE"]).default("VERIFIED_FINAL_PAYMENT"),
+    commissionBasis: z
+      .enum(["VERIFIED_FINAL_PAYMENT", "FINAL_QUOTE", "AGREED_TOTAL"])
+      .default("VERIFIED_FINAL_PAYMENT"),
     manualTransitions: z.array(manualTransitionSchema).default([...defaultManualTransitions]),
     advancePaymentRequiredLeadStatus: z.nativeEnum(LeadStatus).default(LeadStatus.NEW),
     finalPaymentRequiredLeadStatus: z.nativeEnum(LeadStatus).default(LeadStatus.PREVIEW_SENT),

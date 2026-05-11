@@ -48,6 +48,21 @@ describe("commissionAmountCents", () => {
     const lead = leadStub({ finalQuoteCents: null });
     expect(() => commissionAmountCents(lead, 100_000, settings)).toThrow(HttpError);
   });
+
+  it("uses agreed total when commissionBasis is AGREED_TOTAL", () => {
+    const settings = portalSettingsSchema.parse({
+      commissionBasis: "AGREED_TOTAL",
+      commissionRateBps: 2000
+    });
+    const lead = leadStub({ agreedTotalCents: 100_000 });
+    expect(commissionAmountCents(lead, 999, settings)).toBe(20_000);
+  });
+
+  it("throws when AGREED_TOTAL basis but agreed total missing", () => {
+    const settings = portalSettingsSchema.parse({ commissionBasis: "AGREED_TOTAL" });
+    const lead = leadStub({ agreedTotalCents: null });
+    expect(() => commissionAmountCents(lead, 100_000, settings)).toThrow(HttpError);
+  });
 });
 
 describe("assertManualTransition", () => {
@@ -82,6 +97,28 @@ describe("assertManualTransition", () => {
         UserRole.SALES_REP
       )
     ).toThrow(HttpError);
+  });
+
+  it("blocks rep from BUILDING to PREVIEW_SENT (admin-only edge by default)", () => {
+    expect(() =>
+      assertManualTransition(
+        defaultSettings,
+        LeadStatus.BUILDING,
+        LeadStatus.PREVIEW_SENT,
+        UserRole.SALES_REP
+      )
+    ).toThrow(HttpError);
+  });
+
+  it("allows admin to move BUILDING to PREVIEW_SENT", () => {
+    expect(() =>
+      assertManualTransition(
+        defaultSettings,
+        LeadStatus.BUILDING,
+        LeadStatus.PREVIEW_SENT,
+        UserRole.ADMIN
+      )
+    ).not.toThrow();
   });
 
   it("rejects invalid edges", () => {

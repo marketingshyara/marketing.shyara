@@ -128,6 +128,7 @@ export function SettingsPage() {
                 <SelectContent>
                   <SelectItem value="VERIFIED_FINAL_PAYMENT">Verified final payment amount</SelectItem>
                   <SelectItem value="FINAL_QUOTE">Final quote on lead</SelectItem>
+                  <SelectItem value="AGREED_TOTAL">Agreed total on lead</SelectItem>
                 </SelectContent>
               </Select>
             </div>

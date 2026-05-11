@@ -12,7 +12,8 @@ import {
   FileSpreadsheet,
   ScrollText,
   Settings,
-  Users
+  Users,
+  UsersRound
 } from "lucide-react";
 import { useSessionQuery, useLogoutMutation, usePendingPaymentsCountQuery } from "../hooks/useSalesQueries";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -47,8 +48,9 @@ const MAIN_NAV: NavItem[] = [
 ];
 
 const ADMIN_NAV: NavItem[] = [
+  { to: "/portal/team", label: "Team", icon: UsersRound },
   { to: "/portal/users", label: "Users", icon: Users },
-  { to: "/portal/approvals", label: "Approvals", icon: FileCheck2, approvalsBadge: true },
+  { to: "/portal/approvals", label: "Payment reviews", icon: FileCheck2, approvalsBadge: true },
   { to: "/portal/activity", label: "Activity", icon: ScrollText },
   { to: "/portal/settings", label: "Settings", icon: Settings },
   { to: "/portal/exports", label: "Exports", icon: FileSpreadsheet }

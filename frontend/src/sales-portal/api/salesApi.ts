@@ -8,9 +8,14 @@ import type {
   PortalSettingsValues,
   Project,
   SessionUser,
-  User
+  User,
+  WebsiteTemplate
 } from "../types";
 import type { LeadStatus } from "../types";
+
+export type VerifyPaymentRequestBody =
+  | { decision: "VERIFIED"; externalReference: string; adminNote?: string | null }
+  | { decision: "REJECTED"; adminNote?: string | null };
 
 export const salesApi = {
   session: () => apiJson<{ user: SessionUser | null }>("GET", "/auth/session"),
@@ -85,10 +90,8 @@ export const salesApi = {
     body: { kind: "ADVANCE" | "FINAL"; amountCents: number; repNote?: string | null }
   ) => apiJson<{ payment: unknown }>("POST", `/leads/${leadId}/payments`, body),
 
-  verifyPayment: (
-    paymentId: string,
-    body: { decision: "VERIFIED" | "REJECTED"; adminNote?: string | null }
-  ) => apiJson<{ payment: unknown; lead: Lead }>("POST", `/payments/${paymentId}/verify`, body),
+  verifyPayment: (paymentId: string, body: VerifyPaymentRequestBody) =>
+    apiJson<{ payment: unknown; lead: Lead }>("POST", `/payments/${paymentId}/verify`, body),
 
   pendingPaymentsCount: () => apiJson<{ total: number }>("GET", "/payments/pending/count"),
 
@@ -149,6 +152,40 @@ export const salesApi = {
 
   patchProject: (id: string, body: Record<string, unknown>) =>
     apiJson<{ project: Project }>("PATCH", `/projects/${id}`, body),
+
+  verifyProjectDeployment: (projectId: string) =>
+    apiJson<{ project: Project; lead: Lead }>("POST", `/projects/${projectId}/verify-deployment`, {}),
+
+  websiteTemplates: () => apiJson<{ items: WebsiteTemplate[] }>("GET", "/website-templates"),
+
+  teamReps: () =>
+    apiJson<{
+      items: Array<{
+        id: string;
+        email: string;
+        displayName: string | null;
+        activeLeads: number;
+        pendingVerifications: number;
+      }>;
+    }>("GET", "/team/reps"),
+
+  teamRep: (userId: string) =>
+    apiJson<{
+      rep: {
+        id: string;
+        email: string;
+        displayName: string | null;
+        activeLeads: number;
+        pendingVerifications: number;
+      };
+      recentLeads: Array<{
+        id: string;
+        clientName: string;
+        status: LeadStatus;
+        createdAt: string;
+        agreedTotalCents: number | null;
+      }>;
+    }>("GET", `/team/reps/${userId}`),
 
   activityLogs: (params: {
     page?: number;

@@ -19,5 +19,5 @@ const run = process.env.E2E_RUN_APPROVALS === "1";
     return;
   }
   await page.goto("/portal/approvals");
-  await expect(page.getByRole("heading", { name: /Payment approvals/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Payment reviews/i })).toBeVisible();
 });

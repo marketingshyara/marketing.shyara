@@ -163,13 +163,13 @@ d("portal review fixes - integration", () => {
         method: "POST",
         url: `/api/payments/${payment.id}/verify`,
         headers: { cookie: cookieHeader, "content-type": "application/json" },
-        payload: { decision: "VERIFIED" }
+        payload: { decision: "VERIFIED", externalReference: "pay_race_1" }
       }),
       inject(app, {
         method: "POST",
         url: `/api/payments/${payment.id}/verify`,
         headers: { cookie: cookieHeader, "content-type": "application/json" },
-        payload: { decision: "VERIFIED" }
+        payload: { decision: "VERIFIED", externalReference: "pay_race_2" }
       })
     ]);
     const statuses = results.map((r) => r.statusCode).sort();
@@ -253,7 +253,7 @@ d("portal review fixes - integration", () => {
       method: "POST",
       url: `/api/payments/${payment.id}/verify`,
       headers: { cookie: cookieHeader, "content-type": "application/json" },
-      payload: { decision: "VERIFIED" }
+      payload: { decision: "VERIFIED", externalReference: "pay_stale_adv" }
     });
     expect(res.statusCode).toBe(400);
     const body = JSON.parse(res.body);
@@ -330,7 +330,7 @@ d("portal review fixes - integration", () => {
       method: "POST",
       url: `/api/payments/${payment.id}/verify`,
       headers: { cookie: cookieHeader, "content-type": "application/json" },
-      payload: { decision: "VERIFIED" }
+      payload: { decision: "VERIFIED", externalReference: "pay_audit_adv" }
     });
     expect(res.statusCode).toBeGreaterThanOrEqual(500);
     // Use the real client to verify rollback.
@@ -493,10 +493,8 @@ d("portal review fixes - integration", () => {
     await app.close();
   });
 
-  it("[M9] verify computes commission using bankers rounding on the configured rate", async () => {
-    // Set a rate where rounding matters: 30% on a final payment of 5 cents -> 1.5 -> 2 with bankers.
+  it("[M9] verify-deployment creates commission from agreed total using bankers rounding", async () => {
     const settings = portalSettingsSchema.parse({
-      commissionBasis: "VERIFIED_FINAL_PAYMENT",
       commissionRateBps: 3000,
       commissionRounding: "bankers"
     });
@@ -512,24 +510,26 @@ d("portal review fixes - integration", () => {
         createdByUserId: adminId,
         assignedToUserId: repId,
         clientName: "Rounding Lead",
-        status: settings.finalVerifyRequiredLeadStatus,
-        finalQuoteCents: 5
+        status: LeadStatus.FINAL_PAID,
+        agreedTotalCents: 5,
+        advanceAmountCents: 2,
+        finalQuoteCents: 3
       }
     });
-    const payment = await prisma.leadPayment.create({
+    const project = await prisma.project.create({
       data: {
         leadId: lead.id,
-        kind: PaymentKind.FINAL,
-        amountCents: 5,
-        markedByUserId: repId
+        title: "Rounding project",
+        deployedUrl: "https://example.com/live",
+        deploymentSubmittedAt: new Date()
       }
     });
     const { app, cookieHeader } = await loginAs(adminEmail, "AdminPass123!");
     const res = await inject(app, {
       method: "POST",
-      url: `/api/payments/${payment.id}/verify`,
+      url: `/api/projects/${project.id}/verify-deployment`,
       headers: { cookie: cookieHeader, "content-type": "application/json" },
-      payload: { decision: "VERIFIED" }
+      payload: {}
     });
     expect(res.statusCode).toBe(200);
     const commission = await prisma.commission.findUnique({ where: { leadId: lead.id } });
@@ -537,9 +537,8 @@ d("portal review fixes - integration", () => {
     expect(commission?.amountCents).toBe(2);
 
     await prisma.commission.delete({ where: { leadId: lead.id } });
-    await prisma.leadPayment.delete({ where: { id: payment.id } });
+    await prisma.project.delete({ where: { id: project.id } });
     await prisma.lead.delete({ where: { id: lead.id } });
-    // Reset settings.
     const defaults = portalSettingsSchema.parse({});
     await prisma.portalSettings.update({
       where: { id: "default" },

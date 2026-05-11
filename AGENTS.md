@@ -3,6 +3,7 @@
 ## Scope
 - These rules apply to backend and frontend sales-portal changes in this repository.
 - Every PR must preserve backend invariants, API contract consistency, and regression coverage.
+- Sales portal UX expectations (rep/admin journeys, mobile copy, progressive disclosure) live in `.cursor/rules/sales-portal-ux.mdc` — follow them for portal UI work.
 
 ## Required Review Workflow
 - Run a `code-reviewer` style pass before merge and tag findings by severity (`CRITICAL`, `MAJOR`, `MINOR`).

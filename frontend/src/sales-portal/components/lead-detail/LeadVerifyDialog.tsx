@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -38,6 +40,7 @@ export function LeadVerifyDialog({ leadId, paymentId }: Props) {
   const [verifyOpen, setVerifyOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [verifyNote, setVerifyNote] = useState("");
+  const [verifyExternalRef, setVerifyExternalRef] = useState("");
   const [rejectNote, setRejectNote] = useState("");
 
   return (
@@ -46,7 +49,10 @@ export function LeadVerifyDialog({ leadId, paymentId }: Props) {
         open={verifyOpen}
         onOpenChange={(o) => {
           setVerifyOpen(o);
-          if (!o) setVerifyNote("");
+          if (!o) {
+            setVerifyNote("");
+            setVerifyExternalRef("");
+          }
         }}
       >
         <AlertDialogTrigger asChild>
@@ -58,9 +64,22 @@ export function LeadVerifyDialog({ leadId, paymentId }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>Verify payment?</AlertDialogTitle>
             <AlertDialogDescription>
-              Marks this payment as verified and updates the lead per portal rules.
+              Marks this payment as verified and updates the lead per portal rules. Paste the Razorpay payment id (or
+              other provider reference).
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor={`verify-ref-${paymentId}`}>Payment reference (required)</Label>
+            <Input
+              id={`verify-ref-${paymentId}`}
+              className="min-h-11 font-mono text-sm"
+              maxLength={256}
+              autoComplete="off"
+              value={verifyExternalRef}
+              onChange={(e) => setVerifyExternalRef(e.target.value)}
+              placeholder="e.g. pay_…"
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor={`verify-note-${paymentId}`}>Admin note (optional)</Label>
             <Textarea
@@ -76,19 +95,24 @@ export function LeadVerifyDialog({ leadId, paymentId }: Props) {
             <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               disabled={pending}
-              onClick={() =>
+              onClick={() => {
+                const ref = verifyExternalRef.trim();
+                if (!ref) {
+                  toast.error("Enter the provider payment reference.");
+                  return;
+                }
                 verify.mutate(
                   {
                     paymentId,
-                    body: { decision: "VERIFIED", adminNote: noteOrNull(verifyNote) }
+                    body: { decision: "VERIFIED", externalReference: ref, adminNote: noteOrNull(verifyNote) }
                   },
                   {
                     onSuccess: () => {
                       setVerifyOpen(false);
                     }
                   }
-                )
-              }
+                );
+              }}
             >
               Verify
             </AlertDialogAction>

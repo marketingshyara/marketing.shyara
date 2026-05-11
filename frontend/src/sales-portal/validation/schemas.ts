@@ -59,8 +59,10 @@ export const createLeadSchema = z.object({
   clientEmail: z.union([z.string().email(), z.literal("")]).optional(),
   clientPhone: z.string().max(40).optional().nullable(),
   notes: z.string().max(8000).optional().nullable(),
+  agreedTotalCents: z.number().int().min(0).optional().nullable(),
   advanceAmountCents: z.number().int().min(0).optional().nullable(),
   finalQuoteCents: z.number().int().min(0).optional().nullable(),
+  websiteTemplateId: z.string().min(1).max(64).optional().nullable(),
   assignedToUserId: z.string().min(1).optional().nullable()
 });
 
@@ -69,8 +71,11 @@ export const patchLeadSchema = z.object({
   clientEmail: z.union([z.string().email(), z.literal("")]).optional().nullable(),
   clientPhone: z.string().max(40).optional().nullable(),
   notes: z.string().max(8000).optional().nullable(),
+  agreedTotalCents: z.number().int().min(0).optional().nullable(),
   advanceAmountCents: z.number().int().min(0).optional().nullable(),
   finalQuoteCents: z.number().int().min(0).optional().nullable(),
+  websiteTemplateId: z.string().min(1).max(64).optional().nullable(),
+  markContentReceived: z.boolean().optional(),
   assignedToUserId: z.string().min(1).optional().nullable()
 });
 
@@ -84,10 +89,17 @@ export const markPaymentSchema = z.object({
   repNote: z.string().max(2000).optional().nullable()
 });
 
-export const verifyPaymentSchema = z.object({
-  decision: z.enum(["VERIFIED", "REJECTED"]),
-  adminNote: z.string().max(2000).optional().nullable()
-});
+export const verifyPaymentSchema = z.discriminatedUnion("decision", [
+  z.object({
+    decision: z.literal("VERIFIED"),
+    externalReference: z.string().trim().min(1).max(256),
+    adminNote: z.string().max(2000).optional().nullable()
+  }),
+  z.object({
+    decision: z.literal("REJECTED"),
+    adminNote: z.string().max(2000).optional().nullable()
+  })
+]);
 
 export const manualTransitionSchema = z.object({
   from: leadStatusSchema,
@@ -99,7 +111,7 @@ export const manualTransitionSchema = z.object({
 export const portalSettingsSchema = z
   .object({
     commissionRateBps: z.number().int().min(0).max(10000),
-    commissionBasis: z.enum(["VERIFIED_FINAL_PAYMENT", "FINAL_QUOTE"]),
+    commissionBasis: z.enum(["VERIFIED_FINAL_PAYMENT", "FINAL_QUOTE", "AGREED_TOTAL"]),
     commissionRounding: z.enum(["floor", "round", "bankers"]),
     manualTransitions: z.array(manualTransitionSchema),
     advancePaymentRequiredLeadStatus: leadStatusSchema,
@@ -124,5 +136,8 @@ export const createProjectSchema = z.object({
 
 export const patchProjectSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  metadata: z.record(z.unknown()).optional().nullable()
+  metadata: z.record(z.unknown()).optional().nullable(),
+  previewUrl: z.union([z.string().url().max(2000), z.null()]).optional(),
+  deployedUrl: z.union([z.string().url().max(2000), z.null()]).optional(),
+  markDeploymentSubmitted: z.boolean().optional()
 });

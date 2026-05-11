@@ -47,7 +47,7 @@ describe("ApprovalsPage", () => {
         </MemoryRouter>
       </QueryClientProvider>
     );
-    expect(screen.getByRole("heading", { name: /Payment approvals/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Payment reviews/i })).toBeInTheDocument();
     const links = screen.getAllByRole("link", { name: /Acme Co/i });
     expect(links.length).toBeGreaterThanOrEqual(1);
     expect(links[0]).toHaveAttribute("href", "/portal/leads/lead-1");

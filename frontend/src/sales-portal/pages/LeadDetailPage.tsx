@@ -8,6 +8,9 @@ import { LeadHeader } from "../components/lead-detail/LeadHeader";
 import { LeadEditForm } from "../components/lead-detail/LeadEditForm";
 import { LeadStatusPanel } from "../components/lead-detail/LeadStatusPanel";
 import { LeadPaymentsPanel } from "../components/lead-detail/LeadPaymentsPanel";
+import { LeadJourneyStepper } from "../components/lead-detail/LeadJourneyStepper";
+import { LeadTemplateContentCard } from "../components/lead-detail/LeadTemplateContentCard";
+import { LeadProjectDeliveryCard } from "../components/lead-detail/LeadProjectDeliveryCard";
 import {
   useLeadQuery,
   usePortalSettingsQuery,
@@ -114,7 +117,10 @@ export function LeadDetailPage() {
         />
       </div>
       <LeadHeader status={lead.status} terminal={terminal} />
+      <LeadJourneyStepper lead={lead} />
       <LeadEditForm lead={lead} isAdmin={isAdmin} terminal={terminal} />
+      <LeadTemplateContentCard lead={lead} terminal={terminal} />
+      <LeadProjectDeliveryCard lead={lead} isAdmin={isAdmin} terminal={terminal} />
       <LeadStatusPanel lead={lead} settings={settings} role={role} terminal={terminal} />
       <LeadPaymentsPanel lead={lead} settings={settings} isAdmin={isAdmin} terminal={terminal} />
 

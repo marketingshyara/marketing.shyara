@@ -10,8 +10,6 @@ import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
 import { clampPage } from "../lib/pagination.js";
-import { getCommissionRepUserId } from "../services/commissionRep.js";
-import { commissionAmountCents } from "../services/leadFsm.js";
 import { logActivity } from "../services/activityLog.js";
 import {
   assertPaymentMatchesQuoteTolerance,
@@ -121,13 +119,16 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
             : PaymentVerificationStatus.REJECTED;
 
         // Atomic: only flip a still-PENDING payment. Concurrent verifies see 0 rows and bail.
+        const externalReference = body.decision === "VERIFIED" ? body.externalReference.trim() : null;
+
         const payClaim = await tx.leadPayment.updateMany({
           where: { id: paymentId, verificationStatus: PaymentVerificationStatus.PENDING },
           data: {
             verificationStatus: decision,
             verifiedByUserId: admin.id,
             verifiedAt: new Date(),
-            adminNote: body.adminNote ?? undefined
+            adminNote: body.adminNote ?? undefined,
+            externalReference
           }
         });
         if (payClaim.count === 0) {
@@ -202,22 +203,7 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
             `Lead must be ${required} to verify a final payment.`
           );
         }
-        // Re-read so commission math uses the latest finalQuoteCents (defends against a concurrent PATCH).
         const lead = await tx.lead.findUniqueOrThrow({ where: { id: payment.leadId } });
-        const repId = getCommissionRepUserId(lead);
-        const amountCents = commissionAmountCents(lead, payment.amountCents, settings);
-        await tx.commission.upsert({
-          where: { leadId: payment.leadId },
-          create: {
-            leadId: payment.leadId,
-            repUserId: repId,
-            amountCents
-          },
-          update: {
-            repUserId: repId,
-            amountCents
-          }
-        });
         await logActivity({
           prisma: app.prisma,
           tx,

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ApiError } from "../api/client";
-import { salesApi } from "../api/salesApi";
+import { salesApi, type VerifyPaymentRequestBody } from "../api/salesApi";
 import { qk } from "../queryKeys";
 import type { LeadStatus, PortalSettingsValues, SessionUser } from "../types";
 
@@ -196,6 +196,8 @@ export function useCreateLeadMutation() {
     mutationFn: salesApi.createLead,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["leads"] });
+      void qc.invalidateQueries({ queryKey: ["team-reps"] });
+      void qc.invalidateQueries({ queryKey: ["team-rep"] });
       invalidateQueryPrefixes(qc, ["commissions", "activity-logs"]);
       toast.success("Lead created");
     },
@@ -210,6 +212,8 @@ export function usePatchLeadMutation(leadId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.lead(leadId) });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      void qc.invalidateQueries({ queryKey: ["team-reps"] });
+      void qc.invalidateQueries({ queryKey: ["team-rep"] });
       invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "projects"]);
       toast.success("Lead updated");
     },
@@ -242,6 +246,8 @@ export function useMarkPaymentMutation(leadId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.lead(leadId) });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      void qc.invalidateQueries({ queryKey: ["team-reps"] });
+      void qc.invalidateQueries({ queryKey: ["team-rep"] });
       invalidateQueryPrefixes(qc, [
         "commissions",
         "activity-logs",
@@ -257,13 +263,8 @@ export function useMarkPaymentMutation(leadId: string) {
 export function useVerifyPaymentMutation(leadId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      paymentId,
-      body
-    }: {
-      paymentId: string;
-      body: { decision: "VERIFIED" | "REJECTED"; adminNote?: string | null };
-    }) => salesApi.verifyPayment(paymentId, body),
+    mutationFn: ({ paymentId, body }: { paymentId: string; body: VerifyPaymentRequestBody }) =>
+      salesApi.verifyPayment(paymentId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.lead(leadId) });
       qc.invalidateQueries({ queryKey: ["leads"] });
@@ -362,8 +363,59 @@ export function usePatchProjectMutation(projectId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.project(projectId) });
       qc.invalidateQueries({ queryKey: ["projects"] });
-      invalidateQueryPrefixes(qc, ["leads", "lead", "activity-logs"]);
+      invalidateQueryPrefixes(qc, ["leads", "lead", "activity-logs", "commissions"]);
       toast.success("Project updated");
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+export function useWebsiteTemplatesQuery(enabled = true) {
+  return useQuery({
+    queryKey: qk.websiteTemplates,
+    queryFn: () => salesApi.websiteTemplates(),
+    enabled,
+    staleTime: 300_000
+  });
+}
+
+export function useTeamRepsQuery(enabled: boolean) {
+  return useQuery({
+    queryKey: qk.teamReps,
+    queryFn: () => salesApi.teamReps(),
+    enabled,
+    staleTime: 60_000
+  });
+}
+
+export function useTeamRepQuery(userId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.teamRep(userId ?? ""),
+    queryFn: () => salesApi.teamRep(userId!),
+    enabled: !!userId && enabled,
+    staleTime: 60_000
+  });
+}
+
+export function useVerifyProjectDeploymentMutation(projectId: string | undefined, leadId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => {
+      if (!projectId) throw new Error("Missing project id");
+      return salesApi.verifyProjectDeployment(projectId);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        qc.invalidateQueries({ queryKey: qk.project(projectId) });
+      }
+      qc.invalidateQueries({ queryKey: qk.lead(leadId) });
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["commissions"] });
+      void qc.invalidateQueries({ queryKey: ["team-reps"] });
+      void qc.invalidateQueries({ queryKey: ["team-rep"] });
+      invalidateQueryPrefixes(qc, ["activity-logs"]);
+      toast.success("Deployment verified");
     },
     onError: (e) => errToast(e, qc)
   });

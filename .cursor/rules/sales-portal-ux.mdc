@@ -1,0 +1,13 @@
+---
+description: Sales portal UX guardrails (reps, admins, mobile).
+globs: frontend/src/sales-portal/**/*
+alwaysApply: false
+---
+
+# Sales portal UX
+
+- **Mobile-first clarity**: primary navigation and blocking actions must not be icon-only without a visible text label on small screens (pair icons with text in nav, dialogs, and CTAs).
+- **Stage language**: user-facing copy must map clearly to machine state (`LeadStatus`, payment verification, project deployment flags). Show **who acts next** (rep vs admin) when a step is blocked.
+- **Progressive disclosure**: portal FSM / JSON settings remain admin-advanced; reps get guided flows (steppers, banners, short explanations), not raw settings.
+- **Payments**: verifying a payment requires a **provider reference** (e.g. Razorpay id); surface it read-only after verification.
+- **Contract + tests**: any API shape change updates `salesApi`, shared types, and Zod schemas in the same change, with regression coverage per `api-contract-and-testing.mdc`.

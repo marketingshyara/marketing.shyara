@@ -48,6 +48,14 @@ enum ActivityAction {
   SETTINGS_UPDATE
 }
 
+model WebsiteTemplate {
+  id        String @id @default(cuid())
+  slug      String @unique
+  name      String
+  sortOrder Int    @default(0)
+  leads     Lead[]
+}
+
 model User {
   id                   String    @id @default(cuid())
   email                String    @unique
@@ -86,11 +94,15 @@ model Lead {
   status           LeadStatus  @default(NEW)
   advanceAmountCents Int?
   finalQuoteCents    Int?
+  agreedTotalCents   Int?
+  websiteTemplateId  String?
+  contentReceivedAt  DateTime?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
   createdBy   User           @relation("LeadCreatedBy", fields: [createdByUserId], references: [id])
   assignedTo  User?          @relation("LeadAssignedTo", fields: [assignedToUserId], references: [id])
+  websiteTemplate WebsiteTemplate? @relation(fields: [websiteTemplateId], references: [id], onDelete: SetNull)
   payments    LeadPayment[]
   project     Project?
   commission  Commission?
@@ -99,6 +111,7 @@ model Lead {
   @@index([createdByUserId])
   @@index([assignedToUserId])
   @@index([createdAt])
+  @@index([websiteTemplateId])
 }
 
 model PortalSettings {
@@ -119,6 +132,7 @@ model LeadPayment {
   verifiedByUserId     String?
   verifiedAt           DateTime?
   adminNote            String?
+  externalReference      String?
 
   lead           Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
   markedBy       User @relation("PaymentMarkedBy", fields: [markedByUserId], references: [id])
@@ -129,12 +143,16 @@ model LeadPayment {
 }
 
 model Project {
-  id        String   @id @default(cuid())
-  leadId    String   @unique
-  title     String
-  metadata  Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                     String    @id @default(cuid())
+  leadId                 String    @unique
+  title                  String
+  metadata               Json?
+  previewUrl             String?
+  deployedUrl            String?
+  deploymentSubmittedAt  DateTime?
+  deploymentVerifiedAt   DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
 }

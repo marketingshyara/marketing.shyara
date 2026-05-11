@@ -162,6 +162,7 @@ export function LeadPaymentsPanel({ lead, settings, isAdmin, terminal }: Props) 
                     <TableHead>Payment Type</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Provider ref</TableHead>
                     <TableHead>Marked</TableHead>
                     {isAdmin && <TableHead>Actions</TableHead>}
                   </TableRow>
@@ -174,6 +175,11 @@ export function LeadPaymentsPanel({ lead, settings, isAdmin, terminal }: Props) 
                         {formatMinorUnits(p.amountCents)}
                       </TableCell>
                       <TableCell>{paymentVerificationLabel(p.verificationStatus)}</TableCell>
+                      <TableCell className="max-w-[10rem] truncate font-mono text-xs text-muted-foreground">
+                        {p.verificationStatus === "VERIFIED" && p.externalReference
+                          ? p.externalReference
+                          : "—"}
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(p.markedAt).toLocaleString()}
                       </TableCell>

@@ -3,7 +3,12 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
 import { createLeadSchema } from "../validation/schemas";
-import { useCreateLeadMutation, useSessionQuery, useUsersQuery } from "../hooks/useSalesQueries";
+import {
+  useCreateLeadMutation,
+  useSessionQuery,
+  useUsersQuery,
+  useWebsiteTemplatesQuery
+} from "../hooks/useSalesQueries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +29,8 @@ type FormValues = {
   clientEmail: string;
   clientPhone: string;
   notes: string;
+  agreedTotalRupees: string;
+  websiteTemplateId: string;
   advanceRupees: string;
   finalQuoteRupees: string;
   assignedToUserId: string;
@@ -40,6 +47,8 @@ export function LeadCreatePage() {
     refetch: refetchUsers
   } = useUsersQuery(1, 100, isAdmin);
   const create = useCreateLeadMutation();
+  const tplQr = useWebsiteTemplatesQuery(true);
+  const templates = tplQr.data?.items ?? [];
 
   const reps =
     usersData?.items.filter((u) => u.role === "SALES_REP" && u.isActive) ?? [];
@@ -50,11 +59,14 @@ export function LeadCreatePage() {
       clientEmail: "",
       clientPhone: "",
       notes: "",
+      agreedTotalRupees: "",
+      websiteTemplateId: "",
       advanceRupees: "",
       finalQuoteRupees: "",
       assignedToUserId: ""
     }
   });
+  const agreedFilled = form.watch("agreedTotalRupees").trim() !== "";
 
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
@@ -67,7 +79,7 @@ export function LeadCreatePage() {
   }, [create.isPending, form.formState.isDirty]);
 
   return (
-    <div className="mx-auto max-w-lg space-y-4">
+    <div className="mx-auto max-w-3xl space-y-4">
       <Button variant="ghost" className="min-h-11 -ml-2" asChild>
         <Link to="/portal/leads">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -83,8 +95,13 @@ export function LeadCreatePage() {
             className="space-y-4"
             onSubmit={form.handleSubmit((raw) => {
               form.clearErrors();
+              const agreedTotalCents = parseRupeeInputToCents(raw.agreedTotalRupees);
               const advanceAmountCents = parseRupeeInputToCents(raw.advanceRupees);
               const finalQuoteCents = parseRupeeInputToCents(raw.finalQuoteRupees);
+              if (raw.agreedTotalRupees.trim() && agreedTotalCents === null) {
+                form.setError("agreedTotalRupees", { message: "Invalid amount" });
+                return;
+              }
               if (raw.advanceRupees.trim() && advanceAmountCents === null) {
                 form.setError("advanceRupees", { message: "Invalid amount" });
                 return;
@@ -99,8 +116,16 @@ export function LeadCreatePage() {
                 clientEmail: raw.clientEmail.trim() === "" ? undefined : raw.clientEmail,
                 clientPhone: raw.clientPhone.trim() === "" ? null : raw.clientPhone,
                 notes: raw.notes.trim() === "" ? null : raw.notes,
-                advanceAmountCents: advanceAmountCents ?? null,
-                finalQuoteCents: finalQuoteCents ?? null,
+                agreedTotalCents:
+                  raw.agreedTotalRupees.trim() === "" ? undefined : (agreedTotalCents ?? undefined),
+                advanceAmountCents:
+                  raw.agreedTotalRupees.trim() !== "" ? undefined : (advanceAmountCents ?? null),
+                finalQuoteCents:
+                  raw.agreedTotalRupees.trim() !== "" ? undefined : (finalQuoteCents ?? null),
+                websiteTemplateId:
+                  raw.websiteTemplateId === "" || raw.websiteTemplateId === "__none__"
+                    ? null
+                    : raw.websiteTemplateId,
                 assignedToUserId:
                   isAdmin && raw.assignedToUserId ? raw.assignedToUserId : undefined
               });
@@ -121,10 +146,17 @@ export function LeadCreatePage() {
                 clientName: parsed.data.clientName,
                 clientEmail: parsed.data.clientEmail ?? null,
                 clientPhone: parsed.data.clientPhone,
-                notes: parsed.data.notes,
-                advanceAmountCents: parsed.data.advanceAmountCents,
-                finalQuoteCents: parsed.data.finalQuoteCents
+                notes: parsed.data.notes
               };
+              if (parsed.data.agreedTotalCents != null) {
+                body.agreedTotalCents = parsed.data.agreedTotalCents;
+              } else {
+                body.advanceAmountCents = parsed.data.advanceAmountCents;
+                body.finalQuoteCents = parsed.data.finalQuoteCents;
+              }
+              if (parsed.data.websiteTemplateId != null) {
+                body.websiteTemplateId = parsed.data.websiteTemplateId;
+              }
               if (isAdmin) body.assignedToUserId = parsed.data.assignedToUserId;
               create.mutate(body, {
                 onSuccess: (res) => navigate(`/portal/leads/${res.lead.id}`, { replace: true })
@@ -196,10 +228,49 @@ export function LeadCreatePage() {
               <Label htmlFor="cp">Client phone</Label>
               <Input id="cp" type="tel" autoComplete="tel" className="min-h-11" {...form.register("clientPhone")} />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="agreed">Agreed project total (₹)</Label>
+              <Input id="agreed" inputMode="decimal" className="min-h-11" {...form.register("agreedTotalRupees")} />
+              {form.formState.errors.agreedTotalRupees && (
+                <p className="text-sm text-destructive">{form.formState.errors.agreedTotalRupees.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Optional. When set, advance and final due are derived as a 50/50 split.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tpl-create">Website template</Label>
+              {tplQr.isError && (
+                <QueryErrorAlert message="Could not load templates." onRetry={() => void tplQr.refetch()} />
+              )}
+              <Select
+                value={form.watch("websiteTemplateId") || "__none__"}
+                onValueChange={(v) => form.setValue("websiteTemplateId", v === "__none__" ? "" : v)}
+                disabled={tplQr.isLoading || tplQr.isError}
+              >
+                <SelectTrigger id="tpl-create" className="min-h-11">
+                  <SelectValue placeholder={tplQr.isLoading ? "Loading…" : "Optional"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Not set</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="adv">Advance (₹)</Label>
-                <Input id="adv" inputMode="decimal" className="min-h-11" {...form.register("advanceRupees")} />
+                <Input
+                  id="adv"
+                  inputMode="decimal"
+                  className="min-h-11"
+                  disabled={agreedFilled}
+                  {...form.register("advanceRupees")}
+                />
                 {form.formState.errors.advanceRupees && (
                   <p className="text-sm text-destructive">
                     {form.formState.errors.advanceRupees.message}
@@ -208,7 +279,13 @@ export function LeadCreatePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="fq">Final quote (₹)</Label>
-                <Input id="fq" inputMode="decimal" className="min-h-11" {...form.register("finalQuoteRupees")} />
+                <Input
+                  id="fq"
+                  inputMode="decimal"
+                  className="min-h-11"
+                  disabled={agreedFilled}
+                  {...form.register("finalQuoteRupees")}
+                />
                 {form.formState.errors.finalQuoteRupees && (
                   <p className="text-sm text-destructive">
                     {form.formState.errors.finalQuoteRupees.message}
