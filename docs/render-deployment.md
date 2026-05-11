@@ -300,3 +300,43 @@ After each deploy or env change, verify:
 3. **Login:** Open the SPA → Sales portal → sign in with a known user. Expect **200** on `POST .../api/auth/login` and redirect into the app (or to change-password if `mustChangePassword` is set).
 4. **Create sales rep (admin):** As admin, **Users** → **Add user** → role **Sales rep**, leave password empty → **Create**. A dialog must show the **temporary password**; the new user must have **must change password** on first login. Creating the same email again must return **409** with a clear error (duplicate email).
 5. **Cross-origin cookies:** If the static site origin and API origin are different **sites** (e.g. custom domain vs `*.onrender.com`), set **`COOKIE_SAMESITE=none`** on the backend and confirm the session cookie is sent on subsequent API calls (browser DevTools → Network → request headers).
+
+---
+
+## 9. Production drift recovery protocol
+
+Use this when deploys say “no pending migrations” but runtime hits Prisma schema errors (`P2011`, `P2022`, enum/type mismatches, missing columns).
+
+1. **Freeze writes** (short maintenance window) and take a DB snapshot.
+2. **Deploy latest backend migrations** from repo (including drift-heal migrations).
+3. **Run schema preflight** against production DB:
+
+```bash
+npm run db:preflight:schema --workspace backend
+```
+
+4. **Verify core APIs before reopening traffic**:
+   - `GET /api/health?deep=1`
+   - `POST /api/auth/login`
+   - `GET /api/leads?page=1&pageSize=20`
+   - `GET /api/users?page=1&pageSize=20`
+   - `GET /api/projects?page=1&pageSize=20`
+   - `GET /api/commissions?page=1&pageSize=20`
+5. **If any check fails**, keep maintenance mode and inspect backend logs for the exact Prisma constraint/type error, then add a targeted idempotent migration.
+
+### Rollback checklist
+
+1. Revert backend app code to the last known-good commit.
+2. Keep forward-compatible drift-heal migrations (do not drop columns/types in emergency rollback).
+3. Re-run:
+
+```bash
+npm run db:migrate:deploy --workspace backend
+npm run db:preflight:schema --workspace backend
+```
+
+4. Reopen traffic only after auth + leads + users endpoints pass.
+
+### CI guardrail
+
+Repository now includes [`e:/Websites/marketing-shyara-co-in/.github/workflows/schema-drift-guard.yml`](e:/Websites/marketing-shyara-co-in/.github/workflows/schema-drift-guard.yml), which runs Prisma migration/schema drift checks on PRs and pushes.
