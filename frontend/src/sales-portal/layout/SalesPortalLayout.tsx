@@ -36,7 +36,7 @@ type NavItem = {
   label: string;
   icon: LucideIcon;
   end?: boolean;
-  /** Approvals row shows pending count badge when &gt; 0 */
+  /** Approvals row shows pending count badge when count is positive */
   approvalsBadge?: boolean;
 };
 
