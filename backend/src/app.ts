@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import session from "@fastify/session";
 import Fastify from "fastify";
+import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import type { AppConfig } from "./config.js";
 import { httpErrorToBody, isHttpError, type HttpError } from "./errors/httpError.js";
@@ -82,6 +83,19 @@ export async function buildApp(options: BuildAppOptions) {
           code: "VALIDATION_ERROR",
           message: "Invalid request",
           details: error.flatten()
+        }
+      });
+    }
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError ||
+      error instanceof Prisma.PrismaClientUnknownRequestError ||
+      error instanceof Prisma.PrismaClientInitializationError
+    ) {
+      request.log.error(error);
+      return reply.status(503).send({
+        error: {
+          code: "DATABASE_ERROR",
+          message: "Database temporarily unavailable."
         }
       });
     }

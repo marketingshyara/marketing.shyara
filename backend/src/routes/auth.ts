@@ -28,7 +28,13 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
           throw new HttpError(401, "INVALID_CREDENTIALS", "Invalid email or password.");
         }
 
-        const valid = await bcrypt.compare(body.password, user.passwordHash);
+        let valid: boolean;
+        try {
+          valid = await bcrypt.compare(body.password, user.passwordHash);
+        } catch (err) {
+          request.log.error({ err }, "bcrypt.compare failed (invalid stored hash?)");
+          throw new HttpError(401, "INVALID_CREDENTIALS", "Invalid email or password.");
+        }
         if (!valid) {
           throw new HttpError(401, "INVALID_CREDENTIALS", "Invalid email or password.");
         }
@@ -110,7 +116,13 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     const body = changePasswordBodySchema.parse(request.body);
     const user = request.currentUser!;
 
-    const valid = await bcrypt.compare(body.currentPassword, user.passwordHash);
+    let valid: boolean;
+    try {
+      valid = await bcrypt.compare(body.currentPassword, user.passwordHash);
+    } catch (err) {
+      request.log.error({ err }, "bcrypt.compare failed on change-password");
+      throw new HttpError(400, "INVALID_PASSWORD", "Current password is incorrect.");
+    }
     if (!valid) {
       throw new HttpError(400, "INVALID_PASSWORD", "Current password is incorrect.");
     }

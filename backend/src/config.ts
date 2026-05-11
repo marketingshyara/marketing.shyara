@@ -13,7 +13,7 @@ function readOptionalEnv(name: string, fallback: string): string {
 }
 
 /** Strip one pair of surrounding quotes often pasted into hosting env UIs. */
-function stripOuterQuotes(value: string): string {
+export function stripOuterQuotes(value: string): string {
   const t = value.trim();
   if (t.length >= 2 && ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'")))) {
     return t.slice(1, -1);

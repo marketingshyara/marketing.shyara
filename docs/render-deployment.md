@@ -150,6 +150,7 @@ If both are subdomains of the **same** registrable domain (e.g. `app.example.com
 | `BOOTSTRAP_ADMIN_EMAIL` | One-time first admin (optional) |
 | `BOOTSTRAP_ADMIN_PASSWORD` | One-time first admin (optional) |
 | `BOOTSTRAP_ADMIN_DISPLAY_NAME` | One-time first admin (optional) |
+| `BOOTSTRAP_ADMIN_ON_START` | Set to `true` so the web process **upserts** the bootstrap admin on every deploy/start (same as `seed:bootstrap`). Requires `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD`. Handy on Render so you do not need a one-off Shell seed; rotate or clear the password in env after first login if your policy requires. |
 
 #### Do not set unless you know why
 
@@ -182,6 +183,13 @@ GET https://<your-backend-host>/api/health
 GET https://<your-backend-host>/api/health?deep=1
 → {"ok":true,"deep":true,"database":"ok"}   (checks DB)
 ```
+
+#### Login returns 500 (or generic INTERNAL)
+
+1. Check **backend logs** for the stack trace.
+2. Call **`GET /api/health?deep=1`**. If `database` is not `ok`, fix `DATABASE_URL` (paste the full **Internal Database URL** from Render Postgres, including any `?sslmode=...` query string).
+3. If deep health is **ok** but login still fails: the `User` row may have a **non-bcrypt `passwordHash`** (or corrupt value). The API treats bcrypt failures as invalid credentials (**401**); deploy the current backend if you still see **500** from older code.
+4. Ensure an admin user exists: run **`npm run backend:seed`** once (Shell or local with prod `DATABASE_URL`), **or** set **`BOOTSTRAP_ADMIN_ON_START=true`** with `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` so the next deploy recreates a valid hash.
 
 ---
 
@@ -233,7 +241,7 @@ Point your marketing domain to this static site; then add **`https://that-exact-
 
 ## 4. Cross-service checklist (must match)
 
-1. **Backend `ALLOWED_ORIGINS`** includes every HTTPS origin where the SPA is served (including `www` and non-`www` if both used).
+1. **Backend `ALLOWED_ORIGINS`** includes every HTTPS origin where the SPA is served (including `www` and non-`www` if both used). If users open the site from a **Render static** URL (e.g. `https://your-service.onrender.com`), add that **exact** origin too.
 2. **`VITE_API_BASE_URL`** matches the backend URL you want browsers to call.
 3. If login fails with CORS: fix `ALLOWED_ORIGINS`.
 4. If login fails with no cookie / 401 on next request: try **`COOKIE_SAMESITE=none`** when frontend and API are different sites (see above).
@@ -243,7 +251,9 @@ Point your marketing domain to this static site; then add **`https://that-exact-
 
 ## 5. First-time bootstrap admin (optional)
 
-With env set on the backend, run once locally or via Render **Shell** (if available on your plan):
+**Option A — on startup (Render-friendly):** set `BOOTSTRAP_ADMIN_ON_START=true` plus `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD`, and optionally `BOOTSTRAP_ADMIN_DISPLAY_NAME`. Redeploy; the server upserts that admin before listening. Remove the flag or rotate secrets after first login if policy requires.
+
+**Option B — one-off script:** with env set on the backend, run once locally or via Render **Shell** (if available on your plan):
 
 ```bash
 npm run backend:seed

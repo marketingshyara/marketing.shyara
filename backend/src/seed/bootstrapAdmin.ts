@@ -1,6 +1,6 @@
 import "dotenv/config";
-import bcrypt from "bcryptjs";
-import { UserRole } from "@prisma/client";
+import { stripOuterQuotes } from "../config.js";
+import { ensureBootstrapAdmin } from "../lib/ensureBootstrapAdmin.js";
 import { prisma } from "../lib/prisma.js";
 
 async function main(): Promise<void> {
@@ -12,28 +12,16 @@ async function main(): Promise<void> {
   }
 
   const bcryptRounds = Number(process.env.BCRYPT_ROUNDS ?? "10");
-  const passwordHash = await bcrypt.hash(password, bcryptRounds);
-  const displayName = process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME ?? "Admin";
+  const displayNameRaw = process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME;
 
-  await prisma.user.upsert({
-    where: { email: email.toLowerCase().trim() },
-    create: {
-      email: email.toLowerCase().trim(),
-      passwordHash,
-      displayName,
-      role: UserRole.ADMIN,
-      isActive: true,
-      mustChangePassword: false
-    },
-    update: {
-      passwordHash,
-      displayName,
-      role: UserRole.ADMIN,
-      isActive: true
-    }
+  await ensureBootstrapAdmin(prisma, {
+    email: stripOuterQuotes(email),
+    password: stripOuterQuotes(password),
+    displayName: displayNameRaw ? stripOuterQuotes(displayNameRaw) : undefined,
+    bcryptRounds
   });
 
-  console.log("Bootstrap admin ready:", email.toLowerCase().trim());
+  console.log("Bootstrap admin ready:", stripOuterQuotes(email).toLowerCase().trim());
 }
 
 main()
