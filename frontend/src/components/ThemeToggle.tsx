@@ -1,40 +1,43 @@
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { Switch } from "@/components/ui/switch";
 
+/**
+ * Light / dark toggle only (no system / monitor cycle).
+ * Uses `resolvedTheme` so the control matches the applied appearance.
+ */
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  const cycle = () => {
-    if (theme === "light") setTheme("dark");
-    else if (theme === "dark") setTheme("system");
-    else setTheme("light");
-  };
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const label =
-    theme === "system"
-      ? `Theme: system (${resolvedTheme ?? "…"})`
-      : `Theme: ${theme ?? resolvedTheme ?? "light"}`;
-
-  const icon =
-    theme === "system" ? (
-      <Monitor className="h-5 w-5" />
-    ) : resolvedTheme === "dark" ? (
-      <Moon className="h-5 w-5" />
-    ) : (
-      <Sun className="h-5 w-5" />
+  if (!mounted) {
+    return (
+      <div
+        className="flex h-9 min-w-[5.75rem] items-center justify-end gap-2"
+        aria-hidden
+      >
+        <span className="sr-only">Theme</span>
+      </div>
     );
+  }
+
+  const isDark = resolvedTheme === "dark";
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={cycle}
-      className="rounded-full min-h-11 min-w-11 md:min-h-10 md:min-w-10"
-      title={label}
-    >
-      {icon}
-      <span className="sr-only">{label}</span>
-    </Button>
+    <div className="flex items-center gap-2">
+      <Sun className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+      <Switch
+        id="theme-toggle"
+        checked={isDark}
+        onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+        aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      />
+      <Moon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+    </div>
   );
 }

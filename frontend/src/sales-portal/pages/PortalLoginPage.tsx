@@ -9,20 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { ApiError } from "../api/client";
 import { getSafePortalReturnPath } from "../lib/sanitizeRedirect";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
-
-const PORTAL_LOCALE_STORAGE_KEY = "shyara_sales_portal_locale";
 
 function formatLockoutWait(seconds: number): string {
   if (seconds >= 120) {
@@ -57,23 +48,8 @@ export function PortalLoginPage() {
   const [step, setStep] = useState<"email" | "password">("email");
   const [showPassword, setShowPassword] = useState(false);
   const [highlightError, setHighlightError] = useState(false);
-  const [locale, setLocale] = useState(() => {
-    try {
-      return localStorage.getItem(PORTAL_LOCALE_STORAGE_KEY) ?? "en";
-    } catch {
-      return "en";
-    }
-  });
 
   const statusPageUrl = (import.meta.env.VITE_STATUS_PAGE_URL as string | undefined)?.trim();
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(PORTAL_LOCALE_STORAGE_KEY, locale);
-    } catch {
-      /* ignore quota / private mode */
-    }
-  }, [locale]);
 
   useEffect(() => {
     if (searchParams.get("reason") !== "session_expired" || sessionToastShown.current) return;
@@ -146,14 +122,6 @@ export function PortalLoginPage() {
           <div className="mr-auto flex items-center gap-2 md:hidden">
             <span className="text-sm font-semibold">Sales portal</span>
           </div>
-          <Select value={locale} onValueChange={setLocale}>
-            <SelectTrigger className="h-9 w-[130px]" aria-label="Display language">
-              <SelectValue placeholder="Language" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-            </SelectContent>
-          </Select>
           <ThemeToggle />
         </header>
 
