@@ -191,6 +191,11 @@ GET https://<your-backend-host>/api/health?deep=1
 3. If deep health is **ok** but login still fails: the `User` row may have a **non-bcrypt `passwordHash`** (or corrupt value). The API treats bcrypt failures as invalid credentials (**401**); deploy the current backend if you still see **500** from older code.
 4. Ensure an admin user exists: run **`npm run backend:seed`** once (Shell or local with prod `DATABASE_URL`), **or** set **`BOOTSTRAP_ADMIN_ON_START=true`** with `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` so the next deploy recreates a valid hash.
 
+#### Deploy crashes: `P2022` / column `displayName` does not exist
+
+`_prisma_migrations` can show “up to date” while the real tables are missing columns (e.g. old `db push` or manual DB + `migrate resolve`). **Redeploy after pulling** a migration that adds the missing column, or run the SQL in Render **Postgres → Shell** / `psql` if you need a one-off fix:  
+`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "displayName" TEXT;`
+
 ---
 
 ## 3. Frontend Static Site (new service on Render)
