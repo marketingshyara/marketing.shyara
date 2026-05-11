@@ -89,6 +89,12 @@ export interface Lead {
   project?: Project | null;
 }
 
+/** Pending payment row from GET /api/payments/pending (admin queue). */
+export interface LeadPaymentWithRelations extends LeadPayment {
+  lead: Pick<Lead, "id" | "clientName" | "assignedToUserId">;
+  markedBy: Pick<SessionUser, "id" | "displayName" | "email">;
+}
+
 export interface Project {
   id: string;
   leadId: string;

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
+import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { LeadHeader } from "../components/lead-detail/LeadHeader";
 import { LeadEditForm } from "../components/lead-detail/LeadEditForm";
 import { LeadStatusPanel } from "../components/lead-detail/LeadStatusPanel";
@@ -24,15 +25,14 @@ import { ArrowLeft } from "lucide-react";
 export function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: session } = useSessionQuery();
-  const {
-    data: settingsRes,
-    isLoading: settingsLoading,
-    isError: settingsError,
-    refetch: refetchSettings
-  } = usePortalSettingsQuery();
-  const { data, isLoading, isError, refetch: refetchLead } = useLeadQuery(id);
+  const leadQr = useLeadQuery(id);
+  const settingsQr = usePortalSettingsQuery();
 
-  if (isLoading || settingsLoading) {
+  const loading = leadQr.isLoading || settingsQr.isLoading;
+  const fetching = leadQr.isFetching || settingsQr.isFetching;
+  const dataUpdatedAt = Math.max(leadQr.dataUpdatedAt, settingsQr.dataUpdatedAt);
+
+  if (loading) {
     return (
       <div className="mx-auto max-w-4xl space-y-4">
         <Skeleton className="h-10 w-40" />
@@ -41,16 +41,18 @@ export function LeadDetailPage() {
     );
   }
 
-  if (settingsError || !settingsRes?.settings) {
+  if (settingsQr.isError || !settingsQr.data?.settings) {
     return (
       <div className="mx-auto max-w-4xl space-y-4">
-        {settingsError ? (
+        {settingsQr.isError ? (
           <QueryErrorAlert
             message="Could not load portal settings."
-            onRetry={() => void refetchSettings()}
+            onRetry={() => void settingsQr.refetch()}
           />
         ) : (
-          <p className="text-destructive" role="alert">Could not load portal settings.</p>
+          <p className="text-destructive" role="alert">
+            Could not load portal settings.
+          </p>
         )}
         <Button asChild variant="link" className="mt-2">
           <Link to="/portal/leads">Back to leads</Link>
@@ -59,12 +61,12 @@ export function LeadDetailPage() {
     );
   }
 
-  if (isError) {
+  if (leadQr.isError) {
     return (
       <div className="mx-auto max-w-4xl space-y-4">
         <QueryErrorAlert
           message="Could not load this lead."
-          onRetry={() => void refetchLead()}
+          onRetry={() => void leadQr.refetch()}
         />
         <Button asChild variant="link">
           <Link to="/portal/leads">Back to leads</Link>
@@ -73,14 +75,16 @@ export function LeadDetailPage() {
     );
   }
 
-  const lead = data?.lead;
-  const settings = settingsRes.settings;
+  const lead = leadQr.data?.lead;
+  const settings = settingsQr.data.settings;
   const role = session?.user?.role;
 
   if (!lead || !role) {
     return (
       <div className="mx-auto max-w-4xl">
-        <p className="text-destructive" role="alert">Lead not found or no access.</p>
+        <p className="text-destructive" role="alert">
+          Lead not found or no access.
+        </p>
         <Button asChild variant="link" className="mt-2">
           <Link to="/portal/leads">Back to leads</Link>
         </Button>
@@ -93,12 +97,22 @@ export function LeadDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <Button variant="ghost" className="min-h-11 -ml-2" asChild>
-        <Link to="/portal/leads">
-          <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
-          Back to Leads
-        </Link>
-      </Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <Button variant="ghost" className="min-h-11 w-fit -ml-2" asChild>
+          <Link to="/portal/leads">
+            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
+            Back to Leads
+          </Link>
+        </Button>
+        <DataStaleToolbar
+          dataUpdatedAt={dataUpdatedAt}
+          onRefresh={() => {
+            void leadQr.refetch();
+            void settingsQr.refetch();
+          }}
+          isFetching={fetching}
+        />
+      </div>
       <LeadHeader status={lead.status} terminal={terminal} />
       <LeadEditForm lead={lead} isAdmin={isAdmin} terminal={terminal} />
       <LeadStatusPanel lead={lead} settings={settings} role={role} terminal={terminal} />

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -85,7 +84,6 @@ export function LeadVerifyDialog({ leadId, paymentId }: Props) {
                   },
                   {
                     onSuccess: () => {
-                      toast.success("Payment verified.");
                       setVerifyOpen(false);
                     }
                   }
@@ -141,7 +139,6 @@ export function LeadVerifyDialog({ leadId, paymentId }: Props) {
                   },
                   {
                     onSuccess: () => {
-                      toast.success("Payment rejected.");
                       setRejectOpen(false);
                     }
                   }

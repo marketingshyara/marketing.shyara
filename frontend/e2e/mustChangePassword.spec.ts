@@ -11,7 +11,6 @@
  * credentials from env vars so secrets never live in this file.
  */
 
-// @ts-nocheck — file is only loaded when Playwright is installed; CI installs it then runs.
 import { expect, test } from "@playwright/test";
 
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@test.local";

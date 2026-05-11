@@ -1,18 +1,33 @@
-import { useExportMutation } from "../hooks/useSalesQueries";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useExportMutation, invalidateQueryPrefixes } from "../hooks/useSalesQueries";
+import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileSpreadsheet } from "lucide-react";
 
 export function ExportsPage() {
   const exp = useExportMutation();
+  const qc = useQueryClient();
+  const [listsBustedAt, setListsBustedAt] = useState(() => Date.now());
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold md:text-2xl">Exports</h1>
-        <p className="text-sm text-muted-foreground">
-          Download spreadsheet reports. Row limits follow your portal settings.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold md:text-2xl">Exports</h1>
+          <p className="text-sm text-muted-foreground">
+            Download spreadsheet reports. Row limits follow your portal settings.
+          </p>
+        </div>
+        <DataStaleToolbar
+          dataUpdatedAt={listsBustedAt}
+          onRefresh={() => {
+            invalidateQueryPrefixes(qc, ["leads", "commissions", "users", "activity-logs"]);
+            setListsBustedAt(Date.now());
+          }}
+          isFetching={false}
+        />
       </div>
       <Card>
         <CardHeader>

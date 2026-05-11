@@ -10,6 +10,7 @@ import {
   useSessionQuery
 } from "../hooks/useSalesQueries";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
+import { DataStaleToolbar } from "../components/DataStaleToolbar";
 
 const createProjectFormSchema = z.object({
   leadId: z.string().min(1),
@@ -44,7 +45,7 @@ export function ProjectsPage() {
   const isAdmin = session?.user?.role === "ADMIN";
   const [page, setPage] = useState(1);
   const pageSize = 20;
-  const { data, isLoading, isError, refetch } = useProjectsQuery(page, pageSize);
+  const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useProjectsQuery(page, pageSize);
   const {
     data: leadsData,
     isError: leadsError,
@@ -73,13 +74,21 @@ export function ProjectsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold md:text-2xl">Projects</h1>
           <p className="text-sm text-muted-foreground">Per-lead project records.</p>
         </div>
-        {isAdmin && (
-          <Dialog>
+        <div className="flex flex-col gap-2 sm:items-end">
+          {!isLoading && (
+            <DataStaleToolbar
+              dataUpdatedAt={dataUpdatedAt}
+              onRefresh={() => void refetch()}
+              isFetching={isFetching}
+            />
+          )}
+          {isAdmin && (
+            <Dialog>
             <DialogTrigger asChild>
               <Button className="min-h-11 w-full sm:w-auto">New project</Button>
             </DialogTrigger>
@@ -154,7 +163,8 @@ export function ProjectsPage() {
               </form>
             </DialogContent>
           </Dialog>
-        )}
+          )}
+        </div>
       </div>
 
       {isError && (

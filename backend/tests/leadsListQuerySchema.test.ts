@@ -43,6 +43,12 @@ describe("leadsListQuerySchema", () => {
     expect(parsed.search).toBe("ab");
   });
 
+  it("rejects invalid assignedToUserId", () => {
+    expect(() =>
+      leadsListQuerySchema.parse({ page: 1, pageSize: 20, assignedToUserId: "not-a-cuid" })
+    ).toThrow();
+  });
+
   it("treats empty / whitespace search as undefined", () => {
     expect(leadsListQuerySchema.parse({ page: 1, pageSize: 20, search: "" }).search).toBeUndefined();
     expect(leadsListQuerySchema.parse({ page: 1, pageSize: 20, search: "   " }).search).toBeUndefined();

@@ -17,6 +17,7 @@ import { CommissionsPage } from "./pages/CommissionsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ActivityLogsPage } from "./pages/ActivityLogsPage";
+import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ExportsPage } from "./pages/ExportsPage";
 import { Button } from "@/components/ui/button";
@@ -80,6 +81,7 @@ export function PortalRoutes() {
             <Route path="not-found" element={<NotFoundPage />} />
             <Route element={<RequireAdmin />}>
               <Route path="users" element={<UsersPage />} />
+              <Route path="approvals" element={<ApprovalsPage />} />
               <Route path="activity" element={<ActivityLogsPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="exports" element={<ExportsPage />} />

@@ -211,12 +211,23 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       }
 
       const passwordHash = await bcrypt.hash(body.temporaryPassword, app.appConfig.bcryptRounds);
-      const updated = await app.prisma.user.update({
-        where: { id },
+      const claim = await app.prisma.user.updateMany({
+        where: { id, updatedAt: existing.updatedAt },
         data: {
           passwordHash,
           mustChangePassword: true
-        },
+        }
+      });
+      if (claim.count === 0) {
+        throw new HttpError(
+          409,
+          "CONCURRENT_MODIFICATION",
+          "User was modified concurrently; refresh and retry."
+        );
+      }
+
+      const updated = await app.prisma.user.findUniqueOrThrow({
+        where: { id },
         select: {
           id: true,
           email: true,

@@ -8,5 +8,7 @@ export const qk = {
   commissions: (params: Record<string, unknown>) => ["commissions", params] as const,
   projects: (page: number, pageSize: number) => ["projects", page, pageSize] as const,
   project: (id: string) => ["project", id] as const,
-  activityLogs: (params: Record<string, unknown>) => ["activity-logs", params] as const
+  activityLogs: (params: Record<string, unknown>) => ["activity-logs", params] as const,
+  pendingPayments: (params: Record<string, unknown>) => ["pending-payments", params] as const,
+  pendingPaymentsCount: ["pending-payments-count"] as const
 };

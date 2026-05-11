@@ -41,29 +41,58 @@ export async function getPortalSettings(
   return value;
 }
 
+export type UpdatePortalSettingsResult = {
+  settings: PortalSettingsValues;
+  /** Parsed values row before this patch (same tx read for audit consistency). */
+  before: PortalSettingsValues;
+};
+
 export async function updatePortalSettingsValues(
   prisma: PrismaClient,
   patch: unknown
-): Promise<PortalSettingsValues> {
+): Promise<UpdatePortalSettingsResult> {
   const parsedPatch = patchPortalSettingsSchema.parse(pickPortalSettingsPatchInput(patch));
-  const row = await prisma.portalSettings.findUnique({
-    where: { id: "default" },
-    select: { values: true }
-  });
-  const current = parsePortalSettings(row?.values);
-  const merged = portalSettingsSchema.parse({
-    ...current,
-    ...parsedPatch
-  });
 
-  await prisma.portalSettings.upsert({
-    where: { id: "default" },
-    create: { id: "default", values: merged as object },
-    update: { values: merged as object }
-  });
+  return prisma.$transaction(async (tx) => {
+    const row = await tx.portalSettings.findUnique({
+      where: { id: "default" },
+      select: { values: true, updatedAt: true }
+    });
 
-  invalidatePortalSettingsCache();
-  return merged;
+    if (!row) {
+      const before = parsePortalSettings(undefined);
+      const merged = portalSettingsSchema.parse({
+        ...before,
+        ...parsedPatch
+      });
+      await tx.portalSettings.create({
+        data: { id: "default", values: merged as object }
+      });
+      invalidatePortalSettingsCache();
+      return { settings: merged, before };
+    }
+
+    const before = parsePortalSettings(row.values);
+    const merged = portalSettingsSchema.parse({
+      ...before,
+      ...parsedPatch
+    });
+
+    const claim = await tx.portalSettings.updateMany({
+      where: { id: "default", updatedAt: row.updatedAt },
+      data: { values: merged as object }
+    });
+    if (claim.count === 0) {
+      throw new HttpError(
+        409,
+        "CONCURRENT_MODIFICATION",
+        "Settings were modified concurrently; refresh and retry."
+      );
+    }
+
+    invalidatePortalSettingsCache();
+    return { settings: merged, before };
+  });
 }
 
 export function toPublicSettings(values: PortalSettingsValues): PortalSettingsValues {

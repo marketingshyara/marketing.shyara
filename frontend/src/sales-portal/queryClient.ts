@@ -62,7 +62,10 @@ export function createPortalQueryClient() {
     }),
     defaultOptions: {
       queries: {
-        staleTime: 30_000,
+        staleTime: 0,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: "always",
+        refetchOnReconnect: "always",
         retry: (failureCount, error) => {
           if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
             return false;

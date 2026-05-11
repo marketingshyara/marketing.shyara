@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
+import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { leadStatusLabel } from "../lib/copy";
 
 const LEAD_STATUSES: LeadStatus[] = [
@@ -34,7 +35,7 @@ const LEAD_STATUSES: LeadStatus[] = [
 ];
 
 export function SettingsPage() {
-  const { data, isLoading, isError, refetch } = useAdminSettingsQuery(true);
+  const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useAdminSettingsQuery(true);
   const patch = usePatchSettingsMutation();
   const settings = data?.settings;
 
@@ -76,11 +77,18 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold md:text-2xl">Portal settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Configure lead flow, commissions, and admin safeguards for this portal.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold md:text-2xl">Portal settings</h1>
+          <p className="text-sm text-muted-foreground">
+            Configure lead flow, commissions, and admin safeguards for this portal.
+          </p>
+        </div>
+        <DataStaleToolbar
+          dataUpdatedAt={dataUpdatedAt}
+          onRefresh={() => void refetch()}
+          isFetching={isFetching}
+        />
       </div>
 
       <form

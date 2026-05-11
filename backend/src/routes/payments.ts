@@ -3,11 +3,13 @@ import {
   ActivityAction,
   LeadStatus,
   PaymentKind,
-  PaymentVerificationStatus
+  PaymentVerificationStatus,
+  Prisma
 } from "@prisma/client";
 import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
+import { clampPage } from "../lib/pagination.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
 import { commissionAmountCents } from "../services/leadFsm.js";
 import { logActivity } from "../services/activityLog.js";
@@ -16,9 +18,81 @@ import {
   getPortalSettings,
   getRequiredLeadStatusForVerify
 } from "../services/settings.js";
-import { verifyPaymentBodySchema } from "../validators/schemas.js";
+import { verifyPaymentBodySchema, pendingPaymentsQuerySchema } from "../validators/schemas.js";
 
 export async function registerPaymentRoutes(app: FastifyInstance): Promise<void> {
+  app.get(
+    "/api/payments/pending/count",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      requireAdmin(request);
+      const total = await app.prisma.leadPayment.count({
+        where: { verificationStatus: PaymentVerificationStatus.PENDING }
+      });
+      return reply.send({ total });
+    }
+  );
+
+  app.get(
+    "/api/payments/pending",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      requireAdmin(request);
+      const query = pendingPaymentsQuerySchema.parse(request.query);
+
+      const leadWhere: Prisma.LeadWhereInput = {
+        ...(query.assignedToUserId ? { assignedToUserId: query.assignedToUserId } : {}),
+        ...(query.search
+          ? {
+              clientName: { contains: query.search, mode: "insensitive" as const }
+            }
+          : {})
+      };
+
+      const where: Prisma.LeadPaymentWhereInput = {
+        verificationStatus: PaymentVerificationStatus.PENDING,
+        ...(query.kind ? { kind: query.kind } : {}),
+        ...(query.from || query.to
+          ? {
+              markedAt: {
+                ...(query.from ? { gte: query.from } : {}),
+                ...(query.to ? { lte: query.to } : {})
+              }
+            }
+          : {}),
+        ...(Object.keys(leadWhere).length > 0 ? { lead: leadWhere } : {})
+      };
+
+      const total = await app.prisma.leadPayment.count({ where });
+      const page = clampPage(query.page, query.pageSize, total);
+      const skip = (page - 1) * query.pageSize;
+      const items = await app.prisma.leadPayment.findMany({
+        where,
+        skip,
+        take: query.pageSize,
+        orderBy: { markedAt: "desc" },
+        include: {
+          lead: {
+            select: {
+              id: true,
+              clientName: true,
+              assignedToUserId: true
+            }
+          },
+          markedBy: {
+            select: {
+              id: true,
+              displayName: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      return reply.send({ items, total, page, pageSize: query.pageSize });
+    }
+  );
+
   app.post(
     "/api/payments/:paymentId/verify",
     { preHandler: [requireUser] },

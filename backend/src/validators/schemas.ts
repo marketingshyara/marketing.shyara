@@ -38,6 +38,8 @@ export const resetPasswordBodySchema = z.object({
 
 export const leadsListQuerySchema = paginationQuerySchema
   .extend({
+    /** Admin-only: filter pipeline by assigned sales rep. */
+    assignedToUserId: z.string().cuid().optional(),
     status: z.nativeEnum(LeadStatus).optional(),
     /**
      * Server-side minimum length defends the functional `lower(...)` indexes from degenerate
@@ -93,6 +95,21 @@ export const verifyPaymentBodySchema = z.object({
   decision: z.enum(["VERIFIED", "REJECTED"]),
   adminNote: z.string().max(2000).optional().nullable()
 });
+
+export const pendingPaymentsQuerySchema = paginationQuerySchema
+  .extend({
+    kind: z.nativeEnum(PaymentKind).optional(),
+    assignedToUserId: z.string().cuid().optional(),
+    search: z.preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+      z.string().min(2).max(200).optional()
+    ),
+    from: z.coerce.date().optional(),
+    to: z.coerce.date().optional()
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: "Query parameter 'from' must be on or before 'to'."
+  });
 
 export const commissionsListQuerySchema = paginationQuerySchema.extend({
   isPaid: z

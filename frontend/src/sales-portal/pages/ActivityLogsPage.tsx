@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActivityLogsQuery } from "../hooks/useSalesQueries";
 import { useDebounced } from "../hooks/useDebounced";
+import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +28,7 @@ export function ActivityLogsPage() {
   const debouncedEntityType = useDebounced(entityType, 300);
   const debouncedEntityId = useDebounced(entityId, 300);
 
-  const { data, isLoading, isError, refetch } = useActivityLogsQuery({
+  const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useActivityLogsQuery({
     page,
     pageSize,
     userId: debouncedUserId.trim() || undefined,
@@ -70,9 +71,18 @@ export function ActivityLogsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold md:text-2xl">Activity logs</h1>
-        <p className="text-sm text-muted-foreground">Audit trail for admin review.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold md:text-2xl">Activity logs</h1>
+          <p className="text-sm text-muted-foreground">Audit trail for admin review.</p>
+        </div>
+        {!isLoading && (
+          <DataStaleToolbar
+            dataUpdatedAt={dataUpdatedAt}
+            onRefresh={() => void refetch()}
+            isFetching={isFetching}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

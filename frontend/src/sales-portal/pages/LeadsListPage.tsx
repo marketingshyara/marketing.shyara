@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
-import { useLeadsQuery } from "../hooks/useSalesQueries";
+import { useLeadsQuery, useSessionQuery, useUsersQuery } from "../hooks/useSalesQueries";
 import type { LeadStatus } from "../types";
+import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -64,9 +65,14 @@ export function LeadsListPage() {
   const [searchInput, setSearchInput] = useState(searchParams.get("search") ?? "");
   const [fromInput, setFromInput] = useState("");
   const [toInput, setToInput] = useState("");
+  const [assigneeId, setAssigneeId] = useState(() => searchParams.get("rep") ?? "");
   const search = useDebounced(searchInput, 300);
   const searchTrimmed = search.trim();
   const searchTooShort = searchTrimmed.length > 0 && searchTrimmed.length < 2;
+
+  const { data: session } = useSessionQuery();
+  const isAdmin = session?.user?.role === "ADMIN";
+  const { data: usersData } = useUsersQuery(1, 200, isAdmin);
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
@@ -76,8 +82,10 @@ export function LeadsListPage() {
     else next.delete("status");
     if (searchTrimmed.length >= 2) next.set("search", searchTrimmed);
     else next.delete("search");
+    if (isAdmin && assigneeId) next.set("rep", assigneeId);
+    else next.delete("rep");
     setSearchParams(next, { replace: true });
-  }, [page, searchParams, searchTrimmed, setSearchParams, status]);
+  }, [assigneeId, isAdmin, page, searchParams, searchTrimmed, setSearchParams, status]);
 
   const fromD = parseDateStartLocal(fromInput);
   const toD = parseDateEndLocal(toInput);
@@ -91,13 +99,14 @@ export function LeadsListPage() {
     }
   }, [location.pathname, location.state, navigate]);
 
-  const { data, isLoading, isError, refetch } = useLeadsQuery({
+  const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useLeadsQuery({
     page,
     pageSize,
     status: status === "all" ? undefined : status,
     search: searchTooShort ? undefined : searchTrimmed || undefined,
     from: rangeInvalid ? undefined : fromD,
     to: rangeInvalid ? undefined : toD,
+    assignedToUserId: isAdmin && assigneeId ? assigneeId : undefined,
     enabled: !rangeInvalid && !searchTooShort
   });
 
@@ -109,19 +118,28 @@ export function LeadsListPage() {
     setPage((p) => Math.min(p, tp));
   }, [data, pageSize]);
 
+  const repChoices = usersData?.items.filter((u) => u.role === "SALES_REP" && u.isActive) ?? [];
+
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Leads</h1>
           <p className="text-sm text-muted-foreground">Search and manage pipeline leads.</p>
         </div>
-        <Button asChild className="min-h-11 shrink-0">
-          <Link to="/portal/leads/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New lead
-          </Link>
-        </Button>
+        <div className="flex flex-col items-stretch gap-2 sm:items-end">
+          <DataStaleToolbar
+            dataUpdatedAt={dataUpdatedAt}
+            onRefresh={() => void refetch()}
+            isFetching={isFetching}
+          />
+          <Button asChild className="min-h-11 shrink-0">
+            <Link to="/portal/leads/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New lead
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -160,6 +178,32 @@ export function LeadsListPage() {
             ))}
           </SelectContent>
         </Select>
+        {isAdmin && (
+          <div className="w-full space-y-2 sm:w-[220px]">
+            <Label htmlFor="lead-assignee" className="text-muted-foreground">
+              Assigned rep
+            </Label>
+            <Select
+              value={assigneeId || "__all__"}
+              onValueChange={(v) => {
+                setAssigneeId(v === "__all__" ? "" : v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger id="lead-assignee" className="min-h-11" aria-label="Filter by assigned rep">
+                <SelectValue placeholder="All reps" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All reps</SelectItem>
+                {repChoices.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.displayName ?? u.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">

@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   ClipboardList,
+  FileCheck2,
   FolderKanban,
   IndianRupee,
   LogOut,
@@ -12,9 +13,10 @@ import {
   Settings,
   Users
 } from "lucide-react";
-import { useSessionQuery, useLogoutMutation } from "../hooks/useSalesQueries";
+import { useSessionQuery, useLogoutMutation, usePendingPaymentsCountQuery } from "../hooks/useSalesQueries";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +45,8 @@ export function SalesPortalLayout() {
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
   const isAdmin = user?.role === "ADMIN";
+  const pendingCount = usePendingPaymentsCountQuery(isAdmin);
+  const pendingTotal = pendingCount.data?.total ?? 0;
 
   const handleLogout = () => {
     logout.mutate(undefined, {
@@ -72,6 +76,21 @@ export function SalesPortalLayout() {
       <NavLink to="/portal/users" className={navClass} onClick={() => setMoreOpen(false)}>
         <Users className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
         <span className="hidden md:inline">Users</span>
+      </NavLink>
+      <NavLink to="/portal/approvals" className={navClass} onClick={() => setMoreOpen(false)}>
+        <span className="relative inline-flex shrink-0">
+          <FileCheck2 className="h-5 w-5 md:h-4 md:w-4" aria-hidden />
+          {pendingTotal > 0 ? (
+            <Badge
+              variant="destructive"
+              className="absolute -right-2 -top-2 h-5 min-w-5 justify-center px-1 text-[10px] leading-none"
+              aria-label={`${pendingTotal} pending payment approvals`}
+            >
+              {pendingTotal > 99 ? "99+" : pendingTotal}
+            </Badge>
+          ) : null}
+        </span>
+        <span className="hidden md:inline">Approvals</span>
       </NavLink>
       <NavLink to="/portal/activity" className={navClass} onClick={() => setMoreOpen(false)}>
         <ScrollText className="h-5 w-5 shrink-0 md:h-4 md:w-4" />

@@ -132,15 +132,29 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
         throw new HttpError(404, "NOT_FOUND", "Project not found.");
       }
 
-      const project = await app.prisma.project.update({
-        where: { id },
-        data: {
-          ...(body.title !== undefined ? { title: body.title } : {}),
-          ...(body.metadata !== undefined
-            ? { metadata: (body.metadata ?? undefined) as Prisma.InputJsonValue | undefined }
-            : {})
-        }
+      const data: Prisma.ProjectUncheckedUpdateManyInput = {
+        ...(body.title !== undefined ? { title: body.title } : {}),
+        ...(body.metadata !== undefined
+          ? { metadata: (body.metadata ?? undefined) as Prisma.InputJsonValue | undefined }
+          : {})
+      };
+      if (Object.keys(data).length === 0) {
+        return reply.send({ project: existing });
+      }
+
+      const claim = await app.prisma.project.updateMany({
+        where: { id, updatedAt: existing.updatedAt },
+        data
       });
+      if (claim.count === 0) {
+        throw new HttpError(
+          409,
+          "CONCURRENT_MODIFICATION",
+          "Project was modified concurrently; refresh and retry."
+        );
+      }
+
+      const project = await app.prisma.project.findUniqueOrThrow({ where: { id } });
 
       await logActivity({
         prisma: app.prisma,

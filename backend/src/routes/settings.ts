@@ -33,8 +33,7 @@ export async function registerSettingsRoutes(app: FastifyInstance): Promise<void
     { preHandler: [requireUser] },
     async (request, reply) => {
       requireAdmin(request);
-      const before = await getPortalSettings(app.prisma);
-      const settings = await updatePortalSettingsValues(app.prisma, request.body);
+      const { settings, before } = await updatePortalSettingsValues(app.prisma, request.body);
 
       await logActivity({
         prisma: app.prisma,

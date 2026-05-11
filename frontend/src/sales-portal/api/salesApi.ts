@@ -3,6 +3,7 @@ import type {
   ActivityLog,
   Commission,
   Lead,
+  LeadPaymentWithRelations,
   Paginated,
   PortalSettingsValues,
   Project,
@@ -54,6 +55,7 @@ export const salesApi = {
     search?: string;
     from?: Date;
     to?: Date;
+    assignedToUserId?: string;
   }) => {
     const q = new URLSearchParams();
     if (params.page != null) q.set("page", String(params.page));
@@ -62,6 +64,7 @@ export const salesApi = {
     if (params.search) q.set("search", params.search);
     if (params.from) q.set("from", params.from.toISOString());
     if (params.to) q.set("to", params.to.toISOString());
+    if (params.assignedToUserId) q.set("assignedToUserId", params.assignedToUserId);
     const qs = q.toString();
     return apiJson<Paginated<Lead>>("GET", `/leads${qs ? `?${qs}` : ""}`);
   },
@@ -86,6 +89,32 @@ export const salesApi = {
     paymentId: string,
     body: { decision: "VERIFIED" | "REJECTED"; adminNote?: string | null }
   ) => apiJson<{ payment: unknown; lead: Lead }>("POST", `/payments/${paymentId}/verify`, body),
+
+  pendingPaymentsCount: () => apiJson<{ total: number }>("GET", "/payments/pending/count"),
+
+  pendingPayments: (params: {
+    page?: number;
+    pageSize?: number;
+    kind?: "ADVANCE" | "FINAL";
+    assignedToUserId?: string;
+    search?: string;
+    from?: Date;
+    to?: Date;
+  }) => {
+    const q = new URLSearchParams();
+    if (params.page != null) q.set("page", String(params.page));
+    if (params.pageSize != null) q.set("pageSize", String(params.pageSize));
+    if (params.kind) q.set("kind", params.kind);
+    if (params.assignedToUserId) q.set("assignedToUserId", params.assignedToUserId);
+    if (params.search) q.set("search", params.search);
+    if (params.from) q.set("from", params.from.toISOString());
+    if (params.to) q.set("to", params.to.toISOString());
+    const qs = q.toString();
+    return apiJson<Paginated<LeadPaymentWithRelations>>(
+      "GET",
+      `/payments/pending${qs ? `?${qs}` : ""}`
+    );
+  },
 
   commissions: (params: { page?: number; pageSize?: number; isPaid?: boolean }) => {
     const q = new URLSearchParams();

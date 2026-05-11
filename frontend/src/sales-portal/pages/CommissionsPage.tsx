@@ -42,6 +42,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { LeadStatus } from "../types";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
+import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { leadStatusLabel } from "../lib/copy";
 
 export function CommissionsPage() {
@@ -57,7 +58,7 @@ export function CommissionsPage() {
   const isPaid =
     paidFilter === "all" ? undefined : paidFilter === "true" ? true : false;
 
-  const { data, isLoading, isError, refetch } = useCommissionsQuery({
+  const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useCommissionsQuery({
     page,
     pageSize,
     isPaid
@@ -98,11 +99,20 @@ export function CommissionsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold md:text-2xl">Commissions</h1>
-        <p className="text-sm text-muted-foreground">
-          {isAdmin ? "Adjust and mark paid when the lead is deployed." : "Your commissions."}
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold md:text-2xl">Commissions</h1>
+          <p className="text-sm text-muted-foreground">
+            {isAdmin ? "Adjust and mark paid when the lead is deployed." : "Your commissions."}
+          </p>
+        </div>
+        {!isLoading && (
+          <DataStaleToolbar
+            dataUpdatedAt={dataUpdatedAt}
+            onRefresh={() => void refetch()}
+            isFetching={isFetching}
+          />
+        )}
       </div>
 
       <div className="space-y-2">

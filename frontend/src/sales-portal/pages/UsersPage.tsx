@@ -39,11 +39,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "../types";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
+import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { userRoleLabel } from "../lib/copy";
 export function UsersPage() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
-  const { data, isLoading, isError, refetch } = useUsersQuery(page, pageSize, true);
+  const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useUsersQuery(page, pageSize, true);
   const createUser = useCreateUserMutation();
   const patchUser = usePatchUserMutation();
   const resetPw = useResetPasswordMutation();
@@ -90,12 +91,20 @@ export function UsersPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold md:text-2xl">Users</h1>
           <p className="text-sm text-muted-foreground">Manage portal accounts.</p>
         </div>
-        <Dialog>
+        <div className="flex flex-col gap-2 sm:items-end">
+          {!isLoading && (
+            <DataStaleToolbar
+              dataUpdatedAt={dataUpdatedAt}
+              onRefresh={() => void refetch()}
+              isFetching={isFetching}
+            />
+          )}
+          <Dialog>
           <DialogTrigger asChild>
             <Button className="min-h-11 w-full sm:w-auto">Add user</Button>
           </DialogTrigger>
@@ -170,6 +179,7 @@ export function UsersPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {isError && (

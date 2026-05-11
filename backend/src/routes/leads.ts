@@ -58,7 +58,12 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       const user = request.currentUser!;
       const query = leadsListQuerySchema.parse(request.query);
 
+      if (query.assignedToUserId && user.role !== UserRole.ADMIN) {
+        throw new HttpError(403, "FORBIDDEN", "Only admins can filter leads by assignee.");
+      }
+
       const filters = {
+        ...(query.assignedToUserId ? { assignedToUserId: query.assignedToUserId } : {}),
         ...(query.status ? { status: query.status } : {}),
         ...(query.search
           ? {
@@ -215,18 +220,32 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           }
         }
 
-        const updated = await tx.lead.update({
-          where: { id },
-          data: {
-            ...(body.clientName !== undefined ? { clientName: body.clientName } : {}),
-            ...(body.clientEmail !== undefined ? { clientEmail: body.clientEmail } : {}),
-            ...(body.clientPhone !== undefined ? { clientPhone: body.clientPhone } : {}),
-            ...(body.notes !== undefined ? { notes: body.notes } : {}),
-            ...(body.advanceAmountCents !== undefined ? { advanceAmountCents: body.advanceAmountCents } : {}),
-            ...(body.finalQuoteCents !== undefined ? { finalQuoteCents: body.finalQuoteCents } : {}),
-            ...(assignedToUserId !== undefined ? { assignedToUserId } : {})
+        const data: Prisma.LeadUncheckedUpdateManyInput = {
+          ...(body.clientName !== undefined ? { clientName: body.clientName } : {}),
+          ...(body.clientEmail !== undefined ? { clientEmail: body.clientEmail } : {}),
+          ...(body.clientPhone !== undefined ? { clientPhone: body.clientPhone } : {}),
+          ...(body.notes !== undefined ? { notes: body.notes } : {}),
+          ...(body.advanceAmountCents !== undefined ? { advanceAmountCents: body.advanceAmountCents } : {}),
+          ...(body.finalQuoteCents !== undefined ? { finalQuoteCents: body.finalQuoteCents } : {}),
+          ...(assignedToUserId !== undefined ? { assignedToUserId } : {})
+        };
+
+        const hasLeadFieldUpdates = Object.keys(data).length > 0;
+        let updated = lead;
+        if (hasLeadFieldUpdates) {
+          const claim = await tx.lead.updateMany({
+            where: { id, updatedAt: lead.updatedAt },
+            data
+          });
+          if (claim.count === 0) {
+            throw new HttpError(
+              409,
+              "CONCURRENT_MODIFICATION",
+              "Lead was modified concurrently; refresh and retry."
+            );
           }
-        });
+          updated = await tx.lead.findUniqueOrThrow({ where: { id } });
+        }
 
         if (commission && !commission.isPaid) {
           const commissionUpdate: { repUserId?: string; amountCents?: number } = {};
@@ -339,61 +358,80 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       const { id } = request.params as { id: string };
       const body = markPaymentBodySchema.parse(request.body);
 
-      const lead = await app.prisma.lead.findUnique({ where: { id } });
-      if (!lead) {
-        throw new HttpError(404, "NOT_FOUND", "Lead not found.");
-      }
-      assertLeadAccess(lead, user);
-      const settings = await getPortalSettings(app.prisma);
-      assertLeadMutable(lead, settings);
-
-      const requiredAdvance = getRequiredLeadStatusForPaymentKind(settings, "ADVANCE");
-      const requiredFinal = getRequiredLeadStatusForPaymentKind(settings, "FINAL");
-
-      if (body.kind === PaymentKind.ADVANCE && lead.status !== requiredAdvance) {
-        throw new HttpError(
-          400,
-          "INVALID_STATE",
-          `Advance payments can only be marked while the lead is ${requiredAdvance}.`
-        );
-      }
-      if (body.kind === PaymentKind.FINAL && lead.status !== requiredFinal) {
-        throw new HttpError(
-          400,
-          "INVALID_STATE",
-          `Final payments can only be marked while the lead is ${requiredFinal}.`
-        );
-      }
-
-      let payment;
       try {
-        payment = await app.prisma.leadPayment.create({
-          data: {
-            leadId: id,
-            kind: body.kind,
-            amountCents: body.amountCents,
-            repNote: body.repNote ?? undefined,
-            markedByUserId: user.id
-          }
-        });
+        const payment = await app.prisma.$transaction(
+          async (tx) => {
+            const lead = await tx.lead.findUnique({ where: { id } });
+            if (!lead) {
+              throw new HttpError(404, "NOT_FOUND", "Lead not found.");
+            }
+            assertLeadAccess(lead, user);
+            const settings = await getPortalSettings(tx);
+            assertLeadMutable(lead, settings);
+
+            const requiredAdvance = getRequiredLeadStatusForPaymentKind(settings, "ADVANCE");
+            const requiredFinal = getRequiredLeadStatusForPaymentKind(settings, "FINAL");
+
+            if (body.kind === PaymentKind.ADVANCE && lead.status !== requiredAdvance) {
+              throw new HttpError(
+                400,
+                "INVALID_STATE",
+                `Advance payments can only be marked while the lead is ${requiredAdvance}.`
+              );
+            }
+            if (body.kind === PaymentKind.FINAL && lead.status !== requiredFinal) {
+              throw new HttpError(
+                400,
+                "INVALID_STATE",
+                `Final payments can only be marked while the lead is ${requiredFinal}.`
+              );
+            }
+
+            let created;
+            try {
+              created = await tx.leadPayment.create({
+                data: {
+                  leadId: id,
+                  kind: body.kind,
+                  amountCents: body.amountCents,
+                  repNote: body.repNote ?? undefined,
+                  markedByUserId: user.id
+                }
+              });
+            } catch (error) {
+              if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+                throw new HttpError(409, "PENDING_PAYMENT", "A pending payment of this type already exists.");
+              }
+              throw error;
+            }
+
+            await logActivity({
+              prisma: app.prisma,
+              tx,
+              userId: user.id,
+              action: ActivityAction.PAYMENT_MARKED,
+              entityType: "LeadPayment",
+              entityId: created.id,
+              after: { kind: created.kind, amountCents: created.amountCents, leadId: id },
+              request
+            });
+
+            return created;
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+        );
+
+        return reply.status(201).send({ payment });
       } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-          throw new HttpError(409, "PENDING_PAYMENT", "A pending payment of this type already exists.");
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+          throw new HttpError(
+            409,
+            "CONCURRENT_MODIFICATION",
+            "Lead or payment state changed concurrently; refresh and retry."
+          );
         }
         throw error;
       }
-
-      await logActivity({
-        prisma: app.prisma,
-        userId: user.id,
-        action: ActivityAction.PAYMENT_MARKED,
-        entityType: "LeadPayment",
-        entityId: payment.id,
-        after: { kind: payment.kind, amountCents: payment.amountCents, leadId: id },
-        request
-      });
-
-      return reply.status(201).send({ payment });
     }
   );
 }
