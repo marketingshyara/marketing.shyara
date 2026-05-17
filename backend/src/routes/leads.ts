@@ -10,7 +10,7 @@ import {
 import type { User } from "@prisma/client";
 import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
-import { splitAgreedTotal5050Cents } from "../lib/money.js";
+import { splitAgreedTotalCents } from "../lib/money.js";
 import { clampPage } from "../lib/pagination.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
 import { assertManualTransition, commissionAmountCents } from "../services/leadFsm.js";
@@ -142,11 +142,16 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       const assignedToUserId = await resolveAssignedRepForCreate(app.prisma, user, body);
       await assertWebsiteTemplateExists(app.prisma, body.websiteTemplateId);
 
+      const portalSettings = await getPortalSettings(app.prisma);
+
       let advanceAmountCents = body.advanceAmountCents ?? undefined;
       let finalQuoteCents = body.finalQuoteCents ?? undefined;
       let agreedTotalCents: number | undefined = body.agreedTotalCents ?? undefined;
       if (body.agreedTotalCents != null) {
-        const split = splitAgreedTotal5050Cents(body.agreedTotalCents);
+        const split = splitAgreedTotalCents(
+          body.agreedTotalCents,
+          portalSettings.advancePaymentShareBps
+        );
         advanceAmountCents = split.advanceAmountCents;
         finalQuoteCents = split.finalQuoteCents;
         agreedTotalCents = body.agreedTotalCents;
@@ -297,7 +302,10 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           if (body.agreedTotalCents === null) {
             agreedPatch = { agreedTotalCents: null };
           } else {
-            const split = splitAgreedTotal5050Cents(body.agreedTotalCents);
+            const split = splitAgreedTotalCents(
+              body.agreedTotalCents,
+              settings.advancePaymentShareBps
+            );
             agreedPatch = {
               agreedTotalCents: body.agreedTotalCents,
               advanceAmountCents: split.advanceAmountCents,

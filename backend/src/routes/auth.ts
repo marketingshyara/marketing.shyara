@@ -146,9 +146,22 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     const body = changePasswordBodySchema.parse(request.body);
     const user = request.currentUser!;
 
-    const valid = await safeBcryptCompare(body.currentPassword, user.passwordHash, request);
-    if (!valid) {
-      throw new HttpError(400, "INVALID_PASSWORD", "Current password is incorrect.");
+    if (user.mustChangePassword) {
+      if (body.currentPassword !== undefined) {
+        throw new HttpError(
+          400,
+          "VALIDATION_ERROR",
+          "Current password is not required when setting your first password."
+        );
+      }
+    } else {
+      if (!body.currentPassword) {
+        throw new HttpError(400, "VALIDATION_ERROR", "Current password is required.");
+      }
+      const valid = await safeBcryptCompare(body.currentPassword, user.passwordHash, request);
+      if (!valid) {
+        throw new HttpError(400, "INVALID_PASSWORD", "Current password is incorrect.");
+      }
     }
 
     const passwordHash = await bcrypt.hash(body.newPassword, app.appConfig.bcryptRounds);

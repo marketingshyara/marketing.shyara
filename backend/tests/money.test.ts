@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { divideCentsWithRounding } from "../src/lib/money.js";
+import { divideCentsWithRounding, splitAgreedTotalCents } from "../src/lib/money.js";
 
 describe("divideCentsWithRounding", () => {
   it("returns exact quotients without surprise", () => {
@@ -32,5 +32,26 @@ describe("divideCentsWithRounding", () => {
   it("rejects non-positive denominator", () => {
     expect(() => divideCentsWithRounding(1, 0, "bankers")).toThrow();
     expect(() => divideCentsWithRounding(1, -1, "bankers")).toThrow();
+  });
+});
+
+describe("splitAgreedTotalCents", () => {
+  it("splits 50/50 by default bps", () => {
+    expect(splitAgreedTotalCents(100_00, 5000)).toEqual({
+      advanceAmountCents: 50_00,
+      finalQuoteCents: 50_00
+    });
+  });
+
+  it("splits 40/60 when advance share is 4000 bps", () => {
+    expect(splitAgreedTotalCents(100_00, 4000)).toEqual({
+      advanceAmountCents: 40_00,
+      finalQuoteCents: 60_00
+    });
+  });
+
+  it("odd totals sum exactly", () => {
+    const { advanceAmountCents, finalQuoteCents } = splitAgreedTotalCents(100_01, 5000);
+    expect(advanceAmountCents + finalQuoteCents).toBe(100_01);
   });
 });

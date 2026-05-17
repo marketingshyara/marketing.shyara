@@ -8,7 +8,7 @@ export const loginBodySchema = z.object({
 });
 
 export const changePasswordBodySchema = z.object({
-  currentPassword: z.string().min(1),
+  currentPassword: z.string().min(1).optional(),
   newPassword: z.string().min(8).max(128)
 });
 
@@ -194,7 +194,8 @@ export const portalSettingsSchema = z
       .default([LeadStatus.COMMISSION_PAID]),
     enforcePaymentQuoteToleranceBps: z.number().int().min(0).max(10000).nullable().default(null),
     exportMaxRows: z.number().int().min(100).max(500000).default(50_000),
-    commissionRounding: z.enum(["floor", "round", "bankers"]).default("bankers")
+    commissionRounding: z.enum(["floor", "round", "bankers"]).default("bankers"),
+    advancePaymentShareBps: z.number().int().min(0).max(10000).default(5000)
   })
   .strict();
 
@@ -212,7 +213,8 @@ const PORTAL_SETTINGS_INPUT_KEYS = [
   "terminalNoMutationStatuses",
   "enforcePaymentQuoteToleranceBps",
   "exportMaxRows",
-  "commissionRounding"
+  "commissionRounding",
+  "advancePaymentShareBps"
 ] as const satisfies readonly (keyof PortalSettingsValues)[];
 
 function pickKnownPortalSettings(

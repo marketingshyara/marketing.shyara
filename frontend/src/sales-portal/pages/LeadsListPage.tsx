@@ -136,7 +136,7 @@ export function LeadsListPage() {
           <Button asChild className="min-h-11 shrink-0">
             <Link to="/portal/leads/new">
               <Plus className="mr-2 h-4 w-4" />
-              New lead
+              New client
             </Link>
           </Button>
         </div>

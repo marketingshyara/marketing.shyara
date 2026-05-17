@@ -18,7 +18,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <div
-        className="flex h-9 min-w-[6.5rem] items-center justify-end gap-2 md:min-w-[5.75rem]"
+        className="flex h-9 items-center justify-end gap-2"
         aria-hidden
       >
         <span className="sr-only">Theme</span>
@@ -30,7 +30,6 @@ export function ThemeToggle() {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs font-medium text-muted-foreground max-md:inline md:sr-only">Theme</span>
       <Sun className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       <Switch
         id="theme-toggle"

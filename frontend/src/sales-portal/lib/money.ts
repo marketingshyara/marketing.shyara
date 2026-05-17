@@ -27,3 +27,35 @@ export function parseRupeeInputToCents(value: string): number | null {
   if (!Number.isFinite(n) || n < 0) return null;
   return Math.round(n * 100);
 }
+
+/** Mirror backend splitAgreedTotalCents for live form preview. */
+export function splitAgreedTotalCents(
+  totalCents: number,
+  advanceShareBps: number
+): { advanceAmountCents: number; finalQuoteCents: number } {
+  const advanceAmountCents = Math.floor((totalCents * advanceShareBps) / 10000);
+  return { advanceAmountCents, finalQuoteCents: totalCents - advanceAmountCents };
+}
+
+export function centsToRupeeInputString(cents: number): string {
+  if (cents <= 0) return "0";
+  const rupees = cents / 100;
+  return Number.isInteger(rupees) ? String(rupees) : rupees.toFixed(2);
+}
+
+export function estimateCommissionCents(
+  agreedTotalCents: number,
+  commissionRateBps: number,
+  rounding: "floor" | "round" | "bankers"
+): number {
+  const numerator = agreedTotalCents * commissionRateBps;
+  const quotient = Math.floor(numerator / 10000);
+  const remainder = numerator - quotient * 10000;
+  if (remainder === 0) return quotient;
+  if (rounding === "floor") return quotient;
+  if (rounding === "round") return remainder * 2 >= 10000 ? quotient + 1 : quotient;
+  const twice = remainder * 2;
+  if (twice < 10000) return quotient;
+  if (twice > 10000) return quotient + 1;
+  return quotient % 2 === 0 ? quotient : quotient + 1;
+}

@@ -18,10 +18,28 @@ export const loginSchema = z.object({
   rememberDevice: z.boolean().optional()
 });
 
-export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1),
-  newPassword: z.string().min(8).max(128)
-});
+const passwordMatchRefine = {
+  message: "Passwords do not match.",
+  path: ["confirmPassword"] as const
+};
+
+export const forcedChangePasswordSchema = z
+  .object({
+    newPassword: z.string().min(8, "Use at least 8 characters.").max(128),
+    confirmPassword: z.string().min(1, "Confirm your new password.")
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, passwordMatchRefine);
+
+export const voluntaryChangePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password."),
+    newPassword: z.string().min(8, "Use at least 8 characters.").max(128),
+    confirmPassword: z.string().min(1, "Confirm your new password.")
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, passwordMatchRefine);
+
+/** @deprecated Use forcedChangePasswordSchema or voluntaryChangePasswordSchema */
+export const changePasswordSchema = voluntaryChangePasswordSchema;
 
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -120,7 +138,8 @@ export const portalSettingsSchema = z
     finalVerifyRequiredLeadStatus: leadStatusSchema,
     terminalNoMutationStatuses: z.array(leadStatusSchema),
     enforcePaymentQuoteToleranceBps: z.number().int().min(0).max(10000).nullable(),
-    exportMaxRows: z.number().int().min(100).max(500000)
+    exportMaxRows: z.number().int().min(100).max(500000),
+    advancePaymentShareBps: z.number().int().min(0).max(10000)
   })
   .strict();
 

@@ -77,6 +77,10 @@ export interface WebsiteTemplate {
   id: string;
   slug: string;
   name: string;
+  displayCode: string;
+  categoryId: string;
+  sampleSlug: string;
+  samplePath: string | null;
   sortOrder: number;
 }
 
@@ -154,6 +158,7 @@ export interface PortalSettingsValues {
   terminalNoMutationStatuses: LeadStatus[];
   enforcePaymentQuoteToleranceBps: number | null;
   exportMaxRows: number;
+  advancePaymentShareBps: number;
 }
 
 export interface Paginated<T> {

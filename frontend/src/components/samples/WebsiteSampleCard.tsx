@@ -47,7 +47,8 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({ sample }: { s
   };
 
   const openWhatsAppInquire = () => {
-    const msg = `Hi Shyara Marketing, I just viewed the "${sample.name}" sample on your website and I'd like something similar for my business. Can we discuss the scope, timeline, and pricing?`;
+    const code = sample.displayCode ? `${sample.displayCode} — ` : "";
+    const msg = `Hi Shyara Marketing, I just viewed ${code}"${sample.name}" on your website samples and I'd like something similar for my business. Can we discuss the scope, timeline, and pricing?`;
     window.open(`https://wa.me/919584661610?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
   };
 
@@ -147,7 +148,12 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({ sample }: { s
               )}
             </div>
           )}
-          <h3 className="font-semibold text-foreground mb-1">{sample.name}</h3>
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <span className="rounded-md border border-border bg-muted px-2 py-0.5 font-mono text-xs font-semibold tracking-wide text-foreground">
+              {sample.displayCode}
+            </span>
+            <h3 className="font-semibold text-foreground">{sample.name}</h3>
+          </div>
           <p className="text-sm text-muted-foreground line-clamp-2">{sample.description}</p>
           <div className={`grid gap-2 mt-3 ${waitingRoomUrl ? "grid-cols-2" : "grid-cols-1"}`}>
             <Button variant="outline" size="sm" className="flex-1" onClick={handlePreviewClick}>

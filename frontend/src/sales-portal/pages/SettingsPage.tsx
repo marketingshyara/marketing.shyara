@@ -99,6 +99,31 @@ export function SettingsPage() {
       >
         <Card>
           <CardHeader>
+            <CardTitle className="text-base">Client onboarding</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="settings-advance-share">
+                Advance payment share (basis points, 10000 = 100%)
+              </Label>
+              <Input
+                id="settings-advance-share"
+                type="number"
+                className="min-h-11"
+                {...form.register("advancePaymentShareBps", { valueAsNumber: true })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Create Client: advance {bpsToPercentLabel(Number(form.watch("advancePaymentShareBps") ?? 5000))}{" "}
+                / final{" "}
+                {bpsToPercentLabel(10000 - Number(form.watch("advancePaymentShareBps") ?? 5000))} of agreed
+                project total.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle className="text-base">Commission</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

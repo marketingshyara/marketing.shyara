@@ -5,6 +5,7 @@ import { QueryErrorAlert } from "../components/QueryErrorAlert";
 import { createLeadSchema } from "../validation/schemas";
 import {
   useCreateLeadMutation,
+  usePortalSettingsQuery,
   useSessionQuery,
   useUsersQuery,
   useWebsiteTemplatesQuery
@@ -21,7 +22,15 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { parseRupeeInputToCents } from "../lib/money";
+import {
+  bpsToPercentLabel,
+  centsToRupeeInputString,
+  estimateCommissionCents,
+  formatMinorUnits,
+  parseRupeeInputToCents,
+  splitAgreedTotalCents
+} from "../lib/money";
+import { formatTemplateOption } from "../lib/templateLabel";
 import { ArrowLeft } from "lucide-react";
 
 type FormValues = {
@@ -39,6 +48,8 @@ type FormValues = {
 export function LeadCreatePage() {
   const navigate = useNavigate();
   const { data: session } = useSessionQuery();
+  const { data: settingsData } = usePortalSettingsQuery();
+  const settings = settingsData?.settings;
   const isAdmin = session?.user?.role === "ADMIN";
   const {
     data: usersData,
@@ -66,7 +77,26 @@ export function LeadCreatePage() {
       assignedToUserId: ""
     }
   });
-  const agreedFilled = form.watch("agreedTotalRupees").trim() !== "";
+  const agreedTotalRupees = form.watch("agreedTotalRupees");
+  const agreedFilled = agreedTotalRupees.trim() !== "";
+  const advanceShareBps = settings?.advancePaymentShareBps ?? 5000;
+  const finalShareBps = 10000 - advanceShareBps;
+
+  useEffect(() => {
+    if (!agreedFilled || !settings) return;
+    const totalCents = parseRupeeInputToCents(agreedTotalRupees);
+    if (totalCents == null) return;
+    const { advanceAmountCents, finalQuoteCents } = splitAgreedTotalCents(
+      totalCents,
+      settings.advancePaymentShareBps
+    );
+    form.setValue("advanceRupees", centsToRupeeInputString(advanceAmountCents), {
+      shouldDirty: true
+    });
+    form.setValue("finalQuoteRupees", centsToRupeeInputString(finalQuoteCents), {
+      shouldDirty: true
+    });
+  }, [agreedTotalRupees, agreedFilled, settings, form]);
 
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
@@ -78,27 +108,44 @@ export function LeadCreatePage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [create.isPending, form.formState.isDirty]);
 
+  const agreedTotalCents = parseRupeeInputToCents(agreedTotalRupees);
+  const estimatedCommissionCents =
+    agreedTotalCents != null && settings
+      ? estimateCommissionCents(
+          agreedTotalCents,
+          settings.commissionRateBps,
+          settings.commissionRounding
+        )
+      : null;
+
+  const commissionBasisLabel =
+    settings?.commissionBasis === "AGREED_TOTAL"
+      ? "agreed total"
+      : settings?.commissionBasis === "FINAL_QUOTE"
+        ? "final quote (at payout)"
+        : "verified final payment (at payout)";
+
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <Button variant="ghost" className="min-h-11 -ml-2" asChild>
         <Link to="/portal/leads">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Leads
+          Clients
         </Link>
       </Button>
       <Card>
         <CardHeader>
-          <CardTitle>New lead</CardTitle>
+          <CardTitle>Create client</CardTitle>
         </CardHeader>
         <CardContent>
           <form
             className="space-y-4"
             onSubmit={form.handleSubmit((raw) => {
               form.clearErrors();
-              const agreedTotalCents = parseRupeeInputToCents(raw.agreedTotalRupees);
+              const agreedTotalCentsSubmit = parseRupeeInputToCents(raw.agreedTotalRupees);
               const advanceAmountCents = parseRupeeInputToCents(raw.advanceRupees);
               const finalQuoteCents = parseRupeeInputToCents(raw.finalQuoteRupees);
-              if (raw.agreedTotalRupees.trim() && agreedTotalCents === null) {
+              if (raw.agreedTotalRupees.trim() && agreedTotalCentsSubmit === null) {
                 form.setError("agreedTotalRupees", { message: "Invalid amount" });
                 return;
               }
@@ -117,7 +164,9 @@ export function LeadCreatePage() {
                 clientPhone: raw.clientPhone.trim() === "" ? null : raw.clientPhone,
                 notes: raw.notes.trim() === "" ? null : raw.notes,
                 agreedTotalCents:
-                  raw.agreedTotalRupees.trim() === "" ? undefined : (agreedTotalCents ?? undefined),
+                  raw.agreedTotalRupees.trim() === ""
+                    ? undefined
+                    : (agreedTotalCentsSubmit ?? undefined),
                 advanceAmountCents:
                   raw.agreedTotalRupees.trim() !== "" ? undefined : (advanceAmountCents ?? null),
                 finalQuoteCents:
@@ -217,7 +266,13 @@ export function LeadCreatePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="ce">Client email</Label>
-              <Input id="ce" type="email" autoComplete="email" className="min-h-11" {...form.register("clientEmail")} />
+              <Input
+                id="ce"
+                type="email"
+                autoComplete="email"
+                className="min-h-11"
+                {...form.register("clientEmail")}
+              />
               {form.formState.errors.clientEmail && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.clientEmail.message}
@@ -226,22 +281,40 @@ export function LeadCreatePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="cp">Client phone</Label>
-              <Input id="cp" type="tel" autoComplete="tel" className="min-h-11" {...form.register("clientPhone")} />
+              <Input
+                id="cp"
+                type="tel"
+                autoComplete="tel"
+                className="min-h-11"
+                {...form.register("clientPhone")}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="agreed">Agreed project total (₹)</Label>
-              <Input id="agreed" inputMode="decimal" className="min-h-11" {...form.register("agreedTotalRupees")} />
+              <Input
+                id="agreed"
+                inputMode="decimal"
+                className="min-h-11"
+                {...form.register("agreedTotalRupees")}
+              />
               {form.formState.errors.agreedTotalRupees && (
-                <p className="text-sm text-destructive">{form.formState.errors.agreedTotalRupees.message}</p>
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.agreedTotalRupees.message}
+                </p>
               )}
               <p className="text-xs text-muted-foreground">
-                Optional. When set, advance and final due are derived as a 50/50 split.
+                Optional. When set, advance ({bpsToPercentLabel(advanceShareBps)}) and final (
+                {bpsToPercentLabel(finalShareBps)}) are calculated from this total per admin
+                settings.
               </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="tpl-create">Website template</Label>
               {tplQr.isError && (
-                <QueryErrorAlert message="Could not load templates." onRetry={() => void tplQr.refetch()} />
+                <QueryErrorAlert
+                  message="Could not load templates."
+                  onRetry={() => void tplQr.refetch()}
+                />
               )}
               <Select
                 value={form.watch("websiteTemplateId") || "__none__"}
@@ -255,11 +328,23 @@ export function LeadCreatePage() {
                   <SelectItem value="__none__">Not set</SelectItem>
                   {templates.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
-                      {t.name}
+                      {formatTemplateOption(t)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Use the same code on{" "}
+                <a
+                  href="/samples/websites"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline underline-offset-2"
+                >
+                  website samples
+                </a>{" "}
+                when presenting to your client.
+              </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -293,12 +378,33 @@ export function LeadCreatePage() {
                 )}
               </div>
             </div>
+            {agreedFilled && estimatedCommissionCents != null && settings && (
+              <div
+                className="rounded-lg border border-border/80 bg-muted/40 px-3 py-2.5 text-sm"
+                role="status"
+              >
+                <p className="font-medium text-foreground">Estimated summary</p>
+                <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                  <li>
+                    Advance: {formatMinorUnits(splitAgreedTotalCents(agreedTotalCents!, advanceShareBps).advanceAmountCents)}
+                  </li>
+                  <li>
+                    Final: {formatMinorUnits(splitAgreedTotalCents(agreedTotalCents!, advanceShareBps).finalQuoteCents)}
+                  </li>
+                  <li>
+                    Est. commission ({bpsToPercentLabel(settings.commissionRateBps)} of{" "}
+                    {commissionBasisLabel}): {formatMinorUnits(estimatedCommissionCents)} — paid
+                    after deployment
+                  </li>
+                </ul>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="no">Notes</Label>
               <Textarea id="no" rows={4} {...form.register("notes")} />
             </div>
             <Button type="submit" className="min-h-11 w-full" disabled={create.isPending}>
-              {create.isPending ? "Creating…" : "Create Lead"}
+              {create.isPending ? "Creating…" : "Create Client"}
             </Button>
           </form>
         </CardContent>

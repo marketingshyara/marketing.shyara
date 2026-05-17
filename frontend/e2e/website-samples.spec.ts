@@ -8,6 +8,12 @@ test.describe("website samples page", () => {
     });
   });
 
+  test("shows template display codes on sample cards", async ({ page }) => {
+    await page.goto("/samples/websites", { waitUntil: "domcontentloaded" });
+    await expect(page.getByText("RES/001")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("COA/001")).toBeVisible({ timeout: 60_000 });
+  });
+
   test("mobile viewport: last card gains iframe src after scroll into view", async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 390, height: 720 });

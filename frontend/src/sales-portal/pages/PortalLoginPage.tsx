@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { PasswordField } from "../components/PasswordField";
 import { loginSchema } from "../validation/schemas";
 import { useLoginMutation } from "../hooks/useSalesQueries";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,6 @@ export function PortalLoginPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [lockoutSecondsLeft, setLockoutSecondsLeft] = useState<number | null>(null);
   const [step, setStep] = useState<"email" | "password">("email");
-  const [showPassword, setShowPassword] = useState(false);
   const [highlightError, setHighlightError] = useState(false);
 
   const statusPageUrl = (import.meta.env.VITE_STATUS_PAGE_URL as string | undefined)?.trim();
@@ -265,42 +265,13 @@ export function PortalLoginPage() {
                       {form.getValues("email")}
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-                      <Input
-                        id="login-password"
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="current-password"
-                        className="min-h-11 flex-1"
-                        aria-invalid={!!form.formState.errors.password}
-                        aria-describedby={
-                          form.formState.errors.password ? "login-password-error" : "login-password-hint"
-                        }
-                        {...form.register("password")}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="min-h-11 shrink-0 gap-1.5 px-3 sm:min-w-[8.5rem]"
-                        aria-pressed={showPassword}
-                        onClick={() => setShowPassword((v) => !v)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4 shrink-0" aria-hidden /> : <Eye className="h-4 w-4 shrink-0" aria-hidden />}
-                        {showPassword ? "Hide password" : "Show password"}
-                      </Button>
-                    </div>
-                    <p id="login-password-hint" className="sr-only">
-                      Use Show password or Hide password to reveal or conceal what you typed.
-                    </p>
-                    {form.formState.errors.password && (
-                      <p id="login-password-error" className="text-sm font-medium text-destructive">
-                        {form.formState.errors.password.message}
-                      </p>
-                    )}
-                  </div>
-
+                  <PasswordField
+                    id="login-password"
+                    label="Password"
+                    autoComplete="current-password"
+                    registration={form.register("password")}
+                    error={form.formState.errors.password}
+                  />
                   <label className="flex cursor-pointer items-center gap-2 text-sm" htmlFor="remember-device">
                     <Checkbox
                       id="remember-device"

@@ -49,11 +49,15 @@ enum ActivityAction {
 }
 
 model WebsiteTemplate {
-  id        String @id @default(cuid())
-  slug      String @unique
-  name      String
-  sortOrder Int    @default(0)
-  leads     Lead[]
+  id          String  @id
+  slug        String  @unique
+  name        String
+  displayCode String  @unique
+  categoryId  String
+  sampleSlug  String  @unique
+  samplePath  String?
+  sortOrder   Int     @default(0)
+  leads       Lead[]
 }
 
 model User {

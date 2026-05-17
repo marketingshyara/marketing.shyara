@@ -25,7 +25,7 @@ export const salesApi = {
 
   logout: () => apiJson<{ ok: boolean }>("POST", "/auth/logout"),
 
-  changePassword: (body: { currentPassword: string; newPassword: string }) =>
+  changePassword: (body: { newPassword: string; currentPassword?: string }) =>
     apiJson<{ user: SessionUser }>("POST", "/auth/change-password", body),
 
   settings: () => apiJson<{ settings: PortalSettingsValues }>("GET", "/settings"),

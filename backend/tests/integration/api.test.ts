@@ -203,9 +203,11 @@ d("integration: auth and RBAC", () => {
       method: "POST",
       url: "/api/auth/change-password",
       headers: { cookie: cookieHeader, "content-type": "application/json" },
-      payload: { currentPassword: "TempPass123!", newPassword: "ChangedPass123!" }
+      payload: { newPassword: "ChangedPass123!" }
     });
     expect(change.statusCode).toBe(200);
+    const changeBody = JSON.parse(change.body);
+    expect(changeBody.user.mustChangePassword).toBe(false);
 
     const allowed = await inject(app, {
       method: "GET",
@@ -215,6 +217,59 @@ d("integration: auth and RBAC", () => {
     expect(allowed.statusCode).toBe(200);
 
     await prisma.user.deleteMany({ where: { email: "it-mustchange@test.local" } });
+    await app.close();
+  });
+
+  it("voluntary change-password requires and validates current password", async () => {
+    await prisma.user.deleteMany({ where: { email: "it-voluntary-pw@test.local" } });
+    await prisma.user.create({
+      data: {
+        email: "it-voluntary-pw@test.local",
+        passwordHash: await bcrypt.hash("KnownPass123!", 10),
+        role: UserRole.SALES_REP,
+        mustChangePassword: false
+      }
+    });
+    const config = loadConfig();
+    const app = await buildApp({ config });
+
+    const login = await inject(app, {
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "it-voluntary-pw@test.local", password: "KnownPass123!" }
+    });
+    expect(login.statusCode).toBe(200);
+    const cookie = login.cookies.find((c) => c.name === config.cookieName);
+    expect(cookie).toBeDefined();
+    const cookieHeader = `${config.cookieName}=${cookie!.value}`;
+
+    const missingCurrent = await inject(app, {
+      method: "POST",
+      url: "/api/auth/change-password",
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: { newPassword: "NewPass456!" }
+    });
+    expect(missingCurrent.statusCode).toBe(400);
+    expect(JSON.parse(missingCurrent.body).error.code).toBe("VALIDATION_ERROR");
+
+    const wrongCurrent = await inject(app, {
+      method: "POST",
+      url: "/api/auth/change-password",
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: { currentPassword: "WrongPass123!", newPassword: "NewPass456!" }
+    });
+    expect(wrongCurrent.statusCode).toBe(400);
+    expect(JSON.parse(wrongCurrent.body).error.code).toBe("INVALID_PASSWORD");
+
+    const ok = await inject(app, {
+      method: "POST",
+      url: "/api/auth/change-password",
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: { currentPassword: "KnownPass123!", newPassword: "NewPass456!" }
+    });
+    expect(ok.statusCode).toBe(200);
+
+    await prisma.user.deleteMany({ where: { email: "it-voluntary-pw@test.local" } });
     await app.close();
   });
 

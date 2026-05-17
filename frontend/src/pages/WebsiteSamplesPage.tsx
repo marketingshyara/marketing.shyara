@@ -105,11 +105,15 @@ export default function WebsiteSamplesPage() {
   const { categories, samples, loading } = useWebsiteManifest();
 
   const activeCategory = searchParams.get("category") || null;
+  const codeFilter = searchParams.get("code")?.trim().toUpperCase() ?? "";
 
-  const filteredSamples = useMemo(
-    () => (activeCategory ? samples.filter((s) => s.category === activeCategory) : samples),
-    [samples, activeCategory]
-  );
+  const filteredSamples = useMemo(() => {
+    let list = activeCategory ? samples.filter((s) => s.category === activeCategory) : samples;
+    if (codeFilter) {
+      list = list.filter((s) => s.displayCode.toUpperCase() === codeFilter);
+    }
+    return list;
+  }, [samples, activeCategory, codeFilter]);
 
   const isClinicCategory = activeCategory === "clinics";
 
@@ -223,7 +227,11 @@ export default function WebsiteSamplesPage() {
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <FolderOpen className="h-12 w-12 mb-4 opacity-50" />
                 <p className="text-center mb-2">
-                  {activeCategory ? "No samples in this category yet." : "Website samples coming soon!"}
+                  {codeFilter
+                    ? `No sample found for code ${codeFilter}.`
+                    : activeCategory
+                      ? "No samples in this category yet."
+                      : "Website samples coming soon!"}
                 </p>
                 <p className="text-sm text-center opacity-75">We're preparing our portfolio for you to explore.</p>
               </div>

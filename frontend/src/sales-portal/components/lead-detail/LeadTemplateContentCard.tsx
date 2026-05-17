@@ -9,6 +9,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { usePatchLeadMutation, useWebsiteTemplatesQuery } from "../../hooks/useSalesQueries";
+import { formatTemplateOption } from "../../lib/templateLabel";
 import type { Lead } from "../../types";
 import { QueryErrorAlert } from "../QueryErrorAlert";
 
@@ -60,7 +61,7 @@ export function LeadTemplateContentCard({ lead, terminal }: Props) {
               <SelectItem value="__none__">Not set</SelectItem>
               {items.map((t) => (
                 <SelectItem key={t.id} value={t.id}>
-                  {t.name}
+                  {formatTemplateOption(t)}
                 </SelectItem>
               ))}
             </SelectContent>

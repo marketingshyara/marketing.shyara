@@ -41,7 +41,7 @@ This document describes the **marketing-shyara-co-in** backend API so a new fron
 | POST | `/api/auth/login` | No | `{ "email": string, "password": string }` | `{ "user": SessionUser }` |
 | POST | `/api/auth/logout` | Yes | — | `{ "ok": true }` |
 | GET | `/api/auth/session` | No (returns null if logged out) | — | `{ "user": SessionUser \| null }` |
-| POST | `/api/auth/change-password` | Yes | `{ "currentPassword": string, "newPassword": string }` (8–128 chars) | `{ "user": SessionUser }` |
+| POST | `/api/auth/change-password` | Yes | `{ "newPassword": string (8–128 chars), "currentPassword"?: string }` — `currentPassword` required when `mustChangePassword` is false; omit when forced first-login change | `{ "user": SessionUser }` |
 
 **`SessionUser`** shape (no password fields):
 
@@ -242,6 +242,12 @@ Reps can **see** leads they **created** or are **assigned** to. Admins may **PAT
 | `terminalNoMutationStatuses` | `LeadStatus[]` | Leads in these statuses **cannot** be patched, transitioned, or have new payments marked (default `[COMMISSION_PAID]`) |
 | `enforcePaymentQuoteToleranceBps` | number \| null | If non-null, verification compares payment amount to quote within tolerance; **null** disables (default **null**) |
 | `exportMaxRows` | number | Admin XLSX exports cap (100–500000, default **50000**) |
+| `commissionRounding` | `"floor"` \| `"round"` \| `"bankers"` | Rounding when computing commission amounts (default **bankers**) |
+| `advancePaymentShareBps` | number | Share of **agreed total** for advance on Create Client (0–10000; default **5000** = 50/50) |
+
+**GET** `/api/website-templates` — authenticated user; returns `{ "items": WebsiteTemplate[] }` sorted by `sortOrder`.
+
+`WebsiteTemplate`: `id`, `slug`, `name`, **`displayCode`** (e.g. `RES/001`), `categoryId`, `sampleSlug`, `samplePath`, `sortOrder`. Codes match [`/samples/websites`](frontend/public/samples/websites/manifest.json) for rep demos.
 
 **`manualTransitions`** items:
 

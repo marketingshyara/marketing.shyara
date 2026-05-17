@@ -57,15 +57,29 @@ export function divideCentsWithRounding(
   return Number(isEven ? quotient : quotient + (n >= 0n ? 1n : -1n));
 }
 
-/** Split an agreed project total into a 50/50 advance / final pair that sums exactly to `total`. */
-export function splitAgreedTotal5050Cents(totalCents: number): {
+/** Split agreed total into advance / final using admin-configured advance share (basis points). */
+export function splitAgreedTotalCents(
+  totalCents: number,
+  advanceShareBps: number
+): {
   advanceAmountCents: number;
   finalQuoteCents: number;
 } {
   if (!Number.isInteger(totalCents) || totalCents < 0) {
-    throw new Error("splitAgreedTotal5050Cents: totalCents must be a non-negative integer");
+    throw new Error("splitAgreedTotalCents: totalCents must be a non-negative integer");
   }
-  const advanceAmountCents = Math.floor(totalCents / 2);
+  if (!Number.isInteger(advanceShareBps) || advanceShareBps < 0 || advanceShareBps > 10000) {
+    throw new Error("splitAgreedTotalCents: advanceShareBps must be 0–10000");
+  }
+  const advanceAmountCents = Math.floor((totalCents * advanceShareBps) / 10000);
   const finalQuoteCents = totalCents - advanceAmountCents;
   return { advanceAmountCents, finalQuoteCents };
+}
+
+/** @deprecated Use splitAgreedTotalCents(total, 5000) */
+export function splitAgreedTotal5050Cents(totalCents: number): {
+  advanceAmountCents: number;
+  finalQuoteCents: number;
+} {
+  return splitAgreedTotalCents(totalCents, 5000);
 }

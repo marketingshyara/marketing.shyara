@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { parseRupeeInputToCents } from "../../lib/money";
+import { formatTemplateOption } from "../../lib/templateLabel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -211,7 +212,7 @@ export function LeadEditForm({ lead, isAdmin, terminal }: Props) {
                 <SelectItem value="__none__">Not set</SelectItem>
                 {templates.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
-                    {t.name}
+                    {formatTemplateOption(t)}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -85,8 +85,8 @@ export function useChangePasswordMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: salesApi.changePassword,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.session });
+    onSuccess: (data) => {
+      qc.setQueryData(qk.session, data);
     },
     onError: (e) => errToast(e, qc)
   });

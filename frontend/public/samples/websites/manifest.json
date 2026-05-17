@@ -8,6 +8,7 @@
   "samples": [
     {
       "id": "restaurant-classic-website",
+      "displayCode": "RES/001",
       "name": "Restaurant Website",
       "description": "A premium restaurant website with animated sections, gallery, menu, and contact form.",
       "folder": "restaurant-classic-website",
@@ -16,6 +17,7 @@
     },
     {
       "id": "astrology-consultant-website",
+      "displayCode": "AST/001",
       "name": "Astrologer Website",
       "description": "A mystical astrology website with cosmic design, services showcase, and consultation booking.",
       "folder": "astrology-consultant-website",
@@ -24,6 +26,7 @@
     },
     {
       "id": "restaurant-botanical-website",
+      "displayCode": "RES/002",
       "name": "Botanical Restaurant Website",
       "description": "A nature-inspired restaurant website with botanical design, seasonal menu, and organic dining experience.",
       "folder": "restaurant-botanical-website",
@@ -32,6 +35,7 @@
     },
     {
       "id": "restaurant-journey-of-taste-website",
+      "displayCode": "RES/003",
       "name": "Journey Of Taste Website",
       "description": "A cinematic restaurant website with immersive storytelling, signature dishes, and modern dining visuals.",
       "folder": "restaurant-journey-of-taste-website",
@@ -40,6 +44,7 @@
     },
     {
       "id": "clinic-dental-waiting-room-classic",
+      "displayCode": "CLI/001",
       "name": "Dental Clinic Website (Classic)",
       "description": "A dental clinic sample with QR-enabled waiting room flow, doctor profiles, blogs, and patient information pages.",
       "folder": "clinic-dental-waiting-room-classic",
@@ -51,6 +56,7 @@
     },
     {
       "id": "clinic-multispeciality-waiting-room",
+      "displayCode": "CLI/002",
       "name": "Multispeciality Clinic Website",
       "description": "A multispeciality clinic sample with QR waiting-room pages, doctor highlights, blogs, and service information.",
       "folder": "clinic-multispeciality-waiting-room",
@@ -62,6 +68,7 @@
     },
     {
       "id": "clinic-dental-waiting-room-modern",
+      "displayCode": "CLI/003",
       "name": "Dental Clinic Website (Modern)",
       "description": "A modern dental clinic website with waiting-room QR flow, specialists, educational blogs, and treatment details.",
       "folder": "clinic-dental-waiting-room-modern",
@@ -73,6 +80,7 @@
     },
     {
       "id": "clinic-dermatology-waiting-room",
+      "displayCode": "CLI/004",
       "name": "Dermatology Clinic Website",
       "description": "A dermatology-focused clinic sample with QR waiting room, skin-care blogs, doctor cards, and clinic details.",
       "folder": "clinic-dermatology-waiting-room",
@@ -84,6 +92,7 @@
     },
     {
       "id": "clinic-pathology-waiting-room",
+      "displayCode": "CLI/005",
       "name": "Pathology Clinic Website",
       "description": "A pathology clinic sample with QR-enabled waiting room, test-focused resources, doctors, and service information.",
       "folder": "clinic-pathology-waiting-room",
@@ -95,6 +104,7 @@
     },
     {
       "id": "clinic-physiotherapy-waiting-room",
+      "displayCode": "CLI/006",
       "name": "Physiotherapy Clinic Website",
       "description": "A physiotherapy clinic sample with QR waiting-room experience, therapist profiles, care blogs, and clinic highlights.",
       "folder": "clinic-physiotherapy-waiting-room",
@@ -106,6 +116,7 @@
     },
     {
       "id": "clinic-psychological-waiting-room",
+      "displayCode": "CLI/007",
       "name": "Psychological Clinic Website",
       "description": "A psychology clinic sample with QR waiting room, therapist information, wellness blogs, and patient support details.",
       "folder": "clinic-psychological-waiting-room",
@@ -117,6 +128,7 @@
     },
     {
       "id": "coaching-classes-website",
+      "displayCode": "COA/001",
       "name": "Coaching Classes Website",
       "description": "A modern coaching institute website with courses, faculty profiles, results showcase, scholarship info, and test series.",
       "folder": "coaching-classes-website",

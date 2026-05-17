@@ -31,6 +31,8 @@ export type ClinicExperience = "waiting-room" | "standard";
 
 export interface WebsiteSample {
   id: string;
+  /** Sales catalog code, e.g. RES/001 — matches portal WebsiteTemplate.displayCode */
+  displayCode: string;
   name: string;
   description: string;
   folder: string;

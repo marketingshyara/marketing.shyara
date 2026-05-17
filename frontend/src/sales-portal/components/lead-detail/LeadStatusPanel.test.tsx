@@ -23,7 +23,9 @@ const baseSettings: PortalSettingsValues = {
   finalVerifyRequiredLeadStatus: "PREVIEW_SENT",
   terminalNoMutationStatuses: ["COMMISSION_PAID"],
   enforcePaymentQuoteToleranceBps: null,
-  exportMaxRows: 50_000
+  exportMaxRows: 50_000,
+  commissionRounding: "bankers",
+  advancePaymentShareBps: 5000
 };
 
 function renderPanel(props: React.ComponentProps<typeof LeadStatusPanel>) {

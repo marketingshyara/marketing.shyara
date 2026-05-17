@@ -1,0 +1,38 @@
+---
+description: End-to-end Sales Portal fixes — user POV, whole solutions, ripple fixes
+alwaysApply: true
+---
+
+# Sales Portal delivery standards
+
+Apply on every Sales Portal bug fix, improvement, or feature request.
+
+## Understand before changing
+
+- Map the **user journey** (rep vs admin) and where it sits in the lead → payment → project → commission FSM.
+- Trace **frontend → `salesApi` → route → service/Prisma** before editing; never fix only the symptom layer.
+- Read portal settings when behavior is settings-driven (`PortalSettings`, `leadUi.ts`, `leadFsm.ts`).
+
+## User POV — show what is true
+
+- UI copy, badges, and steppers must match **machine state** (`LeadStatus`, payment `verificationStatus`, deployment flags).
+- When blocked, show **why** and **who acts next** (rep vs admin).
+- Amounts, assignee, commission basis, and provider reference after verify must match server data — no optimistic lies.
+- Follow `sales-portal-ux.mdc` for mobile labels, progressive disclosure, and payment verify rules.
+
+## Deliver whole solutions
+
+- Fix the reported issue **and** connected surfaces: sibling pages, guards, error toasts, empty states, query invalidation, similar API handlers.
+- Backend invariant or shape change → same PR updates `salesApi`, `types.ts`, Zod on both sides, and tests (`api-contract-and-testing.mdc`, `backend-invariants.mdc`).
+- Prefer one coherent change over a minimal patch that leaves related flows broken.
+
+## Ripple search (before done)
+
+- Grep for the same pattern in `frontend/src/sales-portal/**` and `backend/src/{routes,services}/**`.
+- If the bug is role, status, or error-code handling, check all call sites of that code path.
+
+## Definition of done
+
+- Regression test for the fixed branch; negative/auth paths when touching permissions or mutations.
+- Run backend tests for touched suites; no new lint/type errors in changed files.
+- Rep and admin paths both considered unless explicitly admin-only.
