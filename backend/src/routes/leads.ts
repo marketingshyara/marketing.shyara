@@ -346,7 +346,10 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               "Lead was modified concurrently; refresh and retry."
             );
           }
-          updated = await tx.lead.findUniqueOrThrow({ where: { id } });
+          updated = await tx.lead.findUniqueOrThrow({
+            where: { id },
+            include: { payments: true }
+          });
         }
 
         if (commission && !commission.isPaid) {
