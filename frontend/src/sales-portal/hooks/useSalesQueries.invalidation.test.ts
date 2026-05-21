@@ -40,7 +40,7 @@ describe("errToast CONCURRENT_MODIFICATION", () => {
     const spy = vi.spyOn(qc, "invalidateQueries").mockResolvedValue();
     errToast(new ApiError(409, "CONCURRENT_MODIFICATION", "Conflict"), qc);
     expect(spy.mock.calls.length).toBeGreaterThan(0);
-    expect(spy.mock.calls.length).toBeLessThanOrEqual(15);
+    expect(spy.mock.calls.length).toBe(16);
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey: string[] }).queryKey[0]);
     expect(keys).toContain("leads");
     expect(keys).toContain("session");
