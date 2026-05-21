@@ -1,16 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
+  BookOpen,
   ClipboardList,
   FileCheck2,
-  FolderKanban,
-  IndianRupee,
   LogOut,
   Menu,
   UserCircle,
   Shield,
-  FileSpreadsheet,
-  ScrollText,
   Settings,
   Users,
   UsersRound
@@ -31,29 +28,26 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { userRoleLabel } from "../lib/copy";
+import { defaultPortalHome } from "../lib/portalPaths";
 
 type NavItem = {
   to: string;
   label: string;
   icon: LucideIcon;
   end?: boolean;
-  /** Approvals row shows pending count badge when count is positive */
   approvalsBadge?: boolean;
 };
 
-const MAIN_NAV: NavItem[] = [
-  { to: "/portal/leads", label: "Leads", icon: ClipboardList, end: true },
-  { to: "/portal/projects", label: "Projects", icon: FolderKanban },
-  { to: "/portal/commissions", label: "Commissions", icon: IndianRupee }
+const REP_NAV: NavItem[] = [
+  { to: "/portal/pipeline", label: "Pipeline", icon: ClipboardList, end: true },
+  { to: "/portal/resources", label: "Resources", icon: BookOpen }
 ];
 
 const ADMIN_NAV: NavItem[] = [
-  { to: "/portal/team", label: "Team", icon: UsersRound },
+  { to: "/portal/team", label: "Team", icon: UsersRound, end: true },
+  { to: "/portal/reviews", label: "Reviews", icon: FileCheck2, approvalsBadge: true },
   { to: "/portal/users", label: "Users", icon: Users },
-  { to: "/portal/approvals", label: "Payment reviews", icon: FileCheck2, approvalsBadge: true },
-  { to: "/portal/activity", label: "Activity", icon: ScrollText },
-  { to: "/portal/settings", label: "Settings", icon: Settings },
-  { to: "/portal/exports", label: "Exports", icon: FileSpreadsheet }
+  { to: "/portal/settings", label: "Settings", icon: Settings }
 ];
 
 const sidebarNavClass = ({ isActive }: { isActive: boolean }) =>
@@ -87,8 +81,14 @@ export function SalesPortalLayout() {
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
   const isAdmin = user?.role === "ADMIN";
+  const navItems = isAdmin ? ADMIN_NAV : REP_NAV;
+  const homePath = user ? defaultPortalHome(user.role) : "/portal/pipeline";
   const pendingCount = usePendingPaymentsCountQuery(isAdmin);
   const pendingTotal = pendingCount.data?.total ?? 0;
+
+  const primaryMobileNav = isAdmin
+    ? ADMIN_NAV.filter((i) => i.to === "/portal/team" || i.to === "/portal/reviews")
+    : REP_NAV;
 
   const handleLogout = () => {
     logout.mutate(undefined, {
@@ -106,7 +106,7 @@ export function SalesPortalLayout() {
             <Badge
               variant="destructive"
               className="absolute -right-2 -top-2 h-5 min-w-5 justify-center px-1 text-[10px] leading-none"
-              aria-label={`${pendingTotal} pending payment approvals`}
+              aria-label={`${pendingTotal} pending payment reviews`}
             >
               {pendingTotal > 99 ? "99+" : pendingTotal}
             </Badge>
@@ -127,7 +127,7 @@ export function SalesPortalLayout() {
             <Badge
               variant="destructive"
               className="absolute -right-2 -top-2 h-5 min-w-5 justify-center px-1 text-[10px] leading-none"
-              aria-label={`${pendingTotal} pending payment approvals`}
+              aria-label={`${pendingTotal} pending payment reviews`}
             >
               {pendingTotal > 99 ? "99+" : pendingTotal}
             </Badge>
@@ -148,7 +148,7 @@ export function SalesPortalLayout() {
             <Badge
               variant="destructive"
               className="absolute -right-2 -top-2 h-5 min-w-5 justify-center px-1 text-[10px] leading-none"
-              aria-label={`${pendingTotal} pending payment approvals`}
+              aria-label={`${pendingTotal} pending payment reviews`}
             >
               {pendingTotal > 99 ? "99+" : pendingTotal}
             </Badge>
@@ -171,7 +171,7 @@ export function SalesPortalLayout() {
         <div className="flex min-w-0 items-center gap-2">
           <Shield className="h-6 w-6 shrink-0 text-accent" aria-hidden />
           <div className="min-w-0">
-            <Link to="/portal/leads" className="truncate text-sm font-semibold tracking-tight">
+            <Link to={homePath} className="truncate text-sm font-semibold tracking-tight">
               Shyara Sales
             </Link>
             <p className="truncate text-xs text-muted-foreground">
@@ -209,31 +209,31 @@ export function SalesPortalLayout() {
       </header>
 
       <aside className="fixed bottom-0 left-0 right-0 z-50 flex h-[calc(4.5rem+env(safe-area-inset-bottom,0px))] items-start justify-around border-t bg-sidebar px-1 pt-1 md:hidden">
-        {MAIN_NAV.map((item) => (
+        {primaryMobileNav.map((item) => (
           <NavLink key={item.to} to={item.to} end={item.end} className={mobileTabNavClass}>
             {renderMobileTabIcon(item)}
             <span className="max-w-[5rem] truncate text-[10px] font-medium leading-tight">{item.label}</span>
           </NavLink>
         ))}
-        <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(mobileTabNavClass({ isActive: false }), "gap-0.5")}
-              aria-label="Open more menu"
-            >
-              <Menu className="h-5 w-5 shrink-0" aria-hidden />
-              <span className="text-[10px] font-medium leading-tight">More</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="pb-[env(safe-area-inset-bottom,0px)]">
-            <SheetHeader>
-              <SheetTitle>Menu</SheetTitle>
-            </SheetHeader>
-            <div className="mt-4 flex flex-col gap-1">
-              {isAdmin &&
-                ADMIN_NAV.map((item) => (
+        {isAdmin ? (
+          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(mobileTabNavClass({ isActive: false }), "gap-0.5")}
+                aria-label="Open more menu"
+              >
+                <Menu className="h-5 w-5 shrink-0" aria-hidden />
+                <span className="text-[10px] font-medium leading-tight">More</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="pb-[env(safe-area-inset-bottom,0px)]">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 flex flex-col gap-1">
+                {ADMIN_NAV.filter((i) => i.to !== "/portal/team" && i.to !== "/portal/reviews").map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
@@ -244,46 +244,36 @@ export function SalesPortalLayout() {
                     <span>{item.label}</span>
                   </NavLink>
                 ))}
-              {isAdmin ? <Separator className="my-2" /> : null}
-              <Button variant="ghost" className="min-h-11 justify-start" asChild>
-                <Link to="/portal/change-password" onClick={() => setMoreOpen(false)}>
-                  Change password
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                className="min-h-11 justify-start text-destructive"
-                onClick={() => {
-                  setMoreOpen(false);
-                  handleLogout();
-                }}
-              >
-                Log out
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
+                <Separator className="my-2" />
+                <Button variant="ghost" className="min-h-11 justify-start" asChild>
+                  <Link to="/portal/change-password" onClick={() => setMoreOpen(false)}>
+                    Change password
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="min-h-11 justify-start text-destructive"
+                  onClick={() => {
+                    setMoreOpen(false);
+                    handleLogout();
+                  }}
+                >
+                  Log out
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        ) : null}
       </aside>
 
       <aside className="fixed left-0 top-0 z-30 hidden h-dvh w-56 flex-col border-r bg-sidebar md:flex">
         <nav className="flex flex-1 flex-col gap-1 p-3">
-          {MAIN_NAV.map((item) => (
+          {navItems.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className={sidebarNavClass}>
               {renderNavIcon(item)}
               <span className="hidden md:inline">{item.label}</span>
             </NavLink>
           ))}
-          {isAdmin && (
-            <>
-              <Separator className="my-2" />
-              {ADMIN_NAV.map((item) => (
-                <NavLink key={item.to} to={item.to} className={sidebarNavClass}>
-                  {renderNavIcon(item)}
-                  <span className="hidden md:inline">{item.label}</span>
-                </NavLink>
-              ))}
-            </>
-          )}
         </nav>
       </aside>
 

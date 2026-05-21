@@ -15,6 +15,7 @@ import { registerCommissionRoutes } from "./routes/commissions.js";
 import { registerExportRoutes } from "./routes/export.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerLeadRoutes } from "./routes/leads.js";
+import { registerLeadStageRoutes } from "./routes/leadStages.js";
 import { registerPaymentRoutes } from "./routes/payments.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
@@ -139,6 +140,7 @@ export async function buildApp(options: BuildAppOptions) {
   await registerTeamRoutes(app);
   await registerWebsiteTemplateRoutes(app);
   await registerLeadRoutes(app);
+  await registerLeadStageRoutes(app);
   await registerPaymentRoutes(app);
   await registerCommissionRoutes(app);
   await registerProjectRoutes(app);

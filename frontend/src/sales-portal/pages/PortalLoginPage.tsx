@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ApiError } from "../api/client";
-import { getSafePortalReturnPath } from "../lib/sanitizeRedirect";
+import { resolvePortalDestination } from "../lib/portalPaths";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -35,8 +35,8 @@ export function PortalLoginPage() {
   const strippedReturnTo = useRef(false);
   const intendedDestinationRef = useRef<string | null>(null);
   if (intendedDestinationRef.current === null) {
-    intendedDestinationRef.current = getSafePortalReturnPath(
-      "/portal/leads",
+    intendedDestinationRef.current = resolvePortalDestination(
+      "SALES_REP",
       searchParams.get("returnTo"),
       (location.state as { from?: string } | null)?.from
     );
@@ -179,7 +179,13 @@ export function PortalLoginPage() {
                             state: { from: intendedDestination }
                           });
                         } else {
-                          navigate(intendedDestination, { replace: true });
+                          navigate(
+                            resolvePortalDestination(
+                              data.user.role,
+                              intendedDestination
+                            ),
+                            { replace: true }
+                          );
                         }
                       },
                       onError: (e) => {

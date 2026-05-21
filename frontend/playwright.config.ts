@@ -19,7 +19,7 @@ export default defineConfig({
     command: "npm run dev",
     url: "http://localhost:8080",
     reuseExistingServer: !process.env.CI,
-    cwd: __dirname,
-    timeout: 120_000,
+    cwd: path.join(__dirname, ".."),
+    timeout: 180_000,
   },
 });

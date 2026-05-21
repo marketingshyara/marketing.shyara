@@ -46,6 +46,38 @@ d("integration: auth and RBAC", () => {
     await prisma.$disconnect();
   });
 
+  it("admin cannot create leads (rep-only)", async () => {
+    const config = loadConfig();
+    const app = await buildApp({ config });
+
+    const login = await inject(app, {
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "it-admin@test.local", password: "AdminPass123!" }
+    });
+    expect(login.statusCode).toBe(200);
+    const cookie = login.cookies.find((c) => c.name === config.cookieName);
+    expect(cookie).toBeDefined();
+
+    const create = await inject(app, {
+      method: "POST",
+      url: "/api/leads",
+      headers: {
+        cookie: `${config.cookieName}=${cookie!.value}`,
+        "content-type": "application/json"
+      },
+      payload: {
+        clientName: "Blocked Lead",
+        assignedToUserId: repId
+      }
+    });
+
+    expect(create.statusCode).toBe(403);
+    const body = JSON.parse(create.body);
+    expect(body.error.code).toBe("FORBIDDEN");
+    await app.close();
+  });
+
   it("rep cannot list all users", async () => {
     const config = loadConfig();
     const app = await buildApp({ config });

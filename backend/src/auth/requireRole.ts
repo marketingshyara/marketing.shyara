@@ -14,3 +14,9 @@ export function requireRepOrAdmin(request: FastifyRequest): void {
     throw new HttpError(403, "FORBIDDEN", "Sales or admin access required.");
   }
 }
+
+export function requireSalesRep(request: FastifyRequest): void {
+  if (request.currentUser?.role !== UserRole.SALES_REP) {
+    throw new HttpError(403, "FORBIDDEN", "Sales rep access required.");
+  }
+}

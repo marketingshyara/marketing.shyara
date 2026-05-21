@@ -11,7 +11,7 @@ import { useChangePasswordMutation, useSessionQuery } from "../hooks/useSalesQue
 import { PasswordField } from "../components/PasswordField";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "../api/client";
-import { getSafePortalReturnPath } from "../lib/sanitizeRedirect";
+import { resolvePortalDestination } from "../lib/portalPaths";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -133,11 +133,13 @@ export function PortalChangePasswordPage() {
   const [searchParams] = useSearchParams();
   const { data, isLoading } = useSessionQuery();
 
-  const intendedDestination = getSafePortalReturnPath(
-    "/portal/leads",
-    searchParams.get("returnTo"),
-    (location.state as { from?: string } | null)?.from
-  );
+  const intendedDestination = data?.user
+    ? resolvePortalDestination(
+        data.user.role,
+        searchParams.get("returnTo"),
+        (location.state as { from?: string } | null)?.from
+      )
+    : "/portal/pipeline";
 
   if (isLoading) {
     return (

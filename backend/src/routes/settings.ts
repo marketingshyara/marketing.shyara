@@ -6,6 +6,7 @@ import { logActivity } from "../services/activityLog.js";
 import {
   getPortalSettings,
   toPublicSettings,
+  toRepPortalSettings,
   updatePortalSettingsValues
 } from "../services/settings.js";
 export async function registerSettingsRoutes(app: FastifyInstance): Promise<void> {
@@ -14,7 +15,7 @@ export async function registerSettingsRoutes(app: FastifyInstance): Promise<void
     { preHandler: [requireUser] },
     async (request, reply) => {
       const settings = await getPortalSettings(app.prisma);
-      return reply.send({ settings: toPublicSettings(settings) });
+      return reply.send({ settings: toRepPortalSettings(settings) });
     }
   );
 

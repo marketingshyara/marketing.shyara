@@ -15,10 +15,13 @@ import { clampPage } from "../lib/pagination.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
 import { assertManualTransition, commissionAmountCents } from "../services/leadFsm.js";
 import { assertLeadAccess } from "../services/leadAccess.js";
+import { assertAdminLeadPatchBody, assertSalesRepActor } from "../services/leadMutations.js";
 import { assertLeadMutable } from "../services/leadGuards.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings, getRequiredLeadStatusForPaymentKind } from "../services/settings.js";
+import { getPipelineStages } from "../services/pipeline.js";
 import {
+  convertLeadBodySchema,
   createLeadBodySchema,
   leadsListQuerySchema,
   markPaymentBodySchema,
@@ -52,24 +55,9 @@ function hasVerifiedAdvance(lead: {
 }
 
 async function resolveAssignedRepForCreate(
-  prisma: FastifyInstance["prisma"],
   user: User,
   body: { assignedToUserId?: string | null }
-): Promise<string | null> {
-  if (user.role === UserRole.ADMIN) {
-    if (!body.assignedToUserId) {
-      throw new HttpError(
-        400,
-        "ASSIGNMENT_REQUIRED",
-        "Admin must set assignedToUserId to an active sales rep."
-      );
-    }
-    const assignee = await prisma.user.findUnique({ where: { id: body.assignedToUserId } });
-    if (!assignee?.isActive || assignee.role !== UserRole.SALES_REP) {
-      throw new HttpError(400, "INVALID_ASSIGNEE", "Assignee must be an active sales rep.");
-    }
-    return assignee.id;
-  }
+): Promise<string> {
   if (body.assignedToUserId && body.assignedToUserId !== user.id) {
     throw new HttpError(403, "FORBIDDEN", "Sales reps cannot assign leads to another user.");
   }
@@ -89,6 +77,8 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       }
 
       const filters = {
+        ...(query.view === "leads" ? { convertedAt: null } : {}),
+        ...(query.view === "clients" ? { convertedAt: { not: null } } : {}),
         ...(query.assignedToUserId ? { assignedToUserId: query.assignedToUserId } : {}),
         ...(query.status ? { status: query.status } : {}),
         ...(query.search
@@ -137,9 +127,10 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: [requireUser] },
     async (request, reply) => {
       const user = request.currentUser!;
+      assertSalesRepActor(user);
       const body = createLeadBodySchema.parse(request.body);
 
-      const assignedToUserId = await resolveAssignedRepForCreate(app.prisma, user, body);
+      const assignedToUserId = await resolveAssignedRepForCreate(user, body);
       await assertWebsiteTemplateExists(app.prisma, body.websiteTemplateId);
 
       const portalSettings = await getPortalSettings(app.prisma);
@@ -222,7 +213,116 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       if (!lead) {
         throw new HttpError(404, "NOT_FOUND", "Lead not found.");
       }
-      return reply.send({ lead });
+      const settings = await getPortalSettings(app.prisma);
+      const pipelineStages = getPipelineStages(lead, settings, user.role);
+      return reply.send({ lead, pipelineStages });
+    }
+  );
+
+  app.post(
+    "/api/leads/:id/convert",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      const user = request.currentUser!;
+      assertSalesRepActor(user);
+      const { id } = request.params as { id: string };
+      const body = convertLeadBodySchema.parse(request.body);
+
+      try {
+        const leadOut = await app.prisma.$transaction(
+          async (tx) => {
+            const lead = await tx.lead.findUnique({ where: { id }, include: { payments: true } });
+            if (!lead) {
+              throw new HttpError(404, "NOT_FOUND", "Lead not found.");
+            }
+            assertLeadAccess(lead, user);
+            const settings = await getPortalSettings(tx);
+            assertLeadMutable(lead, settings);
+
+            if (lead.convertedAt) {
+              throw new HttpError(400, "ALREADY_CONVERTED", "This lead is already a client.");
+            }
+
+            if (body.agreedTotalCents < settings.minAgreedTotalCents) {
+              throw new HttpError(
+                400,
+                "MIN_PRICE",
+                `Agreed total must be at least ₹${Math.round(settings.minAgreedTotalCents / 100)}.`
+              );
+            }
+
+            await assertWebsiteTemplateExists(tx, body.websiteTemplateId);
+
+            const split = splitAgreedTotalCents(body.agreedTotalCents, settings.advancePaymentShareBps);
+            const advanceAmountCents = body.advanceAmountCents ?? split.advanceAmountCents;
+
+            const requiredStatus = getRequiredLeadStatusForPaymentKind(settings, "ADVANCE");
+            if (lead.status !== requiredStatus) {
+              throw new HttpError(
+                400,
+                "INVALID_STATE",
+                `Advance can only be recorded while lead is ${requiredStatus}.`
+              );
+            }
+
+            const claim = await tx.lead.updateMany({
+              where: {
+                id,
+                convertedAt: null,
+                updatedAt: lead.updatedAt,
+                status: requiredStatus
+              },
+              data: {
+                convertedAt: new Date(),
+                websiteTemplateId: body.websiteTemplateId,
+                agreedTotalCents: body.agreedTotalCents,
+                advanceAmountCents,
+                finalQuoteCents: split.finalQuoteCents
+              }
+            });
+            if (claim.count === 0) {
+              throw new HttpError(409, "CONCURRENT_MODIFICATION", "Lead was modified concurrently.");
+            }
+
+            try {
+              await tx.leadPayment.create({
+                data: {
+                  leadId: id,
+                  kind: PaymentKind.ADVANCE,
+                  amountCents: advanceAmountCents,
+                  repNote: body.repNote ?? undefined,
+                  markedByUserId: user.id
+                }
+              });
+            } catch (error) {
+              if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+                throw new HttpError(409, "PENDING_PAYMENT", "A pending advance payment already exists.");
+              }
+              throw error;
+            }
+
+            return tx.lead.findUniqueOrThrow({
+              where: { id },
+              include: {
+                payments: { orderBy: { markedAt: "desc" } },
+                commission: true,
+                project: true,
+                websiteTemplate: true
+              }
+            });
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+        );
+
+        const settings = await getPortalSettings(app.prisma);
+        const pipelineStages = getPipelineStages(leadOut, settings, user.role);
+        return reply.status(201).send({ lead: leadOut, pipelineStages });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+          throw new HttpError(409, "CONCURRENT_MODIFICATION", "Lead state changed concurrently.");
+        }
+        throw error;
+      }
     }
   );
 
@@ -233,6 +333,9 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       const user = request.currentUser!;
       const { id } = request.params as { id: string };
       const body = patchLeadBodySchema.parse(request.body);
+      if (user.role === UserRole.ADMIN) {
+        assertAdminLeadPatchBody(body);
+      }
 
       const result = await app.prisma.$transaction(async (tx) => {
         const lead = await tx.lead.findUnique({
@@ -272,25 +375,29 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           }
         }
 
-        if (body.markContentReceived === false && user.role !== UserRole.ADMIN) {
-          throw new HttpError(403, "FORBIDDEN", "Only an admin can clear content received.");
+        if (body.agreedTotalCents != null && body.agreedTotalCents < settings.minAgreedTotalCents) {
+          throw new HttpError(
+            400,
+            "MIN_PRICE",
+            `Agreed total must be at least ₹${Math.round(settings.minAgreedTotalCents / 100)}.`
+          );
         }
-        if (body.markContentReceived === true) {
+
+        if (body.whatsappGroupLink !== undefined) {
           if (!hasVerifiedAdvance(lead)) {
-            throw new HttpError(
-              400,
-              "INVALID_STATE",
-              "Advance payment must be verified before marking content received."
-            );
+            throw new HttpError(400, "INVALID_STATE", "Advance must be verified before WhatsApp link.");
           }
-          const templateId = body.websiteTemplateId ?? lead.websiteTemplateId;
-          if (!templateId) {
-            throw new HttpError(
-              400,
-              "TEMPLATE_REQUIRED",
-              "Select a website template before marking content received."
-            );
+        }
+
+        if (body.markDemoFinalized === true) {
+          const project = await tx.project.findUnique({ where: { leadId: id } });
+          if (!project?.previewUrl) {
+            throw new HttpError(400, "INVALID_STATE", "Demo link must be ready before finalizing.");
           }
+        }
+
+        if (body.markAccountsReady === true && !lead.demoFinalizedAt && body.markDemoFinalized !== true) {
+          throw new HttpError(400, "INVALID_STATE", "Mark demo finalized before accounts ready.");
         }
 
         let agreedPatch: {
@@ -327,10 +434,24 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
             ? { finalQuoteCents: body.finalQuoteCents }
             : {}),
           ...(body.websiteTemplateId !== undefined ? { websiteTemplateId: body.websiteTemplateId } : {}),
-          ...(body.markContentReceived === true ? { contentReceivedAt: new Date() } : {}),
-          ...(body.markContentReceived === false ? { contentReceivedAt: null } : {}),
+          ...(body.whatsappGroupLink !== undefined
+            ? { whatsappGroupLink: body.whatsappGroupLink }
+            : {}),
+          ...(body.markDemoFinalized === true ? { demoFinalizedAt: new Date() } : {}),
+          ...(body.markAccountsReady === true ? { accountsReadyAt: new Date() } : {}),
           ...(assignedToUserId !== undefined ? { assignedToUserId } : {})
         };
+
+        if (body.previewUrl !== undefined && user.role === UserRole.ADMIN) {
+          const project = await tx.project.findUnique({ where: { leadId: id } });
+          if (!project) {
+            throw new HttpError(400, "INVALID_STATE", "Create a project first (verify advance payment).");
+          }
+          await tx.project.updateMany({
+            where: { id: project.id },
+            data: { previewUrl: body.previewUrl ?? null }
+          });
+        }
 
         const hasLeadFieldUpdates = Object.keys(data).length > 0;
         let updated = lead;
@@ -418,7 +539,9 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       if (!leadOut) {
         throw new HttpError(404, "NOT_FOUND", "Lead not found.");
       }
-      return reply.send({ lead: leadOut });
+      const settings = await getPortalSettings(app.prisma);
+      const pipelineStages = getPipelineStages(leadOut, settings, user.role);
+      return reply.send({ lead: leadOut, pipelineStages });
     }
   );
 
@@ -479,6 +602,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: [requireUser] },
     async (request, reply) => {
       const user = request.currentUser!;
+      assertSalesRepActor(user);
       const { id } = request.params as { id: string };
       const body = markPaymentBodySchema.parse(request.body);
 
@@ -508,6 +632,13 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
                 400,
                 "INVALID_STATE",
                 `Final payments can only be marked while the lead is ${requiredFinal}.`
+              );
+            }
+            if (body.kind === PaymentKind.FINAL && !lead.accountsReadyVerifiedAt) {
+              throw new HttpError(
+                400,
+                "INVALID_STATE",
+                "Accounts must be verified before recording due payment."
               );
             }
 

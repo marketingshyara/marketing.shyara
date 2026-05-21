@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { Navigate, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useSessionQuery } from "../hooks/useSalesQueries";
-import { getSafePortalReturnPath, normalizePortalReturnCandidate } from "../lib/sanitizeRedirect";
+import { defaultPortalHome, resolvePortalDestination } from "../lib/portalPaths";
+import { normalizePortalReturnCandidate } from "../lib/sanitizeRedirect";
 
 function PortalLoading() {
   return (
@@ -40,7 +41,10 @@ export function RequirePortalUnlocked() {
 
   if (data?.user?.mustChangePassword && location.pathname !== "/portal/change-password") {
     const full = `${location.pathname}${location.search}`;
-    const intended = getSafePortalReturnPath("/portal/leads", normalizePortalReturnCandidate(full));
+    const intended = resolvePortalDestination(
+      data.user.role,
+      normalizePortalReturnCandidate(full)
+    );
     const search = `?returnTo=${encodeURIComponent(intended)}`;
     return <Navigate to={{ pathname: "/portal/change-password", search }} replace state={{ from: intended }} />;
   }
@@ -61,16 +65,16 @@ export function PublicLoginGate({ children }: { children: ReactNode }) {
 
   if (data?.user) {
     if (data.user.mustChangePassword) {
-      const intended = getSafePortalReturnPath(
-        "/portal/leads",
+      const intended = resolvePortalDestination(
+        data.user.role,
         searchParams.get("returnTo"),
         (location.state as { from?: string } | null)?.from
       );
       const search = `?returnTo=${encodeURIComponent(intended)}`;
       return <Navigate to={{ pathname: "/portal/change-password", search }} replace state={{ from: intended }} />;
     }
-    const target = getSafePortalReturnPath(
-      "/portal/leads",
+    const target = resolvePortalDestination(
+      data.user.role,
       searchParams.get("returnTo"),
       (location.state as { from?: string } | null)?.from
     );
@@ -78,6 +82,21 @@ export function PublicLoginGate({ children }: { children: ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+export function RequireSalesRep() {
+  const { data, isLoading, isFetching } = useSessionQuery();
+  const location = useLocation();
+
+  if (isLoading || (isFetching && data === undefined)) {
+    return <PortalLoading />;
+  }
+
+  if (data?.user?.role === "ADMIN") {
+    return <Navigate to="/portal/team" replace state={{ from: `${location.pathname}${location.search}` }} />;
+  }
+
+  return <Outlet />;
 }
 
 export function RequireAdmin() {

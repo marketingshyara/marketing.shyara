@@ -37,8 +37,18 @@ export const resetPasswordBodySchema = z.object({
   temporaryPassword: z.string().min(8).max(128)
 });
 
+export const pipelineStageKeySchema = z.enum([
+  "whatsapp",
+  "preview_ready",
+  "accounts_ready",
+  "repo_transfer",
+  "deployment"
+]);
+
 export const leadsListQuerySchema = paginationQuerySchema
   .extend({
+    /** `leads` = not converted; `clients` = rep submitted deal form */
+    view: z.enum(["leads", "clients"]).optional(),
     /** Admin-only: filter pipeline by assigned sales rep. */
     assignedToUserId: z.string().cuid().optional(),
     status: z.nativeEnum(LeadStatus).optional(),
@@ -83,9 +93,23 @@ export const patchLeadBodySchema = z.object({
   advanceAmountCents: z.number().int().min(0).optional().nullable(),
   finalQuoteCents: z.number().int().min(0).optional().nullable(),
   websiteTemplateId: z.string().min(1).max(64).optional().nullable(),
-  /** When true, sets `contentReceivedAt` to now (rep, gated). When false, clears it (admin only). */
-  markContentReceived: z.boolean().optional(),
-  assignedToUserId: z.string().min(1).optional().nullable()
+  whatsappGroupLink: z.union([z.string().url().max(2000), z.null()]).optional(),
+  markDemoFinalized: z.boolean().optional(),
+  markAccountsReady: z.boolean().optional(),
+  assignedToUserId: z.string().min(1).optional().nullable(),
+  /** Admin: set project preview URL on linked project */
+  previewUrl: z.union([z.string().url().max(2000), z.null()]).optional()
+});
+
+export const convertLeadBodySchema = z.object({
+  websiteTemplateId: z.string().min(1).max(64),
+  agreedTotalCents: z.number().int().positive(),
+  advanceAmountCents: z.number().int().positive().optional(),
+  repNote: z.string().max(2000).optional().nullable()
+});
+
+export const rejectStageBodySchema = z.object({
+  adminNote: z.string().max(2000).optional().nullable()
 });
 
 export const transitionBodySchema = z.object({
@@ -178,6 +202,17 @@ export const manualTransitionSchema = z.object({
   enabled: z.boolean()
 });
 
+export const repTutorialLinkSchema = z.object({
+  title: z.string().min(1).max(120),
+  url: z.string().url().max(2000)
+});
+
+export const repPainPointSchema = z.object({
+  categoryId: z.string().min(1).max(64),
+  title: z.string().min(1).max(120),
+  bullets: z.array(z.string().min(1).max(500)).min(1).max(20)
+});
+
 export const portalSettingsSchema = z
   .object({
     commissionRateBps: z.number().int().min(0).max(10000).default(2000),
@@ -195,7 +230,13 @@ export const portalSettingsSchema = z
     enforcePaymentQuoteToleranceBps: z.number().int().min(0).max(10000).nullable().default(null),
     exportMaxRows: z.number().int().min(100).max(500000).default(50_000),
     commissionRounding: z.enum(["floor", "round", "bankers"]).default("bankers"),
-    advancePaymentShareBps: z.number().int().min(0).max(10000).default(5000)
+    advancePaymentShareBps: z.number().int().min(0).max(10000).default(5000),
+    minAgreedTotalCents: z.number().int().min(0).default(799_900),
+    performanceBonusAmountCents: z.number().int().min(0).default(50_000),
+    performanceBonusAfterCompletedSales: z.number().int().min(0).default(10),
+    templatesCatalogUrl: z.string().url().max(2000).default("https://marketing.shyara.co.in/samples/websites"),
+    tutorialLinks: z.array(repTutorialLinkSchema).default([]),
+    painPointsByCategory: z.array(repPainPointSchema).default([])
   })
   .strict();
 
@@ -214,7 +255,13 @@ const PORTAL_SETTINGS_INPUT_KEYS = [
   "enforcePaymentQuoteToleranceBps",
   "exportMaxRows",
   "commissionRounding",
-  "advancePaymentShareBps"
+  "advancePaymentShareBps",
+  "minAgreedTotalCents",
+  "performanceBonusAmountCents",
+  "performanceBonusAfterCompletedSales",
+  "templatesCatalogUrl",
+  "tutorialLinks",
+  "painPointsByCategory"
 ] as const satisfies readonly (keyof PortalSettingsValues)[];
 
 function pickKnownPortalSettings(

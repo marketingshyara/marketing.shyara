@@ -3,7 +3,7 @@
  *
  * Verifies that a freshly-created sales rep account whose admin marked
  * `mustChangePassword: true` is forced into the change-password screen on first login and
- * unblocked into /portal/leads only after submitting a new password.
+ * unblocked into /portal/pipeline only after submitting a new password.
  *
  * Wiring: add `@playwright/test` as a devDependency and a `playwright.config.ts` whose
  * `webServer` block boots both the backend (`npm --prefix backend run dev`) and the frontend
@@ -19,7 +19,7 @@ const NEW_REP_EMAIL = process.env.E2E_REP_EMAIL ?? `rep-${Date.now()}@test.local
 const NEW_REP_PASSWORD = "TempPass123!";
 const FINAL_PASSWORD = "AfterChangePass1!";
 
-test("mustChangePassword forces a password change before /portal/leads access", async ({ page, request }) => {
+test("mustChangePassword forces a password change before /portal/pipeline access", async ({ page, request }) => {
   // Admin login.
   const loginRes = await request.post("/api/auth/login", {
     data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }

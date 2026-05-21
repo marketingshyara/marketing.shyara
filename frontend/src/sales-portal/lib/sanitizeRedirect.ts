@@ -33,9 +33,9 @@ export function getSafePortalReturnPath(fallback: string, ...candidates: unknown
     if (n) return n;
   }
   const fb = normalizePortalReturnCandidate(fallback);
-  return fb ?? "/portal/leads";
+  return fb ?? "/portal/pipeline";
 }
 
-export function sanitizePortalRedirectPath(raw: unknown, fallback = "/portal/leads"): string {
+export function sanitizePortalRedirectPath(raw: unknown, fallback = "/portal/pipeline"): string {
   return normalizePortalReturnCandidate(raw) ?? fallback;
 }

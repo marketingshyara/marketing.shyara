@@ -4,32 +4,35 @@ import {
   PublicLoginGate,
   RequireAdmin,
   RequireAuth,
-  RequirePortalUnlocked
+  RequirePortalUnlocked,
+  RequireSalesRep
 } from "./guards/PortalGuards";
 import { SalesPortalLayout } from "./layout/SalesPortalLayout";
 import { PortalLoginPage } from "./pages/PortalLoginPage";
 import { PortalChangePasswordPage } from "./pages/PortalChangePasswordPage";
-import { LeadsListPage } from "./pages/LeadsListPage";
-import { LeadCreatePage } from "./pages/LeadCreatePage";
-import { LeadDetailPage } from "./pages/LeadDetailPage";
+import { PipelineListPage } from "./pages/pipeline/PipelineListPage";
+import { PipelineDetailPage } from "./pages/pipeline/PipelineDetailPage";
+import { PipelineNewLeadPage } from "./pages/pipeline/PipelineNewLeadPage";
+import { ResourcesPage } from "./pages/resources/ResourcesPage";
+import { ReviewsPage } from "./pages/admin/ReviewsPage";
+import { SettingsPage } from "./pages/admin/SettingsPage";
+import { TeamHubPage } from "./pages/admin/TeamHubPage";
+import { RepProjectsPage } from "./pages/admin/RepProjectsPage";
+import { AdminProjectPage } from "./pages/admin/AdminProjectPage";
 import { UsersPage } from "./pages/UsersPage";
-import { CommissionsPage } from "./pages/CommissionsPage";
-import { ProjectsPage } from "./pages/ProjectsPage";
-import { ProjectDetailPage } from "./pages/ProjectDetailPage";
-import { ActivityLogsPage } from "./pages/ActivityLogsPage";
-import { ApprovalsPage } from "./pages/ApprovalsPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { TeamHubPage } from "./pages/TeamHubPage";
-import { Rep360Page } from "./pages/Rep360Page";
-import { ExportsPage } from "./pages/ExportsPage";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert, SearchX } from "lucide-react";
+import { useSessionQuery } from "./hooks/useSalesQueries";
+import { RoleAwareRedirect } from "./components/RoleAwareRedirect";
+import { defaultPortalHome } from "./lib/portalPaths";
 import { getSafePortalReturnPath } from "./lib/sanitizeRedirect";
 
 function NoAccessPage() {
   const location = useLocation();
+  const { data } = useSessionQuery();
+  const fallback = defaultPortalHome(data?.user?.role ?? "SALES_REP");
   const from = getSafePortalReturnPath(
-    "/portal/leads",
+    fallback,
     (location.state as { from?: string } | null)?.from
   );
   return (
@@ -37,7 +40,7 @@ function NoAccessPage() {
       <ShieldAlert className="h-10 w-10 text-amber-600" aria-hidden />
       <h1 className="text-2xl font-semibold">You Do Not Have Access</h1>
       <p className="text-sm text-muted-foreground">
-        This section is only available to administrators. Ask an administrator if you need access.
+        This section is only available to administrators.
       </p>
       <Button asChild className="min-h-11">
         <Link to={from}>Go Back</Link>
@@ -47,18 +50,27 @@ function NoAccessPage() {
 }
 
 function NotFoundPage() {
+  const { data } = useSessionQuery();
+  const home = defaultPortalHome(data?.user?.role ?? "SALES_REP");
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-4 text-center">
       <SearchX className="h-10 w-10 text-muted-foreground" aria-hidden />
       <h1 className="text-2xl font-semibold">Page Not Found</h1>
-      <p className="text-sm text-muted-foreground">
-        The page link is invalid or no longer available.
-      </p>
       <Button asChild className="min-h-11">
-        <Link to="/portal/leads">Go to Leads</Link>
+        <Link to={home}>Go to home</Link>
       </Button>
     </div>
   );
+}
+
+function LegacyRedirect({ to }: { to: string }) {
+  return <Navigate to={to} replace />;
+}
+
+function PortalIndexRedirect() {
+  const { data, isLoading } = useSessionQuery();
+  if (isLoading || !data?.user) return null;
+  return <Navigate to={defaultPortalHome(data.user.role)} replace />;
 }
 
 export function PortalRoutes() {
@@ -76,23 +88,58 @@ export function PortalRoutes() {
         <Route path="change-password" element={<PortalChangePasswordPage />} />
         <Route element={<RequirePortalUnlocked />}>
           <Route element={<SalesPortalLayout />}>
-            <Route index element={<Navigate to="leads" replace />} />
-            <Route path="leads" element={<LeadsListPage />} />
-            <Route path="leads/new" element={<LeadCreatePage />} />
-            <Route path="leads/:id" element={<LeadDetailPage />} />
-            <Route path="commissions" element={<CommissionsPage />} />
-            <Route path="projects" element={<ProjectsPage />} />
-            <Route path="projects/:id" element={<ProjectDetailPage />} />
+            <Route index element={<PortalIndexRedirect />} />
+
+            <Route element={<RequireSalesRep />}>
+              <Route path="pipeline" element={<PipelineListPage />} />
+              <Route path="pipeline/new" element={<PipelineNewLeadPage />} />
+              <Route path="pipeline/:id" element={<PipelineDetailPage />} />
+              <Route path="resources" element={<ResourcesPage />} />
+            </Route>
+
+            <Route
+              path="leads"
+              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/team" />}
+            />
+            <Route
+              path="leads/*"
+              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/team" />}
+            />
+            <Route
+              path="projects"
+              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/team" />}
+            />
+            <Route
+              path="projects/*"
+              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/team" />}
+            />
+            <Route
+              path="commissions"
+              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/team" />}
+            />
+            <Route
+              path="approvals"
+              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/reviews" />}
+            />
+            <Route
+              path="activity"
+              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/team" />}
+            />
+            <Route
+              path="exports"
+              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/settings" />}
+            />
+
             <Route path="no-access" element={<NoAccessPage />} />
             <Route path="not-found" element={<NotFoundPage />} />
+
             <Route element={<RequireAdmin />}>
               <Route path="team" element={<TeamHubPage />} />
-              <Route path="team/:userId" element={<Rep360Page />} />
-              <Route path="users" element={<UsersPage />} />
-              <Route path="approvals" element={<ApprovalsPage />} />
-              <Route path="activity" element={<ActivityLogsPage />} />
+              <Route path="team/:repId" element={<RepProjectsPage />} />
+              <Route path="team/:repId/projects/:leadId" element={<AdminProjectPage />} />
+              <Route path="reviews" element={<ReviewsPage />} />
               <Route path="settings" element={<SettingsPage />} />
-              <Route path="exports" element={<ExportsPage />} />
+              <Route path="users" element={<UsersPage />} />
             </Route>
           </Route>
         </Route>

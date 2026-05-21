@@ -19,10 +19,22 @@ const run = process.env.E2E_RUN_JOURNEY === "1";
     return;
   }
   await page.goto("/portal/team");
-  await expect(page.getByRole("heading", { name: /^Team$/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Sales team/i })).toBeVisible();
 });
 
-(run ? test : test.skip)("payment reviews page shows updated title", async ({ page, request }) => {
+(run ? test : test.skip)("reviews page loads for admin", async ({ page, request }) => {
+  const loginRes = await request.post("/api/auth/login", {
+    data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
+  });
+  if (!loginRes.ok()) {
+    test.skip();
+    return;
+  }
+  await page.goto("/portal/reviews");
+  await expect(page.getByRole("heading", { name: /^Reviews$/ })).toBeVisible();
+});
+
+(run ? test : test.skip)("legacy approvals URL redirects to reviews", async ({ page, request }) => {
   const loginRes = await request.post("/api/auth/login", {
     data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
   });
@@ -31,5 +43,5 @@ const run = process.env.E2E_RUN_JOURNEY === "1";
     return;
   }
   await page.goto("/portal/approvals");
-  await expect(page.getByRole("heading", { name: /Payment reviews/i })).toBeVisible();
+  await expect(page).toHaveURL(/\/portal\/reviews/);
 });

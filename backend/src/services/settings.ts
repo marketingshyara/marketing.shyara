@@ -95,8 +95,21 @@ export async function updatePortalSettingsValues(
   });
 }
 
+/** Full settings for admins. */
 export function toPublicSettings(values: PortalSettingsValues): PortalSettingsValues {
   return values;
+}
+
+/** Rep-facing subset (no commission tuning or manual transitions). */
+export function toRepPortalSettings(values: PortalSettingsValues) {
+  return {
+    minAgreedTotalCents: values.minAgreedTotalCents,
+    advancePaymentShareBps: values.advancePaymentShareBps,
+    commissionRateBps: values.commissionRateBps,
+    templatesCatalogUrl: values.templatesCatalogUrl,
+    tutorialLinks: values.tutorialLinks,
+    painPointsByCategory: values.painPointsByCategory
+  };
 }
 
 export function getRequiredLeadStatusForPaymentKind(

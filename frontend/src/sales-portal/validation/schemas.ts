@@ -93,8 +93,11 @@ export const patchLeadSchema = z.object({
   advanceAmountCents: z.number().int().min(0).optional().nullable(),
   finalQuoteCents: z.number().int().min(0).optional().nullable(),
   websiteTemplateId: z.string().min(1).max(64).optional().nullable(),
-  markContentReceived: z.boolean().optional(),
-  assignedToUserId: z.string().min(1).optional().nullable()
+  whatsappGroupLink: z.union([z.string().url().max(2000), z.literal("")]).optional().nullable(),
+  markDemoFinalized: z.boolean().optional(),
+  markAccountsReady: z.boolean().optional(),
+  assignedToUserId: z.string().min(1).optional().nullable(),
+  previewUrl: z.union([z.string().url().max(2000), z.literal("")]).optional().nullable()
 });
 
 export const transitionSchema = z.object({
@@ -126,6 +129,17 @@ export const manualTransitionSchema = z.object({
   enabled: z.boolean()
 });
 
+export const repTutorialLinkSchema = z.object({
+  title: z.string().min(1).max(120),
+  url: z.string().url().max(2000)
+});
+
+export const repPainPointSchema = z.object({
+  categoryId: z.string().min(1).max(64),
+  title: z.string().min(1).max(120),
+  bullets: z.array(z.string().min(1).max(500)).min(1).max(20)
+});
+
 export const portalSettingsSchema = z
   .object({
     commissionRateBps: z.number().int().min(0).max(10000),
@@ -139,7 +153,13 @@ export const portalSettingsSchema = z
     terminalNoMutationStatuses: z.array(leadStatusSchema),
     enforcePaymentQuoteToleranceBps: z.number().int().min(0).max(10000).nullable(),
     exportMaxRows: z.number().int().min(100).max(500000),
-    advancePaymentShareBps: z.number().int().min(0).max(10000)
+    advancePaymentShareBps: z.number().int().min(0).max(10000),
+    minAgreedTotalCents: z.number().int().min(0),
+    performanceBonusAmountCents: z.number().int().min(0),
+    performanceBonusAfterCompletedSales: z.number().int().min(0),
+    templatesCatalogUrl: z.string().url().max(2000),
+    tutorialLinks: z.array(repTutorialLinkSchema),
+    painPointsByCategory: z.array(repPainPointSchema)
   })
   .strict();
 

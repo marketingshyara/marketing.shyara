@@ -3,10 +3,13 @@ import type {
   ActivityLog,
   Commission,
   Lead,
+  LeadDetailResponse,
   LeadPaymentWithRelations,
   Paginated,
+  PipelineStageVerifyKey,
   PortalSettingsValues,
   Project,
+  RepPortalSettings,
   SessionUser,
   User,
   WebsiteTemplate
@@ -28,7 +31,7 @@ export const salesApi = {
   changePassword: (body: { newPassword: string; currentPassword?: string }) =>
     apiJson<{ user: SessionUser }>("POST", "/auth/change-password", body),
 
-  settings: () => apiJson<{ settings: PortalSettingsValues }>("GET", "/settings"),
+  settings: () => apiJson<{ settings: RepPortalSettings }>("GET", "/settings"),
 
   adminSettings: () =>
     apiJson<{ settings: PortalSettingsValues }>("GET", "/admin/settings"),
@@ -56,6 +59,7 @@ export const salesApi = {
   leads: (params: {
     page?: number;
     pageSize?: number;
+    view?: "leads" | "clients";
     status?: LeadStatus;
     search?: string;
     from?: Date;
@@ -65,6 +69,7 @@ export const salesApi = {
     const q = new URLSearchParams();
     if (params.page != null) q.set("page", String(params.page));
     if (params.pageSize != null) q.set("pageSize", String(params.pageSize));
+    if (params.view) q.set("view", params.view);
     if (params.status) q.set("status", params.status);
     if (params.search) q.set("search", params.search);
     if (params.from) q.set("from", params.from.toISOString());
@@ -74,16 +79,26 @@ export const salesApi = {
     return apiJson<Paginated<Lead>>("GET", `/leads${qs ? `?${qs}` : ""}`);
   },
 
-  lead: (id: string) => apiJson<{ lead: Lead }>("GET", `/leads/${id}`),
+  lead: (id: string) => apiJson<LeadDetailResponse>("GET", `/leads/${id}`),
 
   createLead: (body: Record<string, unknown>) =>
     apiJson<{ lead: Lead }>("POST", "/leads", body),
 
-  patchLead: (id: string, body: Record<string, unknown>) =>
-    apiJson<{ lead: Lead }>("PATCH", `/leads/${id}`, body),
+  convertLead: (
+    id: string,
+    body: {
+      websiteTemplateId: string;
+      agreedTotalCents: number;
+      advanceAmountCents?: number;
+      repNote?: string | null;
+    }
+  ) => apiJson<LeadDetailResponse>("POST", `/leads/${id}/convert`, body),
 
-  transitionLead: (id: string, body: { toStatus: LeadStatus }) =>
-    apiJson<{ lead: Lead }>("POST", `/leads/${id}/transition`, body),
+  patchLead: (id: string, body: Record<string, unknown>) =>
+    apiJson<LeadDetailResponse>("PATCH", `/leads/${id}`, body),
+
+  verifyLeadStage: (leadId: string, stageKey: PipelineStageVerifyKey) =>
+    apiJson<LeadDetailResponse>("POST", `/leads/${leadId}/stages/${stageKey}/verify`, {}),
 
   markPayment: (
     leadId: string,
@@ -158,34 +173,17 @@ export const salesApi = {
 
   websiteTemplates: () => apiJson<{ items: WebsiteTemplate[] }>("GET", "/website-templates"),
 
-  teamReps: () =>
-    apiJson<{
-      items: Array<{
-        id: string;
-        email: string;
-        displayName: string | null;
-        activeLeads: number;
-        pendingVerifications: number;
-      }>;
-    }>("GET", "/team/reps"),
+  teamReps: () => apiJson<{ items: import("../types").TeamRepSummary[] }>("GET", "/team/reps"),
 
-  teamRep: (userId: string) =>
-    apiJson<{
-      rep: {
-        id: string;
-        email: string;
-        displayName: string | null;
-        activeLeads: number;
-        pendingVerifications: number;
-      };
-      recentLeads: Array<{
-        id: string;
-        clientName: string;
-        status: LeadStatus;
-        createdAt: string;
-        agreedTotalCents: number | null;
-      }>;
-    }>("GET", `/team/reps/${userId}`),
+  teamRep: (userId: string, params?: { status?: "active" | "all" | "completed" }) => {
+    const q = new URLSearchParams();
+    if (params?.status) q.set("status", params.status);
+    const qs = q.toString();
+    return apiJson<{
+      rep: import("../types").TeamRepSummary;
+      projects: import("../types").TeamRepProject[];
+    }>("GET", `/team/reps/${userId}${qs ? `?${qs}` : ""}`);
+  },
 
   activityLogs: (params: {
     page?: number;

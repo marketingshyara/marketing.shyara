@@ -67,6 +67,7 @@ export interface Commission {
   leadId: string;
   repUserId: string;
   amountCents: number;
+  bonusCents: number;
   isPaid: boolean;
   paidAt: string | null;
   paidByAdminId: string | null;
@@ -98,6 +99,13 @@ export interface Lead {
   agreedTotalCents: number | null;
   websiteTemplateId: string | null;
   contentReceivedAt: string | null;
+  convertedAt: string | null;
+  whatsappGroupLink: string | null;
+  whatsappVerifiedAt: string | null;
+  demoFinalizedAt: string | null;
+  accountsReadyAt: string | null;
+  accountsReadyVerifiedAt: string | null;
+  repoTransferVerifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
   payments?: LeadPayment[];
@@ -146,8 +154,53 @@ export interface ManualTransition {
   enabled: boolean;
 }
 
-export interface PortalSettingsValues {
+export interface RepTutorialLink {
+  title: string;
+  url: string;
+}
+
+export interface RepPainPoint {
+  categoryId: string;
+  title: string;
+  bullets: string[];
+}
+
+export interface TeamRepSummary {
+  id: string;
+  email: string;
+  displayName: string | null;
+  totalLeads: number;
+  activeClients: number;
+  ongoingProjects: number;
+  pendingPayments: number;
+  needsAdminAction: number;
+  /** Legacy alias */
+  activeLeads?: number;
+  pendingVerifications?: number;
+}
+
+export interface TeamRepProject {
+  id: string;
+  clientName: string;
+  status: LeadStatus;
+  agreedTotalCents: number | null;
+  convertedAt: string | null;
+  currentStageKey: PipelineStageKey;
+  currentStageTitle: string;
+  pendingAdmin: boolean;
+  pipelineStages: PipelineStageView[];
+}
+
+export interface RepPortalSettings {
+  minAgreedTotalCents: number;
+  advancePaymentShareBps: number;
   commissionRateBps: number;
+  templatesCatalogUrl: string;
+  tutorialLinks: RepTutorialLink[];
+  painPointsByCategory: RepPainPoint[];
+}
+
+export interface PortalSettingsValues extends RepPortalSettings {
   commissionBasis: "VERIFIED_FINAL_PAYMENT" | "FINAL_QUOTE" | "AGREED_TOTAL";
   commissionRounding: "floor" | "round" | "bankers";
   manualTransitions: ManualTransition[];
@@ -158,7 +211,46 @@ export interface PortalSettingsValues {
   terminalNoMutationStatuses: LeadStatus[];
   enforcePaymentQuoteToleranceBps: number | null;
   exportMaxRows: number;
-  advancePaymentShareBps: number;
+  performanceBonusAmountCents: number;
+  performanceBonusAfterCompletedSales: number;
+}
+
+export type PipelineStageKey =
+  | "lead_capture"
+  | "convert_deal"
+  | "advance_verify"
+  | "whatsapp_group"
+  | "build_demo"
+  | "demo_finalized"
+  | "accounts_ready"
+  | "final_payment"
+  | "final_verify"
+  | "repo_transfer"
+  | "deployment_submit"
+  | "deployment_verify"
+  | "commission";
+
+export type StageUiState = "locked" | "actionable" | "pending_admin" | "verified";
+
+export interface PipelineStageView {
+  key: PipelineStageKey;
+  title: string;
+  repActor: boolean;
+  adminActor: boolean;
+  state: StageUiState;
+  hint?: string;
+}
+
+export type PipelineStageVerifyKey =
+  | "whatsapp"
+  | "preview_ready"
+  | "accounts_ready"
+  | "repo_transfer"
+  | "deployment";
+
+export interface LeadDetailResponse {
+  lead: Lead;
+  pipelineStages: PipelineStageView[];
 }
 
 export interface Paginated<T> {

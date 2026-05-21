@@ -4,7 +4,12 @@ import { toast } from "sonner";
 import { ApiError } from "../api/client";
 import { salesApi, type VerifyPaymentRequestBody } from "../api/salesApi";
 import { qk } from "../queryKeys";
-import type { LeadStatus, PortalSettingsValues, SessionUser } from "../types";
+import type {
+  LeadStatus,
+  PipelineStageVerifyKey,
+  PortalSettingsValues,
+  SessionUser
+} from "../types";
 
 export function invalidateQueryPrefixes(qc: QueryClient, prefixes: readonly string[]) {
   for (const p of prefixes) {
@@ -167,6 +172,7 @@ export function useResetPasswordMutation() {
 export function useLeadsQuery(params: {
   page: number;
   pageSize: number;
+  view?: "leads" | "clients";
   status?: LeadStatus;
   search?: string;
   from?: Date;
@@ -214,22 +220,53 @@ export function usePatchLeadMutation(leadId: string) {
       qc.invalidateQueries({ queryKey: ["leads"] });
       void qc.invalidateQueries({ queryKey: ["team-reps"] });
       void qc.invalidateQueries({ queryKey: ["team-rep"] });
-      invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "projects"]);
-      toast.success("Lead updated");
+      invalidateQueryPrefixes(qc, [
+        "commissions",
+        "activity-logs",
+        "projects",
+        "pending-payments",
+        "pending-payments-count"
+      ]);
+      toast.success("Saved");
     },
     onError: (e) => errToast(e, qc)
   });
 }
 
-export function useTransitionLeadMutation(leadId: string) {
+export function useConvertLeadMutation(leadId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { toStatus: LeadStatus }) => salesApi.transitionLead(leadId, body),
+    mutationFn: (body: {
+      websiteTemplateId: string;
+      agreedTotalCents: number;
+      advanceAmountCents?: number;
+      repNote?: string | null;
+    }) => salesApi.convertLead(leadId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.lead(leadId) });
       qc.invalidateQueries({ queryKey: ["leads"] });
-      invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "projects"]);
-      toast.success("Status updated");
+      invalidateQueryPrefixes(qc, ["pending-payments", "pending-payments-count", "activity-logs"]);
+      toast.success("Submitted for admin approval");
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+export function useVerifyLeadStageMutation(leadId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (stageKey: PipelineStageVerifyKey) => salesApi.verifyLeadStage(leadId, stageKey),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.lead(leadId) });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      invalidateQueryPrefixes(qc, [
+        "commissions",
+        "activity-logs",
+        "pending-payments-count",
+        "team-reps",
+        "team-rep"
+      ]);
+      toast.success("Stage verified");
     },
     onError: (e) => errToast(e, qc)
   });
@@ -273,7 +310,9 @@ export function useVerifyPaymentMutation(leadId: string) {
         "activity-logs",
         "pending-payments",
         "pending-payments-count",
-        "projects"
+        "projects",
+        "team-reps",
+        "team-rep"
       ]);
       toast.success("Verification saved");
     },
@@ -318,7 +357,7 @@ export function useMarkCommissionPaidMutation() {
       qc.invalidateQueries({ queryKey: ["commissions"] });
       qc.invalidateQueries({ queryKey: ["leads"] });
       qc.invalidateQueries({ queryKey: ["lead"] });
-      invalidateQueryPrefixes(qc, ["activity-logs"]);
+      invalidateQueryPrefixes(qc, ["activity-logs", "team-reps", "team-rep"]);
       toast.success("Commission marked paid");
     },
     onError: (e) => errToast(e, qc)
@@ -356,13 +395,22 @@ export function useCreateProjectMutation() {
   });
 }
 
-export function usePatchProjectMutation(projectId: string) {
+export function usePatchProjectMutation(leadId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => salesApi.patchProject(projectId, body),
-    onSuccess: () => {
+    mutationFn: ({
+      projectId,
+      body
+    }: {
+      projectId: string;
+      body: Record<string, unknown>;
+    }) => salesApi.patchProject(projectId, body),
+    onSuccess: (_data, { projectId }) => {
       qc.invalidateQueries({ queryKey: qk.project(projectId) });
       qc.invalidateQueries({ queryKey: ["projects"] });
+      if (leadId) {
+        qc.invalidateQueries({ queryKey: qk.lead(leadId) });
+      }
       invalidateQueryPrefixes(qc, ["leads", "lead", "activity-logs", "commissions"]);
       toast.success("Project updated");
     },
@@ -388,10 +436,14 @@ export function useTeamRepsQuery(enabled: boolean) {
   });
 }
 
-export function useTeamRepQuery(userId: string | undefined, enabled: boolean) {
+export function useTeamRepQuery(
+  userId: string | undefined,
+  enabled: boolean,
+  status: "active" | "all" | "completed" = "active"
+) {
   return useQuery({
-    queryKey: qk.teamRep(userId ?? ""),
-    queryFn: () => salesApi.teamRep(userId!),
+    queryKey: [...qk.teamRep(userId ?? ""), status],
+    queryFn: () => salesApi.teamRep(userId!, { status }),
     enabled: !!userId && enabled,
     staleTime: 60_000
   });

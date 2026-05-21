@@ -1,10 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import { ActivityAction, LeadStatus, UserRole } from "@prisma/client";
+import { ActivityAction, LeadStatus, Prisma, UserRole } from "@prisma/client";
 import { clampPage } from "../lib/pagination.js";
 import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
 import { logActivity } from "../services/activityLog.js";
+import { getPortalSettings } from "../services/settings.js";
 import { commissionsListQuerySchema, patchCommissionBodySchema } from "../validators/schemas.js";
 
 export async function registerCommissionRoutes(app: FastifyInstance): Promise<void> {
@@ -108,7 +109,8 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
       const admin = request.currentUser!;
       const { id } = request.params as { id: string };
 
-      const outcome = await app.prisma.$transaction(async (tx) => {
+      const outcome = await app.prisma.$transaction(
+        async (tx) => {
         const commission = await tx.commission.findUnique({
           where: { id },
           include: { lead: true }
@@ -120,13 +122,23 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
           throw new HttpError(400, "ALREADY_PAID", "Commission is already marked paid.");
         }
 
+        const settings = await getPortalSettings(tx);
+        const paidCount = await tx.commission.count({
+          where: { repUserId: commission.repUserId, isPaid: true }
+        });
+        const bonusCents =
+          paidCount >= settings.performanceBonusAfterCompletedSales
+            ? settings.performanceBonusAmountCents
+            : 0;
+
         // Atomic: only mark paid if still unpaid. Concurrent callers see count=0 and bail.
         const commClaim = await tx.commission.updateMany({
           where: { id, isPaid: false },
           data: {
             isPaid: true,
             paidAt: new Date(),
-            paidByAdminId: admin.id
+            paidByAdminId: admin.id,
+            bonusCents
           }
         });
         if (commClaim.count === 0) {
@@ -161,7 +173,9 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
         });
 
         return { commission: updatedCommission, lead: updatedLead };
-      });
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+      );
 
       return reply.send(outcome);
     }

@@ -1,11 +1,18 @@
 import type { FastifyInstance } from "fastify";
-import { ActivityAction, LeadStatus, Prisma, UserRole } from "@prisma/client";
+import {
+  ActivityAction,
+  LeadStatus,
+  PaymentKind,
+  PaymentVerificationStatus,
+  Prisma,
+  UserRole
+} from "@prisma/client";
 import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
 import { clampPage } from "../lib/pagination.js";
-import { divideCentsWithRounding } from "../lib/money.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
+import { commissionAmountCents } from "../services/leadFsm.js";
 import { assertLeadAccess } from "../services/leadAccess.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings } from "../services/settings.js";
@@ -147,24 +154,18 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
 
       if (user.role === UserRole.ADMIN) {
         const body = patchProjectBodySchema.parse(request.body);
+        if (body.deployedUrl !== undefined || body.markDeploymentSubmitted === true) {
+          throw new HttpError(
+            403,
+            "FORBIDDEN",
+            "Admins cannot submit deployment; sales reps submit the live URL for verification."
+          );
+        }
         if (body.title !== undefined) data.title = body.title;
         if (body.metadata !== undefined) {
           data.metadata = (body.metadata ?? undefined) as Prisma.InputJsonValue | undefined;
         }
         if (body.previewUrl !== undefined) data.previewUrl = body.previewUrl ?? undefined;
-        if (body.deployedUrl !== undefined) data.deployedUrl = body.deployedUrl ?? undefined;
-        if (body.markDeploymentSubmitted === true) {
-          const url = body.deployedUrl ?? existing.deployedUrl;
-          if (!url) {
-            throw new HttpError(
-              400,
-              "DEPLOYMENT_URL_REQUIRED",
-              "Set deployedUrl before marking deployment submitted."
-            );
-          }
-          data.deploymentSubmittedAt = new Date();
-          if (body.deployedUrl !== undefined) data.deployedUrl = body.deployedUrl;
-        }
       } else {
         const body = repSubmitDeploymentBodySchema.parse(request.body);
         data.deployedUrl = body.deployedUrl;
@@ -289,17 +290,25 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
             );
           }
           const repId = getCommissionRepUserId(freshLead);
-          const amountCents = divideCentsWithRounding(
-            freshLead.agreedTotalCents * settings.commissionRateBps,
-            10000,
-            settings.commissionRounding
+          const verifiedFinal = await tx.leadPayment.findFirst({
+            where: {
+              leadId: freshLead.id,
+              kind: PaymentKind.FINAL,
+              verificationStatus: PaymentVerificationStatus.VERIFIED
+            }
+          });
+          const amountCents = commissionAmountCents(
+            freshLead,
+            verifiedFinal?.amountCents ?? 0,
+            settings
           );
           await tx.commission.upsert({
             where: { leadId: freshLead.id },
             create: {
               leadId: freshLead.id,
               repUserId: repId,
-              amountCents
+              amountCents,
+              bonusCents: 0
             },
             update: {
               repUserId: repId,

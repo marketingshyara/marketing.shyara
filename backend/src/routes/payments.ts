@@ -151,6 +151,13 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
         }
 
         if (payment.kind === PaymentKind.ADVANCE) {
+          if (!payment.lead.convertedAt) {
+            throw new HttpError(
+              400,
+              "INVALID_STATE",
+              "Lead must be converted to a client before advance payment can be verified."
+            );
+          }
           const required = getRequiredLeadStatusForVerify(settings, "ADVANCE");
           assertPaymentMatchesQuoteTolerance(
             payment.amountCents,
@@ -171,6 +178,15 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
             );
           }
           const lead = await tx.lead.findUniqueOrThrow({ where: { id: payment.leadId } });
+          const existingProject = await tx.project.findUnique({ where: { leadId: payment.leadId } });
+          if (!existingProject) {
+            await tx.project.create({
+              data: {
+                leadId: payment.leadId,
+                title: `${lead.clientName} website`
+              }
+            });
+          }
           await logActivity({
             prisma: app.prisma,
             tx,

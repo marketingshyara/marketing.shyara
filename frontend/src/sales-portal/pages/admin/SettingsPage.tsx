@@ -1,9 +1,9 @@
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAdminSettingsQuery, usePatchSettingsMutation } from "../hooks/useSalesQueries";
-import { portalSettingsSchema } from "../validation/schemas";
-import type { LeadStatus, PortalSettingsValues } from "../types";
-import { bpsToPercentLabel } from "../lib/money";
+import { useAdminSettingsQuery, usePatchSettingsMutation } from "../../hooks/useSalesQueries";
+import { portalSettingsSchema } from "../../validation/schemas";
+import type { LeadStatus, PortalSettingsValues } from "../../types";
+import { bpsToPercentLabel } from "../../lib/money";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,11 +18,13 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { QueryErrorAlert } from "../components/QueryErrorAlert";
-import { DataStaleToolbar } from "../components/DataStaleToolbar";
-import { leadStatusLabel } from "../lib/copy";
+import { QueryErrorAlert } from "../../components/QueryErrorAlert";
+import { DataStaleToolbar } from "../../components/DataStaleToolbar";
+import { leadStatusLabel } from "../../lib/copy";
 
 const LEAD_STATUSES: LeadStatus[] = [
   "NEW",
@@ -47,6 +49,14 @@ export function SettingsPage() {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "manualTransitions"
+  });
+  const tutorialFields = useFieldArray({
+    control: form.control,
+    name: "tutorialLinks"
+  });
+  const painFields = useFieldArray({
+    control: form.control,
+    name: "painPointsByCategory"
   });
 
   if (isError && !settings) {
@@ -97,11 +107,37 @@ export function SettingsPage() {
           toast.error("Fix the highlighted fields before saving.");
         })}
       >
+        <Tabs defaultValue="pricing" className="space-y-4">
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
+            <TabsTrigger value="pricing" className="min-h-11 flex-1 sm:flex-none">
+              Pricing
+            </TabsTrigger>
+            <TabsTrigger value="commission" className="min-h-11 flex-1 sm:flex-none">
+              Commission
+            </TabsTrigger>
+            <TabsTrigger value="resources" className="min-h-11 flex-1 sm:flex-none">
+              Resources
+            </TabsTrigger>
+            <TabsTrigger value="system" className="min-h-11 flex-1 sm:flex-none">
+              System
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pricing" className="space-y-6 mt-0">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Client onboarding</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="settings-min-total">Minimum agreed total (paise, 799900 = ₹7999)</Label>
+              <Input
+                id="settings-min-total"
+                type="number"
+                className="min-h-11"
+                {...form.register("minAgreedTotalCents", { valueAsNumber: true })}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="settings-advance-share">
                 Advance payment share (basis points, 10000 = 100%)
@@ -121,7 +157,9 @@ export function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
 
+          <TabsContent value="commission" className="space-y-6 mt-0">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Commission</CardTitle>
@@ -178,12 +216,146 @@ export function SettingsPage() {
                 Use banker's rounding for balanced finance calculations across large volumes.
               </p>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="settings-bonus-amount">Performance bonus (paise, 50000 = ₹500)</Label>
+              <Input
+                id="settings-bonus-amount"
+                type="number"
+                className="min-h-11"
+                {...form.register("performanceBonusAmountCents", { valueAsNumber: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="settings-bonus-threshold">
+                Bonus after this many paid sales (10 = from 11th sale)
+              </Label>
+              <Input
+                id="settings-bonus-threshold"
+                type="number"
+                className="min-h-11"
+                {...form.register("performanceBonusAfterCompletedSales", { valueAsNumber: true })}
+              />
+            </div>
           </CardContent>
         </Card>
+          </TabsContent>
 
+          <TabsContent value="resources" className="space-y-6 mt-0">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Rep resources</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="settings-templates-url">Templates catalog URL</Label>
+              <Input
+                id="settings-templates-url"
+                className="min-h-11"
+                {...form.register("templatesCatalogUrl")}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-sm font-medium">Tutorial links</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-11"
+                onClick={() => tutorialFields.append({ title: "New tutorial", url: "https://" })}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add link
+              </Button>
+            </div>
+            {tutorialFields.fields.map((field, i) => (
+              <div key={field.id} className="flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-end">
+                <div className="flex-1 space-y-2">
+                  <Label className="text-xs">Title</Label>
+                  <Input className="min-h-11" {...form.register(`tutorialLinks.${i}.title`)} />
+                </div>
+                <div className="flex-[2] space-y-2">
+                  <Label className="text-xs">URL</Label>
+                  <Input className="min-h-11" {...form.register(`tutorialLinks.${i}.url`)} />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11 w-full sm:w-auto"
+                  onClick={() => tutorialFields.remove(i)}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                  Remove
+                </Button>
+              </div>
+            ))}
+            <div className="flex items-center justify-between gap-2 pt-2">
+              <Label className="text-sm font-medium">Pain points by category</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-11"
+                onClick={() =>
+                  painFields.append({
+                    categoryId: `category-${painFields.fields.length + 1}`,
+                    title: "New category",
+                    bullets: ["Add a talking point"]
+                  })
+                }
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add category
+              </Button>
+            </div>
+            {painFields.fields.map((field, i) => (
+              <div key={field.id} className="space-y-3 rounded-md border p-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Category ID</Label>
+                    <Input className="min-h-11" {...form.register(`painPointsByCategory.${i}.categoryId`)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Title</Label>
+                    <Input className="min-h-11" {...form.register(`painPointsByCategory.${i}.title`)} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Bullets (one per line)</Label>
+                  <Textarea
+                    className="min-h-[6rem]"
+                    value={(form.watch(`painPointsByCategory.${i}.bullets`) ?? []).join("\n")}
+                    onChange={(e) => {
+                      const bullets = e.target.value
+                        .split("\n")
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                      form.setValue(`painPointsByCategory.${i}.bullets`, bullets.length ? bullets : [""], {
+                        shouldDirty: true
+                      });
+                    }}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11"
+                  onClick={() => painFields.remove(i)}
+                >
+                  <Trash2 className="mr-1 h-4 w-4" />
+                  Remove category
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+          </TabsContent>
+
+          <TabsContent value="system" className="space-y-6 mt-0">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Manual transitions</CardTitle>
+            <CardTitle className="text-base">Manual transitions (legacy)</CardTitle>
             <Button
               type="button"
               variant="outline"
@@ -369,6 +541,8 @@ export function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
 
         <Button type="submit" className="min-h-11 w-full sm:w-auto" disabled={patch.isPending}>
           Save settings
