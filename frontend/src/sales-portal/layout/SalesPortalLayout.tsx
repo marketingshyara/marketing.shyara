@@ -12,7 +12,12 @@ import {
   Users,
   UsersRound
 } from "lucide-react";
-import { useSessionQuery, useLogoutMutation, usePendingPaymentsCountQuery } from "../hooks/useSalesQueries";
+import {
+  useSessionQuery,
+  useLogoutMutation,
+  usePendingActionsCountQuery
+} from "../hooks/useSalesQueries";
+import { PortalNotificationsBell } from "../components/PortalNotificationsBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,7 +88,7 @@ export function SalesPortalLayout() {
   const isAdmin = user?.role === "ADMIN";
   const navItems = isAdmin ? ADMIN_NAV : REP_NAV;
   const homePath = user ? defaultPortalHome(user.role) : "/portal/pipeline";
-  const pendingCount = usePendingPaymentsCountQuery(isAdmin);
+  const pendingCount = usePendingActionsCountQuery(isAdmin);
   const pendingTotal = pendingCount.data?.total ?? 0;
 
   const primaryMobileNav = isAdmin
@@ -106,7 +111,7 @@ export function SalesPortalLayout() {
             <Badge
               variant="destructive"
               className="absolute -right-2 -top-2 h-5 min-w-5 justify-center px-1 text-[10px] leading-none"
-              aria-label={`${pendingTotal} pending payment reviews`}
+              aria-label={`${pendingTotal} pending verifications`}
             >
               {pendingTotal > 99 ? "99+" : pendingTotal}
             </Badge>
@@ -127,7 +132,7 @@ export function SalesPortalLayout() {
             <Badge
               variant="destructive"
               className="absolute -right-2 -top-2 h-5 min-w-5 justify-center px-1 text-[10px] leading-none"
-              aria-label={`${pendingTotal} pending payment reviews`}
+              aria-label={`${pendingTotal} pending verifications`}
             >
               {pendingTotal > 99 ? "99+" : pendingTotal}
             </Badge>
@@ -148,7 +153,7 @@ export function SalesPortalLayout() {
             <Badge
               variant="destructive"
               className="absolute -right-2 -top-2 h-5 min-w-5 justify-center px-1 text-[10px] leading-none"
-              aria-label={`${pendingTotal} pending payment reviews`}
+              aria-label={`${pendingTotal} pending verifications`}
             >
               {pendingTotal > 99 ? "99+" : pendingTotal}
             </Badge>
@@ -181,6 +186,7 @@ export function SalesPortalLayout() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          {user ? <PortalNotificationsBell user={user} /> : null}
           <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

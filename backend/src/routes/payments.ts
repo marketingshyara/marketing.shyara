@@ -17,6 +17,8 @@ import {
   getRequiredLeadStatusForVerify
 } from "../services/settings.js";
 import { verifyPaymentBodySchema, pendingPaymentsQuerySchema } from "../validators/schemas.js";
+import { notifyRepOfAdminDecision } from "../services/notifications.js";
+import { PortalNotificationKind } from "@prisma/client";
 
 export async function registerPaymentRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -147,6 +149,14 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
             after: { decision: body.decision, leadStatus: payment.lead.status },
             request
           });
+          const repId = payment.lead.assignedToUserId ?? payment.lead.createdByUserId;
+          await notifyRepOfAdminDecision(tx, {
+            leadId: payment.leadId,
+            repUserId: repId,
+            kind: PortalNotificationKind.ADMIN_DECLINED,
+            stageKey: payment.kind === PaymentKind.ADVANCE ? "advance_verify" : "final_verify",
+            message: `${payment.lead.clientName}: ${payment.kind} payment declined.`
+          });
           return { payment: updatedPayment, lead: payment.lead };
         }
 
@@ -197,6 +207,14 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
             after: { decision: body.decision, leadStatus: lead.status },
             request
           });
+          const repIdAdv = lead.assignedToUserId ?? lead.createdByUserId;
+          await notifyRepOfAdminDecision(tx, {
+            leadId: payment.leadId,
+            repUserId: repIdAdv,
+            kind: PortalNotificationKind.ADMIN_VERIFIED,
+            stageKey: "advance_verify",
+            message: `${lead.clientName}: advance payment verified.`
+          });
           return { payment: updatedPayment, lead };
         }
 
@@ -229,6 +247,14 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
           entityId: paymentId,
           after: { decision: body.decision, leadStatus: lead.status },
           request
+        });
+        const repIdFin = lead.assignedToUserId ?? lead.createdByUserId;
+        await notifyRepOfAdminDecision(tx, {
+          leadId: payment.leadId,
+          repUserId: repIdFin,
+          kind: PortalNotificationKind.ADMIN_VERIFIED,
+          stageKey: "final_verify",
+          message: `${lead.clientName}: due payment verified.`
         });
         return { payment: updatedPayment, lead };
       });

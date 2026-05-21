@@ -80,6 +80,7 @@ model User {
   commissions    Commission[]    @relation("CommissionRep")
   commissionsPaid Commission[]   @relation("CommissionPaidBy")
   activityLogs   ActivityLog[]
+  notifications  PortalNotification[]
 
   @@index([role])
   @@index([role, isActive])
@@ -104,7 +105,8 @@ model Lead {
   convertedAt          DateTime?
   whatsappGroupLink    String?
   whatsappVerifiedAt   DateTime?
-  demoFinalizedAt      DateTime?
+  demoFinalizedAt           DateTime?
+  demoFinalizedVerifiedAt   DateTime?
   accountsReadyAt      DateTime?
   accountsReadyVerifiedAt DateTime?
   repoTransferVerifiedAt  DateTime?
@@ -117,6 +119,7 @@ model Lead {
   payments    LeadPayment[]
   project     Project?
   commission  Commission?
+  notifications PortalNotification[]
 
   @@index([status])
   @@index([createdByUserId])
@@ -186,6 +189,30 @@ model Commission {
 
   @@index([repUserId])
   @@index([isPaid])
+}
+
+enum PortalNotificationKind {
+  REP_SUBMITTED
+  ADMIN_VERIFIED
+  ADMIN_DECLINED
+}
+
+model PortalNotification {
+  id        String                 @id @default(cuid())
+  userId    String
+  leadId    String
+  kind      PortalNotificationKind
+  stageKey  String?
+  message   String
+  readAt    DateTime?
+  createdAt DateTime               @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([leadId])
+  @@index([createdAt])
 }
 
 model ActivityLog {

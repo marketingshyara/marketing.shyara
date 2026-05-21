@@ -103,6 +103,7 @@ export interface Lead {
   whatsappGroupLink: string | null;
   whatsappVerifiedAt: string | null;
   demoFinalizedAt: string | null;
+  demoFinalizedVerifiedAt: string | null;
   accountsReadyAt: string | null;
   accountsReadyVerifiedAt: string | null;
   repoTransferVerifiedAt: string | null;
@@ -244,9 +245,45 @@ export interface PipelineStageView {
 export type PipelineStageVerifyKey =
   | "whatsapp"
   | "preview_ready"
+  | "demo_finalized"
   | "accounts_ready"
   | "repo_transfer"
   | "deployment";
+
+export type PortalNotificationKind = "REP_SUBMITTED" | "ADMIN_VERIFIED" | "ADMIN_DECLINED";
+
+export interface PortalNotification {
+  id: string;
+  leadId: string;
+  repId?: string | null;
+  kind: PortalNotificationKind;
+  stageKey: string | null;
+  message: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export type PendingActionType =
+  | "PAYMENT"
+  | "WHATSAPP"
+  | "DEMO_FINALIZED"
+  | "ACCOUNTS"
+  | "BUILD_DEMO"
+  | "REPO_TRANSFER"
+  | "DEPLOYMENT"
+  | "COMMISSION";
+
+export interface PendingActionItem {
+  type: PendingActionType;
+  leadId: string;
+  repId: string | null;
+  clientName: string;
+  stageKey: string;
+  submittedAt: string;
+  summary: string;
+  paymentId?: string;
+  paymentKind?: PaymentKind;
+}
 
 export interface LeadDetailResponse {
   lead: Lead;

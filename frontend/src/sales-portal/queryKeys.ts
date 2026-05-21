@@ -11,6 +11,10 @@ export const qk = {
   activityLogs: (params: Record<string, unknown>) => ["activity-logs", params] as const,
   pendingPayments: (params: Record<string, unknown>) => ["pending-payments", params] as const,
   pendingPaymentsCount: ["pending-payments-count"] as const,
+  pendingActions: (params: Record<string, unknown>) => ["pending-actions", params] as const,
+  pendingActionsCount: ["pending-actions-count"] as const,
+  notifications: (params: Record<string, unknown>) => ["notifications", params] as const,
+  notificationsUnreadCount: ["notifications-unread-count"] as const,
   websiteTemplates: ["website-templates"] as const,
   teamReps: ["team-reps"] as const,
   teamRep: (userId: string) => ["team-rep", userId] as const

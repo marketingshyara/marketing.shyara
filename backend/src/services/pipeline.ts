@@ -74,7 +74,8 @@ export function getPipelineStages(
   const proj = lead.project;
   const whatsappVerified = lead.whatsappVerifiedAt != null;
   const previewReady = Boolean(proj?.previewUrl);
-  const demoDone = lead.demoFinalizedAt != null;
+  const demoRepSubmitted = lead.demoFinalizedAt != null;
+  const demoVerified = lead.demoFinalizedVerifiedAt != null;
   const accountsRep = lead.accountsReadyAt != null;
   const accountsVerified = lead.accountsReadyVerifiedAt != null;
   const repoDone = lead.repoTransferVerifiedAt != null;
@@ -83,7 +84,7 @@ export function getPipelineStages(
   const commissionPaid = lead.status === LeadStatus.COMMISSION_PAID;
 
   const idleBuild =
-    whatsappVerified && !previewReady && !demoDone && !finalVerified && !commissionPaid;
+    whatsappVerified && !previewReady && !demoVerified && !finalVerified && !commissionPaid;
 
   const stages: PipelineStageView[] = [
     {
@@ -156,15 +157,23 @@ export function getPipelineStages(
       key: "demo_finalized",
       title: "Demo approved by client",
       repActor: true,
-      adminActor: false,
-      state: !previewReady ? "locked" : demoDone ? "verified" : "actionable"
+      adminActor: true,
+      state: !previewReady
+        ? "locked"
+        : demoVerified
+          ? "verified"
+          : demoRepSubmitted
+            ? isAdmin
+              ? "actionable"
+              : "pending_admin"
+            : "actionable"
     },
     {
       key: "accounts_ready",
       title: "GitHub & deploy accounts ready",
       repActor: true,
       adminActor: true,
-      state: !demoDone
+      state: !demoVerified
         ? "locked"
         : accountsVerified
           ? "verified"

@@ -22,6 +22,8 @@ import {
   patchProjectBodySchema,
   repSubmitDeploymentBodySchema
 } from "../validators/schemas.js";
+import { notifyActiveAdmins } from "../services/notifications.js";
+import { PortalNotificationKind } from "@prisma/client";
 
 export async function registerProjectRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -210,6 +212,19 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
         },
         request
       });
+
+      if (user.role === UserRole.SALES_REP && project.deploymentSubmittedAt) {
+        const lead = await app.prisma.lead.findUnique({ where: { id: project.leadId } });
+        if (lead) {
+          await notifyActiveAdmins(app.prisma, {
+            leadId: project.leadId,
+            kind: PortalNotificationKind.REP_SUBMITTED,
+            stageKey: "deployment_submit",
+            message: `${lead.clientName}: live deployment URL submitted.`,
+            excludeUserId: user.id
+          });
+        }
+      }
 
       return reply.send({ project });
     }

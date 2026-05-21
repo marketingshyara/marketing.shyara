@@ -20,6 +20,8 @@ import { assertLeadMutable } from "../services/leadGuards.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings, getRequiredLeadStatusForPaymentKind } from "../services/settings.js";
 import { getPipelineStages } from "../services/pipeline.js";
+import { notifyActiveAdmins } from "../services/notifications.js";
+import { PortalNotificationKind } from "@prisma/client";
 import {
   convertLeadBodySchema,
   createLeadBodySchema,
@@ -301,7 +303,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               throw error;
             }
 
-            return tx.lead.findUniqueOrThrow({
+            const out = await tx.lead.findUniqueOrThrow({
               where: { id },
               include: {
                 payments: { orderBy: { markedAt: "desc" } },
@@ -310,6 +312,14 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
                 websiteTemplate: true
               }
             });
+            await notifyActiveAdmins(tx, {
+              leadId: id,
+              kind: PortalNotificationKind.REP_SUBMITTED,
+              stageKey: "convert_deal",
+              message: `${out.clientName}: deal submitted for admin approval.`,
+              excludeUserId: user.id
+            });
+            return out;
           },
           { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
         );
@@ -396,8 +406,8 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           }
         }
 
-        if (body.markAccountsReady === true && !lead.demoFinalizedAt && body.markDemoFinalized !== true) {
-          throw new HttpError(400, "INVALID_STATE", "Mark demo finalized before accounts ready.");
+        if (body.markAccountsReady === true && !lead.demoFinalizedVerifiedAt && body.markDemoFinalized !== true) {
+          throw new HttpError(400, "INVALID_STATE", "Admin must verify demo approval before accounts ready.");
         }
 
         let agreedPatch: {
@@ -519,6 +529,36 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           },
           request
         });
+
+        if (user.role === UserRole.SALES_REP) {
+          if (body.whatsappGroupLink !== undefined && body.whatsappGroupLink) {
+            await notifyActiveAdmins(tx, {
+              leadId: id,
+              kind: PortalNotificationKind.REP_SUBMITTED,
+              stageKey: "whatsapp_group",
+              message: `${updated.clientName}: WhatsApp group link submitted.`,
+              excludeUserId: user.id
+            });
+          }
+          if (body.markDemoFinalized === true) {
+            await notifyActiveAdmins(tx, {
+              leadId: id,
+              kind: PortalNotificationKind.REP_SUBMITTED,
+              stageKey: "demo_finalized",
+              message: `${updated.clientName}: client demo approval submitted.`,
+              excludeUserId: user.id
+            });
+          }
+          if (body.markAccountsReady === true) {
+            await notifyActiveAdmins(tx, {
+              leadId: id,
+              kind: PortalNotificationKind.REP_SUBMITTED,
+              stageKey: "accounts_ready",
+              message: `${updated.clientName}: accounts ready submitted.`,
+              excludeUserId: user.id
+            });
+          }
+        }
 
         return updated;
       });
@@ -669,6 +709,15 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               entityId: created.id,
               after: { kind: created.kind, amountCents: created.amountCents, leadId: id },
               request
+            });
+
+            const leadRow = await tx.lead.findUniqueOrThrow({ where: { id } });
+            await notifyActiveAdmins(tx, {
+              leadId: id,
+              kind: PortalNotificationKind.REP_SUBMITTED,
+              stageKey: created.kind === PaymentKind.ADVANCE ? "advance_verify" : "final_verify",
+              message: `${leadRow.clientName}: ${created.kind} payment submitted for verification.`,
+              excludeUserId: user.id
             });
 
             return created;

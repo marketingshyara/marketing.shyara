@@ -40,6 +40,7 @@ export const resetPasswordBodySchema = z.object({
 export const pipelineStageKeySchema = z.enum([
   "whatsapp",
   "preview_ready",
+  "demo_finalized",
   "accounts_ready",
   "repo_transfer",
   "deployment"

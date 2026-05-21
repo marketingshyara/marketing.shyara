@@ -21,6 +21,9 @@ function stageIsClickable(stage: PipelineStageView, actorMode: "rep" | "admin"):
     if (stage.state === "actionable") {
       return true;
     }
+    if (stage.state === "pending_admin" && stage.repActor) {
+      return true;
+    }
     if (stage.state === "verified") {
       return stage.repActor;
     }

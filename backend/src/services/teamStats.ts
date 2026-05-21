@@ -79,9 +79,13 @@ export async function getRepDashboardStats(
               }
             },
             {
+              demoFinalizedAt: { not: null },
+              demoFinalizedVerifiedAt: null
+            },
+            {
               convertedAt: { not: null },
               whatsappVerifiedAt: { not: null },
-              demoFinalizedAt: null,
+              demoFinalizedVerifiedAt: null,
               project: { is: { previewUrl: null } }
             },
             {

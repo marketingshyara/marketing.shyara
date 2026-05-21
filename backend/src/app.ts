@@ -22,6 +22,8 @@ import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerTeamRoutes } from "./routes/team.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerWebsiteTemplateRoutes } from "./routes/websiteTemplates.js";
+import { registerAdminPendingRoutes } from "./routes/adminPending.js";
+import { registerNotificationRoutes } from "./routes/notifications.js";
 
 export type BuildAppOptions = {
   config: AppConfig;
@@ -146,6 +148,8 @@ export async function buildApp(options: BuildAppOptions) {
   await registerProjectRoutes(app);
   await registerActivityLogRoutes(app);
   await registerExportRoutes(app);
+  await registerAdminPendingRoutes(app);
+  await registerNotificationRoutes(app);
 
   return app;
 }

@@ -6,7 +6,9 @@ import type {
   LeadDetailResponse,
   LeadPaymentWithRelations,
   Paginated,
+  PendingActionItem,
   PipelineStageVerifyKey,
+  PortalNotification,
   PortalSettingsValues,
   Project,
   RepPortalSettings,
@@ -100,6 +102,12 @@ export const salesApi = {
   verifyLeadStage: (leadId: string, stageKey: PipelineStageVerifyKey) =>
     apiJson<LeadDetailResponse>("POST", `/leads/${leadId}/stages/${stageKey}/verify`, {}),
 
+  rejectLeadStage: (
+    leadId: string,
+    stageKey: PipelineStageVerifyKey,
+    body?: { adminNote?: string | null }
+  ) => apiJson<LeadDetailResponse>("POST", `/leads/${leadId}/stages/${stageKey}/reject`, body ?? {}),
+
   markPayment: (
     leadId: string,
     body: { kind: "ADVANCE" | "FINAL"; amountCents: number; repNote?: string | null }
@@ -109,6 +117,42 @@ export const salesApi = {
     apiJson<{ payment: unknown; lead: Lead }>("POST", `/payments/${paymentId}/verify`, body),
 
   pendingPaymentsCount: () => apiJson<{ total: number }>("GET", "/payments/pending/count"),
+
+  pendingActionsCount: () => apiJson<{ total: number }>("GET", "/admin/pending-actions/count"),
+
+  pendingActions: (params: {
+    page?: number;
+    pageSize?: number;
+    type?: import("../types").PendingActionType;
+  }) => {
+    const q = new URLSearchParams();
+    if (params.page != null) q.set("page", String(params.page));
+    if (params.pageSize != null) q.set("pageSize", String(params.pageSize));
+    if (params.type) q.set("type", params.type);
+    const qs = q.toString();
+    return apiJson<Paginated<PendingActionItem>>(
+      "GET",
+      `/admin/pending-actions${qs ? `?${qs}` : ""}`
+    );
+  },
+
+  notificationsUnreadCount: () =>
+    apiJson<{ total: number }>("GET", "/notifications/unread-count"),
+
+  notifications: (params: { page?: number; pageSize?: number; unreadOnly?: boolean }) => {
+    const q = new URLSearchParams();
+    if (params.page != null) q.set("page", String(params.page));
+    if (params.pageSize != null) q.set("pageSize", String(params.pageSize));
+    if (params.unreadOnly) q.set("unreadOnly", "1");
+    const qs = q.toString();
+    return apiJson<Paginated<PortalNotification>>(
+      "GET",
+      `/notifications${qs ? `?${qs}` : ""}`
+    );
+  },
+
+  markNotificationRead: (id: string) =>
+    apiJson<{ ok: boolean }>("POST", `/notifications/${id}/read`, {}),
 
   pendingPayments: (params: {
     page?: number;

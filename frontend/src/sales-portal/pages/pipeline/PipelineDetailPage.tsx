@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { StageModalShell } from "../../components/pipeline/StageModalShell";
@@ -39,6 +39,7 @@ export function PipelineDetailPage() {
   const tplQr = useWebsiteTemplatesQuery(true);
 
   const [activeStage, setActiveStage] = useState<PipelineStageKey | null>(null);
+  const [readOnlyModal, setReadOnlyModal] = useState(false);
 
   const patch = usePatchLeadMutation(id ?? "");
   const convert = useConvertLeadMutation(id ?? "");
@@ -85,22 +86,42 @@ export function PipelineDetailPage() {
 
   const idleBuild = stages.find((s) => s.key === "build_demo")?.hint;
 
-  const closeModal = () => setActiveStage(null);
+  const closeModal = () => {
+    setActiveStage(null);
+    setReadOnlyModal(false);
+  };
+
+  useEffect(() => {
+    setActiveStage(null);
+    setReadOnlyModal(false);
+    setClientName("");
+    setClientPhone("");
+    setNotes("");
+    setTemplateId("");
+    setAgreedRupees("");
+    setAdvanceNote("");
+    setWhatsappLink("");
+    setDueRupees("");
+    setDeployUrl("");
+  }, [id]);
 
   const handleStageClick = (key: PipelineStageKey) => {
+    const stage = stages.find((s) => s.key === key);
+    setReadOnlyModal(stage?.state === "pending_admin");
+
     if (key === "lead_capture") {
       setClientName(lead.clientName);
       setClientPhone(lead.clientPhone ?? "");
       setNotes(lead.notes ?? "");
     }
     if (key === "convert_deal") {
-      if (lead.convertedAt) {
-        return;
-      }
       setTemplateId(lead.websiteTemplateId ?? "");
       setAgreedRupees(
         lead.agreedTotalCents ? String(lead.agreedTotalCents / 100) : ""
       );
+      if (lead.convertedAt) {
+        setReadOnlyModal(true);
+      }
     }
     if (key === "whatsapp_group") {
       setWhatsappLink(lead.whatsappGroupLink ?? "");
@@ -170,18 +191,26 @@ export function PipelineDetailPage() {
         onOpenChange={(o) => !o && closeModal()}
         title="Lead details"
         footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={patch.isPending}
-            onClick={() =>
-              patch.mutate(
-                { clientName: clientName.trim(), clientPhone: clientPhone.trim() || null, notes: notes.trim() || null },
-                { onSuccess: closeModal }
-              )
-            }
-          >
-            Save
-          </Button>
+          readOnlyModal ? (
+            <p className="text-sm text-muted-foreground">View only.</p>
+          ) : (
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={patch.isPending}
+              onClick={() =>
+                patch.mutate(
+                  {
+                    clientName: clientName.trim(),
+                    clientPhone: clientPhone.trim() || null,
+                    notes: notes.trim() || null
+                  },
+                  { onSuccess: closeModal }
+                )
+              }
+            >
+              Save
+            </Button>
+          )
         }
       >
         <div className="space-y-3">
@@ -203,27 +232,35 @@ export function PipelineDetailPage() {
       <StageModalShell
         open={activeStage === "convert_deal"}
         onOpenChange={(o) => !o && closeModal()}
-        title="Convert to client"
-        description={`Minimum project total: ₹${minRupees}. Advance is ${settings ? settings.advancePaymentShareBps / 100 : 50}% by default.`}
+        title={readOnlyModal ? "Deal submitted" : "Convert to client"}
+        description={
+          readOnlyModal
+            ? "Waiting for admin to verify advance payment."
+            : `Minimum project total: ₹${minRupees}. Advance is ${settings ? settings.advancePaymentShareBps / 100 : 50}% by default.`
+        }
         footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={convert.isPending || !templateId || !agreedRupees.trim()}
-            onClick={() => {
-              const agreedTotalCents = parseRupeeInputToCents(agreedRupees);
-              if (agreedTotalCents == null) return;
-              convert.mutate(
-                {
-                  websiteTemplateId: templateId,
-                  agreedTotalCents,
-                  repNote: advanceNote.trim() || null
-                },
-                { onSuccess: closeModal }
-              );
-            }}
-          >
-            Submit for admin approval
-          </Button>
+          readOnlyModal ? (
+            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+          ) : (
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={convert.isPending || !templateId || !agreedRupees.trim()}
+              onClick={() => {
+                const agreedTotalCents = parseRupeeInputToCents(agreedRupees);
+                if (agreedTotalCents == null) return;
+                convert.mutate(
+                  {
+                    websiteTemplateId: templateId,
+                    agreedTotalCents,
+                    repNote: advanceNote.trim() || null
+                  },
+                  { onSuccess: closeModal }
+                );
+              }}
+            >
+              Submit for admin approval
+            </Button>
+          )
         }
       >
         {settings?.templatesCatalogUrl ? (
@@ -264,17 +301,25 @@ export function PipelineDetailPage() {
         open={activeStage === "whatsapp_group"}
         onOpenChange={(o) => !o && closeModal()}
         title="WhatsApp group"
-        description="Create the group with the client and technical team, then paste the invite link."
+        description={
+          readOnlyModal
+            ? "Submitted — waiting for admin to verify."
+            : "Create the group with the client and technical team, then paste the invite link."
+        }
         footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={patch.isPending}
-            onClick={() =>
-              patch.mutate({ whatsappGroupLink: whatsappLink.trim() || null }, { onSuccess: closeModal })
-            }
-          >
-            Save link
-          </Button>
+          readOnlyModal ? (
+            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+          ) : (
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={patch.isPending}
+              onClick={() =>
+                patch.mutate({ whatsappGroupLink: whatsappLink.trim() || null }, { onSuccess: closeModal })
+              }
+            >
+              Save link
+            </Button>
+          )
         }
       >
         <div className="space-y-2">
@@ -287,15 +332,23 @@ export function PipelineDetailPage() {
         open={activeStage === "demo_finalized"}
         onOpenChange={(o) => !o && closeModal()}
         title="Demo approved"
-        description="Confirm the client approved the demo website."
+        description={
+          readOnlyModal
+            ? "Submitted — waiting for admin to verify."
+            : "Confirm the client approved the demo website."
+        }
         footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={patch.isPending}
-            onClick={() => patch.mutate({ markDemoFinalized: true }, { onSuccess: closeModal })}
-          >
-            Mark demo finalized
-          </Button>
+          readOnlyModal ? (
+            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+          ) : (
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={patch.isPending}
+              onClick={() => patch.mutate({ markDemoFinalized: true }, { onSuccess: closeModal })}
+            >
+              Mark demo finalized
+            </Button>
+          )
         }
       >
         <p className="text-sm text-muted-foreground">
@@ -307,15 +360,23 @@ export function PipelineDetailPage() {
         open={activeStage === "accounts_ready"}
         onOpenChange={(o) => !o && closeModal()}
         title="Accounts ready"
-        description="Confirm GitHub and free static hosting accounts are set up for the client."
+        description={
+          readOnlyModal
+            ? "Submitted — waiting for admin to verify."
+            : "Confirm GitHub and free static hosting accounts are set up for the client."
+        }
         footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={patch.isPending}
-            onClick={() => patch.mutate({ markAccountsReady: true }, { onSuccess: closeModal })}
-          >
-            Mark accounts ready
-          </Button>
+          readOnlyModal ? (
+            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+          ) : (
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={patch.isPending}
+              onClick={() => patch.mutate({ markAccountsReady: true }, { onSuccess: closeModal })}
+            >
+              Mark accounts ready
+            </Button>
+          )
         }
       >
         <p className="text-sm text-muted-foreground">
@@ -327,18 +388,23 @@ export function PipelineDetailPage() {
         open={activeStage === "final_payment"}
         onOpenChange={(o) => !o && closeModal()}
         title="Due payment"
+        description={readOnlyModal ? "Submitted — waiting for admin to verify payment." : undefined}
         footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={markPay.isPending}
-            onClick={() => {
-              const cents = parseRupeeInputToCents(dueRupees);
-              if (cents == null) return;
-              markPay.mutate({ kind: "FINAL", amountCents: cents }, { onSuccess: closeModal });
-            }}
-          >
-            Record due payment
-          </Button>
+          readOnlyModal ? (
+            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+          ) : (
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={markPay.isPending}
+              onClick={() => {
+                const cents = parseRupeeInputToCents(dueRupees);
+                if (cents == null) return;
+                markPay.mutate({ kind: "FINAL", amountCents: cents }, { onSuccess: closeModal });
+              }}
+            >
+              Record due payment
+            </Button>
+          )
         }
       >
         <div className="space-y-2">
@@ -351,24 +417,29 @@ export function PipelineDetailPage() {
         open={activeStage === "deployment_submit"}
         onOpenChange={(o) => !o && closeModal()}
         title="Live deployment"
+        description={readOnlyModal ? "Submitted — waiting for admin to verify deployment." : undefined}
         footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={patchProject.isPending || !lead.project?.id}
-            onClick={() => {
-              const projectId = lead.project?.id;
-              if (!projectId) return;
-              patchProject.mutate(
-                {
-                  projectId,
-                  body: { deployedUrl: deployUrl.trim(), markDeploymentSubmitted: true }
-                },
-                { onSuccess: closeModal }
-              );
-            }}
-          >
-            Submit for verification
-          </Button>
+          readOnlyModal ? (
+            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+          ) : (
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={patchProject.isPending || !lead.project?.id}
+              onClick={() => {
+                const projectId = lead.project?.id;
+                if (!projectId) return;
+                patchProject.mutate(
+                  {
+                    projectId,
+                    body: { deployedUrl: deployUrl.trim(), markDeploymentSubmitted: true }
+                  },
+                  { onSuccess: closeModal }
+                );
+              }}
+            >
+              Submit for verification
+            </Button>
+          )
         }
       >
         {!lead.project?.id ? (

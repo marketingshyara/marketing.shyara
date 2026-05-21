@@ -1,32 +1,50 @@
-import { useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { StageModalShell } from "../../components/pipeline/StageModalShell";
+import { AdminVerifyModals } from "../../components/pipeline/AdminVerifyModals";
+import { PaymentVerifyDialog } from "../../components/pipeline/PaymentVerifyDialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { PipelineProgress } from "../../components/pipeline/PipelineProgress";
-import { PaymentVerifyDialog } from "../../components/pipeline/PaymentVerifyDialog";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
   useLeadQuery,
   useMarkCommissionPaidMutation,
+  usePatchCommissionMutation,
   usePatchLeadMutation,
+  useRejectLeadStageMutation,
+  useTeamRepsQuery,
   useVerifyLeadStageMutation,
   useVerifyPaymentMutation
 } from "../../hooks/useSalesQueries";
 import type { LeadPayment, PipelineStageKey, PipelineStageVerifyKey, PipelineStageView } from "../../types";
-import { formatMinorUnits } from "../../lib/money";
+import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
 import { leadStatusLabel } from "../../lib/copy";
+import { formatTemplateOption } from "../../lib/templateLabel";
 
 const STAGE_TO_VERIFY: Partial<Record<PipelineStageKey, PipelineStageVerifyKey>> = {
   whatsapp_group: "whatsapp",
+  demo_finalized: "demo_finalized",
   build_demo: "preview_ready",
   accounts_ready: "accounts_ready",
   repo_transfer: "repo_transfer",
+  deployment_verify: "deployment"
+};
+
+const STAGE_REJECTABLE: Partial<Record<PipelineStageKey, PipelineStageVerifyKey>> = {
+  whatsapp_group: "whatsapp",
+  demo_finalized: "demo_finalized",
+  accounts_ready: "accounts_ready",
   deployment_verify: "deployment"
 };
 
@@ -39,20 +57,51 @@ function isAdminActionable(stage: PipelineStageView): boolean {
 
 export function AdminProjectPage() {
   const { repId, leadId } = useParams<{ repId: string; leadId: string }>();
+  const [searchParams] = useSearchParams();
   const leadQr = useLeadQuery(leadId);
+  const repsQr = useTeamRepsQuery(true);
   const [activeStage, setActiveStage] = useState<PipelineStageKey | null>(null);
   const [verifyPayment, setVerifyPayment] = useState<LeadPayment | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [declineNote, setDeclineNote] = useState("");
+  const [commissionEditRupees, setCommissionEditRupees] = useState("");
 
-  const verifyPay = useVerifyPaymentMutation(leadId ?? "");
-  const verifyStage = useVerifyLeadStageMutation(leadId ?? "");
-  const markCommissionPaid = useMarkCommissionPaidMutation();
-  const patch = usePatchLeadMutation(leadId ?? "");
+  const verifyPay = useVerifyPaymentMutation(leadId ?? "", repId);
+  const verifyStage = useVerifyLeadStageMutation(leadId ?? "", repId);
+  const rejectStage = useRejectLeadStageMutation(leadId ?? "", repId);
+  const markCommissionPaid = useMarkCommissionPaidMutation(repId);
+  const patchCommission = usePatchCommissionMutation(leadId ?? "", repId);
+  const patch = usePatchLeadMutation(leadId ?? "", repId);
 
   const lead = leadQr.data?.lead;
   const stages = leadQr.data?.pipelineStages ?? [];
 
-  const closeModal = () => setActiveStage(null);
+  const closeModal = () => {
+    setActiveStage(null);
+    setDeclineNote("");
+  };
+
+  useEffect(() => {
+    setActiveStage(null);
+    setVerifyPayment(null);
+    setDeclineNote("");
+    setPreviewUrl("");
+    setCommissionEditRupees("");
+  }, [leadId]);
+
+  useEffect(() => {
+    const stage = searchParams.get("stage") as PipelineStageKey | null;
+    if (stage && lead) {
+      handleStageClick(stage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open once when deep-linked
+  }, [searchParams.get("stage"), lead?.id]);
+
+  useEffect(() => {
+    if (lead?.commission && commissionEditRupees === "") {
+      setCommissionEditRupees(String(lead.commission.amountCents / 100));
+    }
+  }, [lead?.commission?.amountCents, commissionEditRupees]);
 
   const pendingAdvance = lead?.payments?.find(
     (p) => p.kind === "ADVANCE" && p.verificationStatus === "PENDING"
@@ -74,11 +123,40 @@ export function AdminProjectPage() {
     if (key === "build_demo") {
       setPreviewUrl(lead.project?.previewUrl ?? "");
     }
-    const stage = stages.find((s) => s.key === key);
-    if (!stage || !isAdminActionable(stage)) {
+    if (key === "convert_deal" && lead.convertedAt) {
+      setActiveStage("convert_deal");
       return;
     }
-    setActiveStage(key);
+    if (key === "deployment_submit") {
+      setActiveStage("deployment_submit");
+      return;
+    }
+    const stage = stages.find((s) => s.key === key);
+    if (!stage) return;
+    if (key === "commission" || isAdminActionable(stage)) {
+      setActiveStage(key);
+    }
+  };
+
+  const runVerify = () => {
+    if (!activeStage) return;
+    const apiKey = STAGE_TO_VERIFY[activeStage];
+    if (!apiKey) return;
+    if (activeStage === "commission" && lead?.commission) {
+      markCommissionPaid.mutate(lead.commission.id, { onSuccess: closeModal });
+      return;
+    }
+    verifyStage.mutate(apiKey, { onSuccess: closeModal });
+  };
+
+  const runDecline = () => {
+    if (!activeStage) return;
+    const apiKey = STAGE_REJECTABLE[activeStage];
+    if (!apiKey) return;
+    rejectStage.mutate(
+      { stageKey: apiKey, adminNote: declineNote.trim() || null },
+      { onSuccess: closeModal }
+    );
   };
 
   if (leadQr.isLoading) {
@@ -90,12 +168,7 @@ export function AdminProjectPage() {
     );
   }
 
-  if (
-    lead &&
-    repId &&
-    lead.assignedToUserId &&
-    lead.assignedToUserId !== repId
-  ) {
+  if (lead && repId && lead.assignedToUserId && lead.assignedToUserId !== repId) {
     return (
       <Navigate
         to={`/portal/team/${lead.assignedToUserId}/projects/${lead.id}`}
@@ -119,6 +192,14 @@ export function AdminProjectPage() {
   }
 
   const idleBuild = stages.find((s) => s.key === "build_demo")?.hint;
+  const rejectable = activeStage ? STAGE_REJECTABLE[activeStage] : undefined;
+
+  const verifiedAdvance = lead.payments?.find(
+    (p) => p.kind === "ADVANCE" && p.verificationStatus === "VERIFIED"
+  );
+  const verifiedFinal = lead.payments?.find(
+    (p) => p.kind === "FINAL" && p.verificationStatus === "VERIFIED"
+  );
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -152,10 +233,29 @@ export function AdminProjectPage() {
         <h1 className="text-xl font-semibold md:text-2xl">{lead.clientName}</h1>
         <p className="text-sm text-muted-foreground">
           Client · {leadStatusLabel(lead.status)}
-          {lead.agreedTotalCents != null
-            ? ` · ${formatMinorUnits(lead.agreedTotalCents)}`
-            : ""}
+          {lead.agreedTotalCents != null ? ` · ${formatMinorUnits(lead.agreedTotalCents)}` : ""}
         </p>
+      </div>
+
+      <div className="space-y-2 rounded-lg border p-4">
+        <Label htmlFor="assign-rep">Assigned rep</Label>
+        <Select
+          value={lead.assignedToUserId ?? "__none__"}
+          onValueChange={(v) =>
+            patch.mutate({ assignedToUserId: v === "__none__" ? null : v })
+          }
+        >
+          <SelectTrigger id="assign-rep" className="min-h-11">
+            <SelectValue placeholder="Choose rep" />
+          </SelectTrigger>
+          <SelectContent>
+            {(repsQr.data?.items ?? []).map((r) => (
+              <SelectItem key={r.id} value={r.id}>
+                {r.displayName ?? r.email}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {idleBuild ? (
@@ -164,6 +264,24 @@ export function AdminProjectPage() {
           <AlertDescription>{idleBuild}</AlertDescription>
         </Alert>
       ) : null}
+
+      {(verifiedAdvance?.externalReference || verifiedFinal?.externalReference) && (
+        <div className="rounded-lg border p-4 text-sm space-y-2">
+          <p className="font-medium">Verified payments</p>
+          {verifiedAdvance?.externalReference ? (
+            <p>
+              Advance ref:{" "}
+              <span className="font-mono text-xs">{verifiedAdvance.externalReference}</span>
+            </p>
+          ) : null}
+          {verifiedFinal?.externalReference ? (
+            <p>
+              Due ref:{" "}
+              <span className="font-mono text-xs">{verifiedFinal.externalReference}</span>
+            </p>
+          ) : null}
+        </div>
+      )}
 
       {lead.commission ? (
         <div className="rounded-lg border p-4 text-sm">
@@ -181,164 +299,44 @@ export function AdminProjectPage() {
 
       <PipelineProgress stages={stages} onStageClick={handleStageClick} actorMode="admin" />
 
-      <StageModalShell
-        open={activeStage === "whatsapp_group"}
-        onOpenChange={(o) => !o && closeModal()}
-        title="Verify WhatsApp group"
-        description={
-          lead.whatsappGroupLink
-            ? `Rep submitted: ${lead.whatsappGroupLink}`
-            : "Rep has not saved a group link yet."
+      <AdminVerifyModals
+        lead={lead}
+        activeStage={activeStage}
+        onClose={closeModal}
+        previewUrl={previewUrl}
+        onPreviewUrlChange={setPreviewUrl}
+        commissionEditRupees={commissionEditRupees}
+        onCommissionEditRupeesChange={setCommissionEditRupees}
+        verify={{
+          onVerify: runVerify,
+          onDecline: rejectable ? runDecline : undefined,
+          isPending:
+            verifyStage.isPending || rejectStage.isPending || markCommissionPaid.isPending,
+          declineNote,
+          onDeclineNoteChange: setDeclineNote
+        }}
+        onSavePreview={() =>
+          patch.mutate({ previewUrl: previewUrl.trim() || null }, { onSuccess: closeModal })
         }
-        footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={verifyStage.isPending || !lead.whatsappGroupLink}
-            onClick={() => verifyStage.mutate("whatsapp", { onSuccess: closeModal })}
-          >
-            Verify WhatsApp
-          </Button>
-        }
-      >
-        <p className="text-sm text-muted-foreground">
-          Confirm advance payment is verified and the group link is valid.
-        </p>
-      </StageModalShell>
-
-      <StageModalShell
-        open={activeStage === "build_demo"}
-        onOpenChange={(o) => !o && closeModal()}
-        title="Demo link"
-        footer={
-          <>
-            <Button
-              className="min-h-11 w-full sm:w-auto"
-              disabled={patch.isPending}
-              onClick={() =>
-                patch.mutate({ previewUrl: previewUrl.trim() || null }, { onSuccess: closeModal })
-              }
-            >
-              Save preview URL
-            </Button>
-            <Button
-              className="min-h-11 w-full sm:w-auto"
-              disabled={verifyStage.isPending || !previewUrl.trim()}
-              onClick={() => verifyStage.mutate("preview_ready", { onSuccess: closeModal })}
-            >
-              Mark demo ready
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-2">
-          <Label htmlFor="admin-preview">Preview URL</Label>
-          <Input
-            id="admin-preview"
-            className="min-h-11"
-            value={previewUrl}
-            onChange={(e) => setPreviewUrl(e.target.value)}
-          />
-        </div>
-      </StageModalShell>
-
-      <StageModalShell
-        open={activeStage === "accounts_ready"}
-        onOpenChange={(o) => !o && closeModal()}
-        title="Verify accounts ready"
-        description="Rep marked GitHub and hosting accounts as set up."
-        footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={verifyStage.isPending}
-            onClick={() => verifyStage.mutate("accounts_ready", { onSuccess: closeModal })}
-          >
-            Verify accounts
-          </Button>
-        }
-      >
-        <p className="text-sm text-muted-foreground">
-          Confirm accounts exist before the client pays the due amount.
-        </p>
-      </StageModalShell>
-
-      <StageModalShell
-        open={activeStage === "repo_transfer"}
-        onOpenChange={(o) => !o && closeModal()}
-        title="Verify repository transfer"
-        footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={verifyStage.isPending}
-            onClick={() => verifyStage.mutate("repo_transfer", { onSuccess: closeModal })}
-          >
-            Verify repo transfer
-          </Button>
-        }
-      >
-        <p className="text-sm text-muted-foreground">
-          Confirm repository ownership moved to the client.
-        </p>
-      </StageModalShell>
-
-      <StageModalShell
-        open={activeStage === "deployment_verify"}
-        onOpenChange={(o) => !o && closeModal()}
-        title="Verify deployment"
-        description={
-          lead.project?.deployedUrl
-            ? `Live URL: ${lead.project.deployedUrl}`
-            : "Rep has not submitted a live URL yet."
-        }
-        footer={
-          <Button
-            className="min-h-11 w-full sm:w-auto"
-            disabled={verifyStage.isPending || !lead.project?.deployedUrl}
-            onClick={() => verifyStage.mutate("deployment", { onSuccess: closeModal })}
-          >
-            Verify deployment
-          </Button>
-        }
-      >
-        <p className="text-sm text-muted-foreground">
-          Confirms the site is live and unlocks commission payout.
-        </p>
-      </StageModalShell>
-
-      <StageModalShell
-        open={activeStage === "commission"}
-        onOpenChange={(o) => !o && closeModal()}
-        title="Commission payout"
-        footer={
-          lead.commission && !lead.commission.isPaid ? (
-            <Button
-              className="min-h-11 w-full sm:w-auto"
-              disabled={markCommissionPaid.isPending}
-              onClick={() =>
-                markCommissionPaid.mutate(lead.commission!.id, { onSuccess: closeModal })
-              }
-            >
-              Mark commission paid
-            </Button>
-          ) : (
-            <p className="text-sm text-muted-foreground">Commission already paid or not due yet.</p>
-          )
-        }
-      >
-        <p className="text-sm text-muted-foreground">
-          Mark paid after funds are sent (typically 3–5 business days).
-        </p>
-      </StageModalShell>
+        savePreviewPending={patch.isPending}
+        onPatchCommission={() => {
+          const cents = parseRupeeInputToCents(commissionEditRupees);
+          if (cents == null || !lead.commission) return;
+          patchCommission.mutate({ id: lead.commission.id, amountCents: cents });
+        }}
+        patchCommissionPending={patchCommission.isPending}
+      />
 
       <PaymentVerifyDialog
         payment={verifyPayment}
         open={verifyPayment != null}
         onOpenChange={(o) => !o && setVerifyPayment(null)}
         isPending={verifyPay.isPending}
+        clientName={lead.clientName}
+        templateLabel={lead.websiteTemplate ? formatTemplateOption(lead.websiteTemplate) : null}
+        agreedTotalCents={lead.agreedTotalCents}
         onVerify={(paymentId, body) =>
-          verifyPay.mutate(
-            { paymentId, body },
-            { onSuccess: () => setVerifyPayment(null) }
-          )
+          verifyPay.mutate({ paymentId, body }, { onSuccess: () => setVerifyPayment(null) })
         }
       />
     </div>

@@ -15,9 +15,21 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   onVerify: (paymentId: string, body: VerifyPaymentRequestBody) => void;
   isPending: boolean;
+  clientName?: string;
+  templateLabel?: string | null;
+  agreedTotalCents?: number | null;
 };
 
-export function PaymentVerifyDialog({ payment, open, onOpenChange, onVerify, isPending }: Props) {
+export function PaymentVerifyDialog({
+  payment,
+  open,
+  onOpenChange,
+  onVerify,
+  isPending,
+  clientName,
+  templateLabel,
+  agreedTotalCents
+}: Props) {
   const [ref, setRef] = useState("");
   const [note, setNote] = useState("");
 
@@ -63,6 +75,38 @@ export function PaymentVerifyDialog({ payment, open, onOpenChange, onVerify, isP
       }
     >
       <div className="space-y-3">
+        {clientName ? (
+          <dl className="grid gap-2 text-sm">
+            <div>
+              <dt className="text-muted-foreground">Client</dt>
+              <dd className="font-medium">{clientName}</dd>
+            </div>
+            {templateLabel ? (
+              <div>
+                <dt className="text-muted-foreground">Template</dt>
+                <dd>{templateLabel}</dd>
+              </div>
+            ) : null}
+            {agreedTotalCents != null ? (
+              <div>
+                <dt className="text-muted-foreground">Agreed total</dt>
+                <dd>{formatMinorUnits(agreedTotalCents)}</dd>
+              </div>
+            ) : null}
+            {payment.repNote ? (
+              <div>
+                <dt className="text-muted-foreground">Rep note</dt>
+                <dd>{payment.repNote}</dd>
+              </div>
+            ) : null}
+            {payment.verificationStatus === "VERIFIED" && payment.externalReference ? (
+              <div>
+                <dt className="text-muted-foreground">Provider reference</dt>
+                <dd className="font-mono text-xs">{payment.externalReference}</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : null}
         <div className="space-y-2">
           <Label htmlFor="pay-ref">Provider reference (required)</Label>
           <Input
