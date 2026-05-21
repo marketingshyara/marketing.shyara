@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useActivityLogsQuery } from "../../hooks/useSalesQueries";
+import { ChevronLeft, ChevronRight, History } from "lucide-react";
+import { useActivityLogsQuery, useSessionQuery } from "../../hooks/useSalesQueries";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
@@ -12,12 +12,17 @@ import { activityActionLabel } from "../../lib/copy";
 export function ActivityLogsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 25;
+  const sessionQr = useSessionQuery();
+  const isAdmin = sessionQr.data?.user?.role === "ADMIN";
   const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useActivityLogsQuery({
     page,
-    pageSize
+    pageSize,
+    enabled: isAdmin
   });
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
+  const items = data?.items ?? [];
+  const showEmpty = !isLoading && !isError && items.length === 0;
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
@@ -36,7 +41,21 @@ export function ActivityLogsPage() {
       {isError ? (
         <QueryErrorAlert message="Could not load activity logs." onRetry={() => void refetch()} />
       ) : isLoading ? (
-        <Skeleton className="h-64 w-full" />
+        <div className="space-y-3" aria-busy="true" aria-live="polite">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      ) : showEmpty ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
+            <History className="h-10 w-10 text-muted-foreground" aria-hidden />
+            <p className="text-sm font-medium text-foreground">No activity yet</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Logins, payment verifications, and project updates will appear here as your team uses
+              the portal.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <Card>
           <CardContent className="p-0">
@@ -60,7 +79,7 @@ export function ActivityLogsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data?.items ?? []).map((row) => (
+                  {items.map((row) => (
                     <tr key={row.id} className="border-b last:border-0">
                       <td className="px-4 py-3 whitespace-nowrap">
                         {new Date(row.createdAt).toLocaleString()}
@@ -77,13 +96,11 @@ export function ActivityLogsPage() {
                 </tbody>
               </table>
             </div>
-            {(data?.items.length ?? 0) === 0 ? (
-              <p className="px-4 py-8 text-center text-sm text-muted-foreground">No activity yet.</p>
-            ) : null}
           </CardContent>
         </Card>
       )}
 
+      {!isLoading && !isError && (data?.total ?? 0) > 0 ? (
       <div className="flex items-center justify-between gap-2">
         <Button
           type="button"
@@ -109,6 +126,7 @@ export function ActivityLogsPage() {
           <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
         </Button>
       </div>
+      ) : null}
     </div>
   );
 }

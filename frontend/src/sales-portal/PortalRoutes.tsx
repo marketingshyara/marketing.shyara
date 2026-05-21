@@ -127,10 +127,6 @@ export function PortalRoutes() {
               element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/reviews" />}
             />
             <Route
-              path="activity"
-              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/activity" />}
-            />
-            <Route
               path="exports"
               element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/settings" />}
             />
