@@ -18,6 +18,7 @@ import {
   usePendingActionsCountQuery
 } from "../hooks/useSalesQueries";
 import { PortalNotificationsBell } from "../components/PortalNotificationsBell";
+import { PortalErrorBoundary } from "../components/PortalErrorBoundary";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -285,7 +286,9 @@ export function SalesPortalLayout() {
 
       <main id="main-content" className="flex-1 overflow-x-hidden px-3 py-4 md:px-6">
         <div className="mx-auto w-full max-w-[1200px]">
-          <Outlet />
+          <PortalErrorBoundary role={user?.role}>
+            <Outlet />
+          </PortalErrorBoundary>
         </div>
       </main>
     </div>

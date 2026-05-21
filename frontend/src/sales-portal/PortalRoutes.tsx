@@ -11,7 +11,7 @@ import { SalesPortalLayout } from "./layout/SalesPortalLayout";
 import { PortalLoginPage } from "./pages/PortalLoginPage";
 import { PortalChangePasswordPage } from "./pages/PortalChangePasswordPage";
 import { PipelineListPage } from "./pages/pipeline/PipelineListPage";
-import { PipelineDetailPage } from "./pages/pipeline/PipelineDetailPage";
+import { PipelineDetailGate } from "./pages/pipeline/PipelineDetailGate";
 import { PipelineNewLeadPage } from "./pages/pipeline/PipelineNewLeadPage";
 import { ResourcesPage } from "./pages/resources/ResourcesPage";
 import { ReviewsPage } from "./pages/admin/ReviewsPage";
@@ -90,10 +90,11 @@ export function PortalRoutes() {
           <Route element={<SalesPortalLayout />}>
             <Route index element={<PortalIndexRedirect />} />
 
+            <Route path="pipeline/:id" element={<PipelineDetailGate />} />
+
             <Route element={<RequireSalesRep />}>
               <Route path="pipeline" element={<PipelineListPage />} />
               <Route path="pipeline/new" element={<PipelineNewLeadPage />} />
-              <Route path="pipeline/:id" element={<PipelineDetailPage />} />
               <Route path="resources" element={<ResourcesPage />} />
             </Route>
 

@@ -57,7 +57,21 @@ export function PipelineDetailPage() {
   const [dueRupees, setDueRupees] = useState("");
   const [deployUrl, setDeployUrl] = useState("");
 
-  const loading = leadQr.isLoading || settingsQr.isLoading;
+  useEffect(() => {
+    setActiveStage(null);
+    setReadOnlyModal(false);
+    setClientName("");
+    setClientPhone("");
+    setNotes("");
+    setTemplateId("");
+    setAgreedRupees("");
+    setAdvanceNote("");
+    setWhatsappLink("");
+    setDueRupees("");
+    setDeployUrl("");
+  }, [id]);
+
+  const loading = leadQr.isLoading || (settingsQr.isLoading && !settingsQr.isError);
   const lead = leadQr.data?.lead;
   const stages = leadQr.data?.pipelineStages ?? [];
   const settings = settingsQr.data?.settings;
@@ -92,21 +106,8 @@ export function PipelineDetailPage() {
     setReadOnlyModal(false);
   };
 
-  useEffect(() => {
-    setActiveStage(null);
-    setReadOnlyModal(false);
-    setClientName("");
-    setClientPhone("");
-    setNotes("");
-    setTemplateId("");
-    setAgreedRupees("");
-    setAdvanceNote("");
-    setWhatsappLink("");
-    setDueRupees("");
-    setDeployUrl("");
-  }, [id]);
-
   const handleStageClick = (key: PipelineStageKey) => {
+    if (!lead) return;
     const stage = stages.find((s) => s.key === key);
     setReadOnlyModal(stage?.state === "pending_admin");
 
@@ -163,6 +164,13 @@ export function PipelineDetailPage() {
           {lead.convertedAt ? "Client" : "Lead"} · {leadStatusLabel(lead.status)}
         </p>
       </div>
+
+      {settingsQr.isError ? (
+        <QueryErrorAlert
+          message="Could not load portal settings. Using default minimums."
+          onRetry={() => void settingsQr.refetch()}
+        />
+      ) : null}
 
       <PipelineFocusCard
         stages={stages}
