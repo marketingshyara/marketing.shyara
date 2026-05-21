@@ -45,7 +45,7 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-9">
+        <nav className="hidden md:flex items-center gap-9" aria-label="Main navigation">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -80,8 +80,10 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
+            className="min-h-11 min-w-11"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-main-nav"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -98,7 +100,11 @@ export function Header() {
             onClick={() => setMobileMenuOpen(false)}
           />
           <div className="relative z-50 md:hidden border-t border-border bg-background animate-slide-up shadow-elevated">
-            <nav className="container py-5 flex flex-col gap-1">
+            <nav
+              id="mobile-main-nav"
+              className="container py-5 flex flex-col gap-1"
+              aria-label="Main navigation"
+            >
             {navLinks.map((link) => (
               <Link
                 key={link.href}

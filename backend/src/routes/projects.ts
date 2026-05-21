@@ -1,21 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import {
-  ActivityAction,
-  LeadStatus,
-  PaymentKind,
-  PaymentVerificationStatus,
-  Prisma,
-  UserRole
-} from "@prisma/client";
+import { ActivityAction, Prisma, UserRole } from "@prisma/client";
 import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
 import { clampPage } from "../lib/pagination.js";
-import { getCommissionRepUserId } from "../services/commissionRep.js";
-import { commissionAmountCents } from "../services/leadFsm.js";
 import { assertLeadAccess } from "../services/leadAccess.js";
 import { logActivity } from "../services/activityLog.js";
-import { getPortalSettings } from "../services/settings.js";
 import {
   createProjectBodySchema,
   paginationQuerySchema,
@@ -170,6 +160,13 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
         if (body.previewUrl !== undefined) data.previewUrl = body.previewUrl ?? undefined;
       } else {
         const body = repSubmitDeploymentBodySchema.parse(request.body);
+        if (!existing.lead.repoTransferVerifiedAt) {
+          throw new HttpError(
+            400,
+            "INVALID_STATE",
+            "Admin must verify repository transfer before you submit the live URL."
+          );
+        }
         data.deployedUrl = body.deployedUrl;
         data.deploymentSubmittedAt = new Date();
       }
@@ -233,131 +230,13 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
   app.post(
     "/api/projects/:id/verify-deployment",
     { preHandler: [requireUser] },
-    async (request, reply) => {
-      requireAdmin(request);
-      const admin = request.currentUser!;
-      const { id } = request.params as { id: string };
-
-      const outcome = await app.prisma.$transaction(
-        async (tx) => {
-          const project = await tx.project.findUnique({
-            where: { id },
-            include: { lead: true }
-          });
-          if (!project) {
-            throw new HttpError(404, "NOT_FOUND", "Project not found.");
-          }
-          if (!project.deploymentSubmittedAt) {
-            throw new HttpError(
-              400,
-              "INVALID_STATE",
-              "Deployment has not been submitted for this project."
-            );
-          }
-          if (project.deploymentVerifiedAt) {
-            throw new HttpError(400, "ALREADY_PROCESSED", "Deployment was already verified.");
-          }
-
-          const lead = project.lead;
-          if (lead.status === LeadStatus.FINAL_PAID) {
-            const leadClaim = await tx.lead.updateMany({
-              where: { id: lead.id, status: LeadStatus.FINAL_PAID },
-              data: { status: LeadStatus.DEPLOYED }
-            });
-            if (leadClaim.count === 0) {
-              throw new HttpError(
-                409,
-                "CONCURRENT_MODIFICATION",
-                "Lead state changed concurrently; refresh and retry."
-              );
-            }
-          } else if (lead.status !== LeadStatus.DEPLOYED) {
-            throw new HttpError(
-              400,
-              "INVALID_STATE",
-              "Lead must be FINAL_PAID or DEPLOYED before deployment can be verified."
-            );
-          }
-
-          const projectClaim = await tx.project.updateMany({
-            where: {
-              id,
-              deploymentVerifiedAt: null,
-              deploymentSubmittedAt: { not: null }
-            },
-            data: { deploymentVerifiedAt: new Date() }
-          });
-          if (projectClaim.count === 0) {
-            throw new HttpError(
-              400,
-              "INVALID_STATE",
-              "Deployment must be submitted and not already verified."
-            );
-          }
-
-          const freshLead = await tx.lead.findUniqueOrThrow({ where: { id: lead.id } });
-          const settings = await getPortalSettings(tx);
-          if (freshLead.agreedTotalCents == null || freshLead.agreedTotalCents <= 0) {
-            throw new HttpError(
-              400,
-              "AGREED_TOTAL_REQUIRED",
-              "Set the agreed project total on the lead before verifying deployment."
-            );
-          }
-          const repId = getCommissionRepUserId(freshLead);
-          const verifiedFinal = await tx.leadPayment.findFirst({
-            where: {
-              leadId: freshLead.id,
-              kind: PaymentKind.FINAL,
-              verificationStatus: PaymentVerificationStatus.VERIFIED
-            }
-          });
-          const amountCents = commissionAmountCents(
-            freshLead,
-            verifiedFinal?.amountCents ?? 0,
-            settings
-          );
-          await tx.commission.upsert({
-            where: { leadId: freshLead.id },
-            create: {
-              leadId: freshLead.id,
-              repUserId: repId,
-              amountCents,
-              bonusCents: 0
-            },
-            update: {
-              repUserId: repId,
-              amountCents
-            }
-          });
-
-          const updatedProject = await tx.project.findUniqueOrThrow({ where: { id } });
-          const updatedLead = await tx.lead.findUniqueOrThrow({ where: { id: lead.id } });
-
-          await logActivity({
-            prisma: app.prisma,
-            tx,
-            userId: admin.id,
-            action: ActivityAction.UPDATE,
-            entityType: "Project",
-            entityId: id,
-            after: {
-              deploymentVerifiedAt: updatedProject.deploymentVerifiedAt,
-              leadStatus: updatedLead.status
-            },
-            request
-          });
-
-          return { project: updatedProject, lead: updatedLead };
-        },
-        {
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-          maxWait: 5000,
-          timeout: 15000
-        }
+    async (_request, _reply) => {
+      requireAdmin(_request);
+      throw new HttpError(
+        410,
+        "DEPRECATED_ENDPOINT",
+        "Use POST /api/leads/:leadId/stages/deployment/verify instead."
       );
-
-      return reply.send(outcome);
     }
   );
 }

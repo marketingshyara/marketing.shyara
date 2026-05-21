@@ -1,5 +1,6 @@
 import { LeadStatus, PaymentKind, PaymentVerificationStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
+import { optionalHttpUrlSchema, requiredHttpUrlSchema } from "../lib/httpUrl.js";
 
 export const loginBodySchema = z.object({
   email: z.string().email(),
@@ -103,12 +104,12 @@ export const patchLeadBodySchema = z.object({
   advanceAmountCents: z.number().int().min(0).optional().nullable(),
   finalQuoteCents: z.number().int().min(0).optional().nullable(),
   websiteTemplateId: z.string().min(1).max(64).optional().nullable(),
-  whatsappGroupLink: z.union([z.string().url().max(2000), z.null()]).optional(),
+  whatsappGroupLink: optionalHttpUrlSchema,
   markDemoFinalized: z.boolean().optional(),
   markAccountsReady: z.boolean().optional(),
   assignedToUserId: z.string().min(1).optional().nullable(),
   /** Admin: set project preview URL on linked project */
-  previewUrl: z.union([z.string().url().max(2000), z.null()]).optional()
+  previewUrl: optionalHttpUrlSchema
 });
 
 export const convertLeadBodySchema = z.object({
@@ -182,14 +183,14 @@ export const activityLogsQuerySchema = paginationQuerySchema
 export const patchProjectBodySchema = z.object({
   title: z.string().min(1).max(200).optional(),
   metadata: z.record(z.unknown()).optional().nullable(),
-  previewUrl: z.union([z.string().url().max(2000), z.null()]).optional(),
-  deployedUrl: z.union([z.string().url().max(2000), z.null()]).optional(),
+  previewUrl: optionalHttpUrlSchema,
+  deployedUrl: optionalHttpUrlSchema,
   markDeploymentSubmitted: z.boolean().optional()
 });
 
 /** Rep-only: submit live URL for admin deployment verification. */
 export const repSubmitDeploymentBodySchema = z.object({
-  deployedUrl: z.string().url().max(2000),
+  deployedUrl: requiredHttpUrlSchema,
   markDeploymentSubmitted: z.literal(true)
 });
 

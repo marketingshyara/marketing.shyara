@@ -21,12 +21,26 @@ const NotFound = () => {
       <div className="flex min-h-[60vh] items-center justify-center px-4">
         <div className="text-center">
           <h1 className="mb-4 text-display font-bold text-foreground">404</h1>
-          <p className="mb-6 text-body text-muted-foreground">Oops! Page not found</p>
-          <Link to="/">
-            <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              Return to Home
-            </Button>
-          </Link>
+          <p className="mb-6 text-body text-muted-foreground">
+            That page does not exist. Try one of these instead:
+          </p>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Link to="/">
+              <Button size="lg" className="min-h-11 bg-accent hover:bg-accent/90 text-accent-foreground">
+                Home
+              </Button>
+            </Link>
+            <Link to="/services">
+              <Button size="lg" variant="outline" className="min-h-11">
+                Services
+              </Button>
+            </Link>
+            <Link to="/contact">
+              <Button size="lg" variant="outline" className="min-h-11">
+                Contact
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </Layout>

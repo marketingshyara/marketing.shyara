@@ -72,6 +72,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         request.session.options({ maxAge: sessionMaxAgeMs });
         request.session.set("userId", user.id);
         request.session.set("role", user.role);
+        request.session.set("rememberDevice", Boolean(body.rememberDevice));
 
         await logActivity({
           prisma: app.prisma,

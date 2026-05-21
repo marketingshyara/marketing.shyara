@@ -233,3 +233,15 @@ model ActivityLog {
   @@index([userId])
   @@index([createdAt])
 }
+
+/** Server-side session rows for @fastify/session (shared across app instances). */
+model PortalSession {
+  sid       String   @id
+  data      Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([expiresAt])
+  @@map("portal_sessions")
+}

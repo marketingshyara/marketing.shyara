@@ -1,4 +1,10 @@
-import type { LeadStatus, PaymentKind, PaymentVerificationStatus, UserRole } from "../types";
+import type {
+  ActivityAction,
+  LeadStatus,
+  PaymentKind,
+  PaymentVerificationStatus,
+  UserRole
+} from "../types";
 
 const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   NEW: "New Lead",
@@ -40,4 +46,23 @@ export function paymentKindLabel(kind: PaymentKind): string {
 
 export function paymentVerificationLabel(status: PaymentVerificationStatus): string {
   return PAYMENT_STATUS_LABELS[status];
+}
+
+const ACTIVITY_ACTION_LABELS: Record<ActivityAction, string> = {
+  LOGIN: "Signed in",
+  LOGOUT: "Signed out",
+  CREATE: "Created",
+  UPDATE: "Updated",
+  DELETE: "Deleted",
+  STATUS_CHANGE: "Status changed",
+  PAYMENT_MARKED: "Payment submitted",
+  PAYMENT_VERIFIED: "Payment verified",
+  COMMISSION_PAID: "Commission paid",
+  PASSWORD_CHANGED: "Password changed",
+  EXPORT: "Data exported",
+  SETTINGS_UPDATE: "Settings updated"
+};
+
+export function activityActionLabel(action: ActivityAction): string {
+  return ACTIVITY_ACTION_LABELS[action];
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { StageModalShell } from "./StageModalShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,12 +49,16 @@ export function PaymentVerifyDialog({
             variant="destructive"
             className="min-h-11 w-full sm:w-auto"
             disabled={isPending}
-            onClick={() =>
+            onClick={() => {
+              if (!note.trim()) {
+                toast.error("Add a short note explaining why you declined.");
+                return;
+              }
               onVerify(payment.id, {
                 decision: "REJECTED",
-                adminNote: note || null
-              })
-            }
+                adminNote: note.trim()
+              });
+            }}
           >
             Decline
           </Button>
@@ -101,24 +106,28 @@ export function PaymentVerifyDialog({
             ) : null}
             {payment.verificationStatus === "VERIFIED" && payment.externalReference ? (
               <div>
-                <dt className="text-muted-foreground">Provider reference</dt>
+                <dt className="text-muted-foreground">Razorpay reference</dt>
                 <dd className="font-mono text-xs">{payment.externalReference}</dd>
               </div>
             ) : null}
           </dl>
         ) : null}
         <div className="space-y-2">
-          <Label htmlFor="pay-ref">Provider reference (required)</Label>
+          <Label htmlFor="pay-ref">Razorpay reference (required to approve)</Label>
           <Input
             id="pay-ref"
             className="min-h-11"
             value={ref}
             onChange={(e) => setRef(e.target.value)}
             placeholder="Razorpay payment id"
+            aria-describedby="pay-ref-hint"
           />
+          <p id="pay-ref-hint" className="text-xs text-muted-foreground">
+            Paste the payment ID from your Razorpay dashboard.
+          </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="pay-note">Admin note (optional)</Label>
+          <Label htmlFor="pay-note">Admin note (required if declining)</Label>
           <Textarea id="pay-note" value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
       </div>

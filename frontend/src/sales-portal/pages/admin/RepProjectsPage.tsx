@@ -7,6 +7,7 @@ import { useTeamRepQuery } from "../../hooks/useSalesQueries";
 import { AdminProjectCard } from "../../components/admin/AdminProjectCard";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
+import { PortalPageHeader } from "../../components/PortalPageHeader";
 
 type FilterTab = "active" | "all" | "completed";
 
@@ -43,22 +44,20 @@ export function RepProjectsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <Button asChild variant="ghost" className="min-h-11 -ml-2 w-fit px-2">
-            <Link to="/portal/team">← Sales team</Link>
-          </Button>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">
-            {rep.displayName ?? rep.email}
-          </h1>
-          <p className="text-sm text-muted-foreground">{rep.email}</p>
-        </div>
-        <DataStaleToolbar
-          dataUpdatedAt={qr.dataUpdatedAt}
-          onRefresh={() => void qr.refetch()}
-          isFetching={qr.isFetching}
-        />
-      </div>
+      <Button asChild variant="ghost" className="min-h-11 -ml-2 w-fit px-2">
+        <Link to="/portal/team">← Sales team</Link>
+      </Button>
+      <PortalPageHeader
+        title={rep.displayName ?? rep.email}
+        description={rep.email}
+        toolbar={
+          <DataStaleToolbar
+            dataUpdatedAt={qr.dataUpdatedAt}
+            onRefresh={() => void qr.refetch()}
+            isFetching={qr.isFetching}
+          />
+        }
+      />
 
       <div className="flex flex-wrap gap-2 text-xs">
         <StatPill label="Leads" value={rep.totalLeads} />

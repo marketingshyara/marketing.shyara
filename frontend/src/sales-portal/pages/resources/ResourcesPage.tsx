@@ -4,6 +4,7 @@ import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PortalPageHeader } from "../../components/PortalPageHeader";
 
 export function ResourcesPage() {
   const { data, isLoading, isError, refetch } = usePortalSettingsQuery();
@@ -26,12 +27,10 @@ export function ResourcesPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold md:text-2xl">Sales resources</h1>
-        <p className="text-sm text-muted-foreground">
-          Templates, tutorials, and talking points for your pitch.
-        </p>
-      </div>
+      <PortalPageHeader
+        title="Sales resources"
+        description="Templates, tutorials, and talking points for your pitch."
+      />
 
       <Card>
         <CardHeader>

@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { leadStatusLabel } from "../../lib/copy";
+import { SettingsExportsCard } from "../../components/admin/SettingsExportsCard";
+import { PortalPageHeader } from "../../components/PortalPageHeader";
 
 const LEAD_STATUSES: LeadStatus[] = [
   "NEW",
@@ -62,12 +64,10 @@ export function SettingsPage() {
   if (isError && !settings) {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
-        <div>
-          <h1 className="text-xl font-semibold md:text-2xl">Portal settings</h1>
-          <p className="text-sm text-muted-foreground">
-            Workflow gates and commission calculation.
-          </p>
-        </div>
+        <PortalPageHeader
+          title="Portal settings"
+          description="Workflow gates and commission calculation."
+        />
         <QueryErrorAlert
           message="Could not load settings."
           onRetry={() => void refetch()}
@@ -87,19 +87,17 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold md:text-2xl">Portal settings</h1>
-          <p className="text-sm text-muted-foreground">
-            Configure lead flow, commissions, and admin safeguards for this portal.
-          </p>
-        </div>
-        <DataStaleToolbar
-          dataUpdatedAt={dataUpdatedAt}
-          onRefresh={() => void refetch()}
-          isFetching={isFetching}
-        />
-      </div>
+      <PortalPageHeader
+        title="Portal settings"
+        description="Configure lead flow, commissions, and admin safeguards for this portal."
+        toolbar={
+          <DataStaleToolbar
+            dataUpdatedAt={dataUpdatedAt}
+            onRefresh={() => void refetch()}
+            isFetching={isFetching}
+          />
+        }
+      />
 
       <form
         className="space-y-6"
@@ -354,8 +352,14 @@ export function SettingsPage() {
 
           <TabsContent value="system" className="space-y-6 mt-0">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Manual transitions (legacy)</CardTitle>
+          <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-base">Manual transitions (legacy)</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Emergency API-only status overrides. Normal deals follow the pipeline steps on each
+                project; reps do not use these rules.
+              </p>
+            </div>
             <Button
               type="button"
               variant="outline"
@@ -509,7 +513,10 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="settings-payment-tolerance">Payment vs quote tolerance (basis points, empty = disabled)</Label>
+              <Label htmlFor="settings-payment-tolerance">Payment vs quote tolerance</Label>
+              <p className="text-xs text-muted-foreground">
+                Basis points (100 bps = 1%). Leave empty to disable tolerance checks on payment amounts.
+              </p>
               <Input
                 id="settings-payment-tolerance"
                 className="min-h-11"
@@ -548,6 +555,8 @@ export function SettingsPage() {
           Save settings
         </Button>
       </form>
+
+      <SettingsExportsCard />
     </div>
   );
 }

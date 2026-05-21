@@ -102,7 +102,14 @@ function primaryButtonLabel(stage: PipelineStageView, actorMode: PipelineActorMo
     if (stage.key === "commission") {
       return "Mark commission paid";
     }
-    return `Review ${short.toLowerCase()}`;
+    if (stage.key === "build_demo") {
+      return stage.hint ? "Mark demo ready" : "Save preview link";
+    }
+    if (stage.key === "demo_finalized") return "Verify demo approved";
+    if (stage.key === "accounts_ready") return "Verify accounts ready";
+    if (stage.key === "repo_transfer") return "Verify repo transfer";
+    if (stage.key === "deployment_verify") return "Verify deployment";
+    return `Review: ${short}`;
   }
   switch (stage.key) {
     case "lead_capture":
@@ -125,6 +132,9 @@ function primaryButtonLabel(stage: PipelineStageView, actorMode: PipelineActorMo
 }
 
 function focusDescription(stage: PipelineStageView, actorMode: PipelineActorMode): string {
+  if (stage.state === "locked" && stage.blockedReason) {
+    return stage.blockedReason;
+  }
   if (stage.state === "pending_admin" && actorMode === "rep") {
     return `You submitted “${stageShortTitle(stage.key, stage.title)}”. Admin will review it soon.`;
   }
@@ -137,10 +147,13 @@ function focusDescription(stage: PipelineStageView, actorMode: PipelineActorMode
   if (actorMode === "admin" && stage.key === "convert_deal") {
     return "Review the deal details, then verify the advance payment from the payment step.";
   }
+  if (actorMode === "admin" && stage.key === "build_demo" && stage.state === "actionable") {
+    return "Step 1: Save the staging or preview link. Step 2: Mark demo ready so the rep can continue.";
+  }
   if (actorMode === "rep" && stage.state === "actionable") {
     return `Complete “${stageShortTitle(stage.key, stage.title)}” to move this project forward.`;
   }
-  if (actorMode === "admin" && stage.state === "actionable") {
+  if (actorMode === "admin" && stage.state === "actionable" && stage.key !== "build_demo") {
     return `Review what the rep submitted for “${stageShortTitle(stage.key, stage.title)}”.`;
   }
   return whoActsNext(stage, actorMode);
@@ -206,4 +219,64 @@ export function tickAriaLabel(state: StageUiState, adminVerified: boolean): stri
 
 export function stageWasAdminVerified(key: PipelineStageKey): boolean {
   return key !== "lead_capture" && key !== "convert_deal" && key !== "demo_finalized";
+}
+
+export function listWaitingSubline(
+  summary: LeadPipelineSummary,
+  actorMode: PipelineActorMode
+): string | null {
+  if (actorMode === "rep" && summary.pendingAdmin) {
+    return "Admin will review soon.";
+  }
+  return null;
+}
+
+const NEXT_STEP_HINTS: Partial<
+  Record<PipelineStageKey, Partial<Record<PipelineActorMode, string>>>
+> = {
+  lead_capture: {
+    rep: "Next: convert to a client and record the advance payment."
+  },
+  convert_deal: {
+    rep: "Next: wait for admin to verify the advance payment."
+  },
+  whatsapp_group: {
+    rep: "Next: admin verifies the group, then the technical team shares a demo link."
+  },
+  demo_finalized: {
+    rep: "Next: admin verifies, then you mark accounts ready.",
+    admin: "Next: rep can mark accounts ready after you verify."
+  },
+  accounts_ready: {
+    rep: "Next: admin verifies, then you record the due payment.",
+    admin: "Next: rep records due payment; you verify it on Payments or Reviews."
+  },
+  final_payment: {
+    rep: "Next: admin verifies the due payment, then repo transfer and deployment."
+  },
+  deployment_submit: {
+    rep: "Next: admin verifies the live site; commission is calculated after that."
+  },
+  build_demo: {
+    admin: "Next: mark demo ready so the rep can show the site to the client."
+  },
+  repo_transfer: {
+    admin: "Next: rep submits the live URL for you to verify."
+  },
+  deployment_verify: {
+    admin: "Next: mark commission paid when payout is complete."
+  },
+  advance_verify: {
+    admin: "Next: rep adds the WhatsApp group link."
+  },
+  final_verify: {
+    admin: "Next: verify repo transfer, then rep deploys the live URL."
+  }
+};
+
+export function stageNextStepHint(
+  key: PipelineStageKey,
+  actorMode: PipelineActorMode
+): string | undefined {
+  return NEXT_STEP_HINTS[key]?.[actorMode];
 }

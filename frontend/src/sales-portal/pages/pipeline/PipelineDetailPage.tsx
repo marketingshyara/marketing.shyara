@@ -20,6 +20,7 @@ import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsA
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import {
+  errToast,
   useConvertLeadMutation,
   useLeadQuery,
   useMarkPaymentMutation,
@@ -28,9 +29,13 @@ import {
   usePatchProjectMutation,
   useWebsiteTemplatesQuery
 } from "../../hooks/useSalesQueries";
+import { prepareHttpUrlForMutation } from "../../lib/httpUrl";
+import { toastIfStageBlocked } from "../../lib/pipelineStageGuard";
 import type { PipelineStageKey } from "../../types";
 import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
 import { formatTemplateOption } from "../../lib/templateLabel";
+import { stageNextStepHint } from "../../lib/pipelineCopy";
+import { Badge } from "@/components/ui/badge";
 import { leadStatusLabel } from "../../lib/copy";
 
 export function PipelineDetailPage() {
@@ -106,9 +111,13 @@ export function PipelineDetailPage() {
     setReadOnlyModal(false);
   };
 
+  const repModalHint =
+    activeStage && !readOnlyModal ? stageNextStepHint(activeStage, "rep") : undefined;
+
   const handleStageClick = (key: PipelineStageKey) => {
     if (!lead) return;
     const stage = stages.find((s) => s.key === key);
+    if (toastIfStageBlocked(stages, key)) return;
     setReadOnlyModal(stage?.state === "pending_admin");
 
     if (key === "lead_capture") {
@@ -195,16 +204,24 @@ export function PipelineDetailPage() {
       />
 
       {lead.commission && (
-        <div className="rounded-lg border p-4 text-sm">
-          <p>
-            Commission: {formatMinorUnits(lead.commission.amountCents)}
-            {lead.commission.bonusCents > 0
-              ? ` + ${formatMinorUnits(lead.commission.bonusCents)} bonus`
-              : ""}
+        <div className="rounded-lg border p-4 text-sm space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-medium">
+              Commission: {formatMinorUnits(lead.commission.amountCents)}
+              {lead.commission.bonusCents > 0
+                ? ` + ${formatMinorUnits(lead.commission.bonusCents)} bonus`
+                : ""}
+            </p>
+            <Badge variant={lead.commission.isPaid ? "default" : "secondary"}>
+              {lead.commission.isPaid ? "Paid" : "Pending payout"}
+            </Badge>
+          </div>
+          <p className="text-muted-foreground text-xs">
+            Payout is marked within 3–5 business days after admin verifies deployment.
           </p>
-          <p className="text-muted-foreground">
-            {lead.commission.isPaid ? "Paid" : "Pending (3–5 business days after admin marks complete)"}
-          </p>
+          <Button variant="link" className="h-auto min-h-11 px-0 text-sm" asChild>
+            <Link to="/portal/commission">View all commission</Link>
+          </Button>
         </div>
       )}
 
@@ -212,6 +229,12 @@ export function PipelineDetailPage() {
         open={activeStage === "lead_capture"}
         onOpenChange={(o) => !o && closeModal()}
         title="Lead details"
+        description={
+          readOnlyModal
+            ? "View-only while this step is waiting on admin or already complete."
+            : "Update client contact details for this lead."
+        }
+        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
             <p className="text-sm text-muted-foreground">View only.</p>
@@ -260,6 +283,7 @@ export function PipelineDetailPage() {
             ? "Waiting for admin to verify advance payment."
             : `Minimum project total: ₹${minRupees}. Advance is ${settings ? settings.advancePaymentShareBps / 100 : 50}% by default.`
         }
+        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
             <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
@@ -328,6 +352,7 @@ export function PipelineDetailPage() {
             ? "Submitted — waiting for admin to verify."
             : "Create the group with the client and technical team, then paste the invite link."
         }
+        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
             <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
@@ -335,9 +360,14 @@ export function PipelineDetailPage() {
             <Button
               className="min-h-11 w-full sm:w-auto"
               disabled={patch.isPending}
-              onClick={() =>
-                patch.mutate({ whatsappGroupLink: whatsappLink.trim() || null }, { onSuccess: closeModal })
-              }
+              onClick={() => {
+                try {
+                  const whatsappGroupLink = prepareHttpUrlForMutation(whatsappLink);
+                  patch.mutate({ whatsappGroupLink }, { onSuccess: closeModal });
+                } catch (e) {
+                  errToast(e);
+                }
+              }}
             >
               Save link
             </Button>
@@ -346,7 +376,15 @@ export function PipelineDetailPage() {
       >
         <div className="space-y-2">
           <Label htmlFor="wa-link">Group invite link</Label>
-          <Input id="wa-link" className="min-h-11" value={whatsappLink} onChange={(e) => setWhatsappLink(e.target.value)} />
+          <Input
+            id="wa-link"
+            className="min-h-11"
+            type="url"
+            inputMode="url"
+            placeholder="https://chat.whatsapp.com/…"
+            value={whatsappLink}
+            onChange={(e) => setWhatsappLink(e.target.value)}
+          />
         </div>
       </StageModalShell>
 
@@ -359,6 +397,7 @@ export function PipelineDetailPage() {
             ? "Submitted — waiting for admin to verify."
             : "Confirm the client approved the demo website."
         }
+        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
             <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
@@ -387,6 +426,7 @@ export function PipelineDetailPage() {
             ? "Submitted — waiting for admin to verify."
             : "Confirm GitHub and free static hosting accounts are set up for the client."
         }
+        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
             <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
@@ -410,7 +450,12 @@ export function PipelineDetailPage() {
         open={activeStage === "final_payment"}
         onOpenChange={(o) => !o && closeModal()}
         title="Due payment"
-        description={readOnlyModal ? "Submitted — waiting for admin to verify payment." : undefined}
+        description={
+          readOnlyModal
+            ? "Submitted — waiting for admin to verify payment."
+            : "Record the due payment amount so admin can verify it."
+        }
+        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
             <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
@@ -439,7 +484,12 @@ export function PipelineDetailPage() {
         open={activeStage === "deployment_submit"}
         onOpenChange={(o) => !o && closeModal()}
         title="Live deployment"
-        description={readOnlyModal ? "Submitted — waiting for admin to verify deployment." : undefined}
+        description={
+          readOnlyModal
+            ? "Submitted — waiting for admin to verify deployment."
+            : "Paste the live site URL after deployment. Admin will verify before commission."
+        }
+        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
             <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
@@ -450,13 +500,18 @@ export function PipelineDetailPage() {
               onClick={() => {
                 const projectId = lead.project?.id;
                 if (!projectId) return;
-                patchProject.mutate(
-                  {
-                    projectId,
-                    body: { deployedUrl: deployUrl.trim(), markDeploymentSubmitted: true }
-                  },
-                  { onSuccess: closeModal }
-                );
+                try {
+                  const deployedUrl = prepareHttpUrlForMutation(deployUrl);
+                  patchProject.mutate(
+                    {
+                      projectId,
+                      body: { deployedUrl, markDeploymentSubmitted: true }
+                    },
+                    { onSuccess: closeModal }
+                  );
+                } catch (e) {
+                  errToast(e);
+                }
               }}
             >
               Submit for verification
@@ -471,7 +526,15 @@ export function PipelineDetailPage() {
         ) : null}
         <div className="space-y-2">
           <Label htmlFor="live-url">Live site URL</Label>
-          <Input id="live-url" className="min-h-11" value={deployUrl} onChange={(e) => setDeployUrl(e.target.value)} />
+          <Input
+            id="live-url"
+            className="min-h-11"
+            type="url"
+            inputMode="url"
+            placeholder="https://… or yourdomain.com"
+            value={deployUrl}
+            onChange={(e) => setDeployUrl(e.target.value)}
+          />
         </div>
       </StageModalShell>
 

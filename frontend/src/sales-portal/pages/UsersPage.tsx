@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger
@@ -41,6 +42,7 @@ import type { User } from "../types";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { userRoleLabel } from "../lib/copy";
+import { PortalPageHeader } from "../components/PortalPageHeader";
 
 export function UsersPage() {
   const [page, setPage] = useState(1);
@@ -93,26 +95,31 @@ export function UsersPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold md:text-2xl">Users</h1>
-          <p className="text-sm text-muted-foreground">Manage portal accounts.</p>
-        </div>
-        <div className="flex flex-col gap-2 sm:items-end">
-          {!isLoading && (
-            <DataStaleToolbar
-              dataUpdatedAt={dataUpdatedAt}
-              onRefresh={() => void refetch()}
-              isFetching={isFetching}
-            />
-          )}
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      <PortalPageHeader
+        title="Users"
+        description="Manage portal accounts."
+        toolbar={
+          <div className="flex flex-col gap-2 sm:items-end">
+            {!isLoading && (
+              <DataStaleToolbar
+                dataUpdatedAt={dataUpdatedAt}
+                onRefresh={() => void refetch()}
+                isFetching={isFetching}
+              />
+            )}
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button className="min-h-11 w-full sm:w-auto">Add user</Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+          <DialogContent
+            aria-describedby={undefined}
+            className="max-h-[90dvh] overflow-y-auto sm:max-w-md"
+          >
             <DialogHeader>
               <DialogTitle>New user</DialogTitle>
+              <DialogDescription className="sr-only">
+                Create a sales rep or admin account.
+              </DialogDescription>
             </DialogHeader>
             <form
               className="space-y-4"
@@ -237,8 +244,9 @@ export function UsersPage() {
             </form>
           </DialogContent>
         </Dialog>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {isError && (
         <QueryErrorAlert
@@ -371,9 +379,10 @@ export function UsersPage() {
       )}
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit user</DialogTitle>
+            <DialogDescription className="sr-only">Update role, name, or active status.</DialogDescription>
           </DialogHeader>
           {editing && (
             <form
@@ -431,9 +440,12 @@ export function UsersPage() {
       </Dialog>
 
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Set temporary password</DialogTitle>
+            <DialogDescription className="sr-only">
+              Set a one-time password the user must change at first login.
+            </DialogDescription>
           </DialogHeader>
           <form
             className="space-y-4"
@@ -466,14 +478,13 @@ export function UsersPage() {
           if (!open) setNewUserTempPassword(null);
         }}
       >
-        <DialogContent className="max-h-[90dvh] overflow-y-auto">
+        <DialogContent aria-describedby={undefined} className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Temporary password</DialogTitle>
+            <DialogDescription>
+              Share this password once. The user must set a new password at first sign-in.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Share this password once. The user must set a new password at first sign-in before using
-            the portal.
-          </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Input readOnly className="min-h-11 font-mono text-sm" value={newUserTempPassword ?? ""} />
             <Button

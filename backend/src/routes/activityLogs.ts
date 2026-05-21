@@ -33,7 +33,10 @@ export async function registerActivityLogRoutes(app: FastifyInstance): Promise<v
         where,
         skip,
         take: query.pageSize,
-        orderBy: { createdAt: "desc" }
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { id: true, displayName: true, email: true } }
+        }
       });
 
       return reply.send({ items, total, page, pageSize: query.pageSize });

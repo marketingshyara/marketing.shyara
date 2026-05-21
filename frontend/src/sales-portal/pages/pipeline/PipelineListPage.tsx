@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
+import { PortalPageHeader } from "../../components/PortalPageHeader";
 import { PipelineListSummary } from "../../components/pipeline/PipelineListSummary";
-import { listBadgeLabel } from "../../lib/pipelineCopy";
+import { listBadgeLabel, listWaitingSubline } from "../../lib/pipelineCopy";
 import { cn } from "@/lib/utils";
 
 type ViewTab = "leads" | "clients";
@@ -55,21 +56,21 @@ export function PipelineListPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Pipeline</h1>
-          <p className="text-sm text-muted-foreground">
-            {tab === "leads"
-              ? "Prospects — not yet converted to clients"
-              : "Active clients — after admin approves advance"}
-          </p>
-        </div>
-        <DataStaleToolbar
-          dataUpdatedAt={dataUpdatedAt}
-          onRefresh={() => void refetch()}
-          isFetching={isFetching}
-        />
-      </div>
+      <PortalPageHeader
+        title="Pipeline"
+        description={
+          tab === "leads"
+            ? "Prospects — not yet converted to clients"
+            : "Active clients — after admin approves advance"
+        }
+        toolbar={
+          <DataStaleToolbar
+            dataUpdatedAt={dataUpdatedAt}
+            onRefresh={() => void refetch()}
+            isFetching={isFetching}
+          />
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div
@@ -132,11 +133,25 @@ export function PipelineListPage() {
       ) : (
         <div className="min-w-0 space-y-2">
           {data?.items.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">
-              {tab === "leads"
-                ? "No prospects yet. Add your first prospect."
-                : "No active clients yet. Converted clients appear here after admin approves advance."}
-            </p>
+            <div className="space-y-3 py-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                {tab === "leads"
+                  ? "No prospects yet."
+                  : "No active clients yet. Converted clients appear here after admin approves advance."}
+              </p>
+              {tab === "leads" ? (
+                <Button className="min-h-11" asChild>
+                  <Link to="/portal/pipeline/new">
+                    <Plus className="mr-2 h-4 w-4" aria-hidden />
+                    Add lead
+                  </Link>
+                </Button>
+              ) : (
+                <Button variant="outline" className="min-h-11" onClick={() => setTab("leads")}>
+                  View prospects
+                </Button>
+              )}
+            </div>
           ) : (
             data?.items.map((lead) => {
               const summary = lead.pipelineSummary ?? {
@@ -154,6 +169,7 @@ export function PipelineListPage() {
                   href={`/portal/pipeline/${lead.id}`}
                   badgeLabel={label}
                   badgeVariant={variant}
+                  waitingSubline={listWaitingSubline(summary, "rep")}
                 />
               );
             })

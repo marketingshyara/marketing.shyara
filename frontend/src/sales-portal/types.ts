@@ -148,6 +148,7 @@ export interface ActivityLog {
   before: unknown;
   after: unknown;
   createdAt: string;
+  user?: { id: string; displayName: string | null; email: string } | null;
 }
 
 export interface ManualTransition {
@@ -248,6 +249,7 @@ export interface PipelineStageView {
   adminActor: boolean;
   state: StageUiState;
   hint?: string;
+  blockedReason?: string;
 }
 
 export type PipelineStageVerifyKey =

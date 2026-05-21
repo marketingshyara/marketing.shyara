@@ -1,11 +1,17 @@
-import { useTeamRepsQuery } from "../../hooks/useSalesQueries";
+import { Link } from "react-router-dom";
+import { usePendingActionsCountQuery, useTeamRepsQuery } from "../../hooks/useSalesQueries";
 import { AdminRepCard } from "../../components/admin/AdminRepCard";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
+import { PortalPageHeader } from "../../components/PortalPageHeader";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function TeamHubPage() {
   const qr = useTeamRepsQuery(true);
+  const pendingCount = usePendingActionsCountQuery(true);
+  const pendingTotal = pendingCount.data?.total ?? 0;
 
   if (qr.isError) {
     return (
@@ -19,19 +25,31 @@ export function TeamHubPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Sales team</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage reps, verify payments, and track each client project.
-          </p>
-        </div>
-        <DataStaleToolbar
-          dataUpdatedAt={qr.dataUpdatedAt}
-          onRefresh={() => void qr.refetch()}
-          isFetching={qr.isFetching}
-        />
-      </div>
+      <PortalPageHeader
+        title="Sales team"
+        description="Manage reps, verify payments, and track each client project."
+        toolbar={
+          <DataStaleToolbar
+            dataUpdatedAt={qr.dataUpdatedAt}
+            onRefresh={() => void qr.refetch()}
+            isFetching={qr.isFetching}
+          />
+        }
+      />
+
+      {pendingTotal > 0 ? (
+        <Alert>
+          <AlertTitle>
+            {pendingTotal} item{pendingTotal === 1 ? "" : "s"} need your approval
+          </AlertTitle>
+          <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>Open the reviews queue to verify payments and project steps.</span>
+            <Button className="min-h-11 shrink-0" asChild>
+              <Link to="/portal/reviews">Open reviews queue</Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       {qr.isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -51,6 +51,28 @@ export function errToast(e: unknown, qc?: QueryClient) {
       );
       return;
     }
+    if (e.code === "VALIDATION_ERROR") {
+      toast.error("Enter a valid link (e.g. https://example.com or example.com).");
+      return;
+    }
+    if (e.code === "INVALID_STATE") {
+      toast.error(e.message || "This action is not available for this project yet.");
+      return;
+    }
+    if (e.code === "LEAD_TERMINAL") {
+      toast.error(e.message || "This project is complete and cannot be changed.");
+      return;
+    }
+    if (e.code === "INVALID_TRANSITION") {
+      toast.error(e.message || "This status change is not allowed.");
+      return;
+    }
+    if (e.code === "PENDING_PAYMENT") {
+      toast.error(e.message || "A payment is already waiting for admin approval.");
+      return;
+    }
+    toast.error(e.message);
+  } else if (e instanceof Error && e.message) {
     toast.error(e.message);
   } else toast.error("Something went wrong");
 }
@@ -59,9 +81,9 @@ export function useSessionQuery() {
   return useQuery({
     queryKey: qk.session,
     queryFn: () => salesApi.session(),
-    /** Session is validated on mutations and 401 handlers; avoid refetch-on-focus storms vs global defaults in `queryClient.ts`. */
+    /** Longer stale window; gentle refetch on tab focus revalidates auth without data-query storms. */
     staleTime: 120_000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     refetchOnReconnect: true
   });
 }
@@ -479,30 +501,6 @@ export function useTeamRepQuery(
     queryFn: () => salesApi.teamRep(userId!, { status }),
     enabled: !!userId && enabled,
     staleTime: 60_000
-  });
-}
-
-export function useVerifyProjectDeploymentMutation(projectId: string | undefined, leadId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () => {
-      if (!projectId) throw new Error("Missing project id");
-      return salesApi.verifyProjectDeployment(projectId);
-    },
-    onSuccess: () => {
-      if (projectId) {
-        qc.invalidateQueries({ queryKey: qk.project(projectId) });
-      }
-      qc.invalidateQueries({ queryKey: qk.lead(leadId) });
-      qc.invalidateQueries({ queryKey: ["projects"] });
-      qc.invalidateQueries({ queryKey: ["leads"] });
-      qc.invalidateQueries({ queryKey: ["commissions"] });
-      void qc.invalidateQueries({ queryKey: ["team-reps"] });
-      void qc.invalidateQueries({ queryKey: ["team-rep"] });
-      invalidateQueryPrefixes(qc, ["activity-logs"]);
-      toast.success("Deployment verified");
-    },
-    onError: (e) => errToast(e, qc)
   });
 }
 

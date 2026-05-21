@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import Samples from "./pages/Samples";
+import SocialMediaSamplesPage from "./pages/SocialMediaSamplesPage";
 import WebsiteSamplesPage from "./pages/WebsiteSamplesPage";
 import SocialMediaService from "./pages/services/SocialMediaService";
 import AdsCampaignService from "./pages/services/AdsCampaignService";
@@ -43,7 +44,7 @@ export function AppRoutes() {
         <Route path="/services/website-development" element={<WebsiteDevelopmentService />} />
         <Route path="/services/app-development" element={<AppDevelopmentService />} />
         <Route path="/samples" element={<Samples />} />
-        <Route path="/samples/social-media" element={<Navigate to="/samples" replace />} />
+        <Route path="/samples/social-media" element={<SocialMediaSamplesPage />} />
         <Route path="/samples/websites" element={<WebsiteSamplesPage />} />
         <Route path="/waiting" element={<Navigate to="/samples/websites/clinic-multispeciality-waiting-room/waiting" replace />} />
         <Route path="/waiting/*" element={<Navigate to="/samples/websites/clinic-multispeciality-waiting-room/waiting" replace />} />

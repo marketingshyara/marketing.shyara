@@ -2,12 +2,13 @@ import {
   LeadStatus,
   PaymentKind,
   PaymentVerificationStatus,
+  UserRole,
   type Lead,
   type LeadPayment,
-  type Project,
-  type UserRole
+  type Project
 } from "@prisma/client";
 import type { PortalSettingsValues } from "../validators/schemas.js";
+import { getRequiredLeadStatusForPaymentKind } from "./settings.js";
 
 export type PipelineStageKey =
   | "lead_capture"
@@ -33,6 +34,8 @@ export type PipelineStageView = {
   adminActor: boolean;
   state: StageUiState;
   hint?: string;
+  /** Shown when state is locked — why the step cannot be acted on yet. */
+  blockedReason?: string;
 };
 
 type LeadWithRelations = Lead & {
@@ -60,12 +63,90 @@ export function isLeadOnlyRecord(lead: Lead): boolean {
   return lead.convertedAt == null;
 }
 
+const POST_PREVIEW_STATUSES: LeadStatus[] = [
+  LeadStatus.PREVIEW_SENT,
+  LeadStatus.FINAL_PAID,
+  LeadStatus.DEPLOYED,
+  LeadStatus.COMMISSION_PAID
+];
+
+function isPreviewMarkedReady(lead: LeadWithRelations): boolean {
+  return POST_PREVIEW_STATUSES.includes(lead.status);
+}
+
+type PipelineLockContext = {
+  converted: boolean;
+  advanceVerified: boolean;
+  advancePending: boolean;
+  whatsappVerified: boolean;
+  previewMarkedReady: boolean;
+  demoVerified: boolean;
+  accountsVerified: boolean;
+  finalVerified: boolean;
+  finalPending: boolean;
+  repoDone: boolean;
+  deploySubmitted: boolean;
+  deployVerified: boolean;
+  advancePaymentStatus: LeadStatus;
+  finalPaymentStatus: LeadStatus;
+  canConvert: boolean;
+  canRecordFinalPayment: boolean;
+};
+
+function defaultLockedReason(key: PipelineStageKey, ctx: PipelineLockContext): string {
+  switch (key) {
+    case "advance_verify":
+      return ctx.converted
+        ? "Waiting for the rep to submit advance payment."
+        : "Convert the deal and record advance payment first.";
+    case "whatsapp_group":
+      return "Verify the advance payment before the WhatsApp group step.";
+    case "demo_finalized":
+      return "Admin must mark the demo ready before the rep confirms client approval.";
+    case "accounts_ready":
+      return "Admin must verify demo approval before accounts can be marked ready.";
+    case "final_payment":
+      if (!ctx.accountsVerified) {
+        return "Complete and verify accounts ready before recording due payment.";
+      }
+      return `Record due payment when lead status is ${ctx.finalPaymentStatus}.`;
+    case "final_verify":
+      if (!ctx.accountsVerified) {
+        return "Accounts must be ready before you can verify due payment.";
+      }
+      return "Rep must record due payment before you can verify it.";
+    case "repo_transfer":
+      return "Verify the due payment before confirming repository transfer.";
+    case "deployment_submit":
+      return "Admin must verify repository transfer before the rep submits the live URL.";
+    case "deployment_verify":
+      return "Rep must submit the live URL before you can verify deployment.";
+    case "commission":
+      return "Verify deployment before marking commission paid.";
+    case "convert_deal":
+      return `Convert is available when lead status is ${ctx.advancePaymentStatus}.`;
+    default:
+      return "Complete earlier steps first.";
+  }
+}
+
+function enrichLockedReasons(
+  stages: PipelineStageView[],
+  ctx: PipelineLockContext
+): PipelineStageView[] {
+  return stages.map((s) =>
+    s.state === "locked" && !s.blockedReason
+      ? { ...s, blockedReason: defaultLockedReason(s.key, ctx) }
+      : s
+  );
+}
+
 export function getPipelineStages(
   lead: LeadWithRelations,
-  _settings: PortalSettingsValues,
+  settings: PortalSettingsValues,
   role: UserRole
 ): PipelineStageView[] {
-  const isAdmin = role === "ADMIN";
+  const isAdmin = role === UserRole.ADMIN;
   const converted = lead.convertedAt != null;
   const advanceVerified = hasVerifiedPayment(lead, PaymentKind.ADVANCE);
   const advancePending = hasPendingPayment(lead, PaymentKind.ADVANCE);
@@ -73,7 +154,11 @@ export function getPipelineStages(
   const finalPending = hasPendingPayment(lead, PaymentKind.FINAL);
   const proj = lead.project;
   const whatsappVerified = lead.whatsappVerifiedAt != null;
-  const previewReady = Boolean(proj?.previewUrl);
+  const previewUrlSaved = Boolean(proj?.previewUrl);
+  const previewMarkedReady = isPreviewMarkedReady(lead);
+  const advancePaymentStatus = getRequiredLeadStatusForPaymentKind(settings, "ADVANCE");
+  const finalPaymentStatus = getRequiredLeadStatusForPaymentKind(settings, "FINAL");
+  const terminal = settings.terminalNoMutationStatuses.includes(lead.status);
   const demoRepSubmitted = lead.demoFinalizedAt != null;
   const demoVerified = lead.demoFinalizedVerifiedAt != null;
   const accountsRep = lead.accountsReadyAt != null;
@@ -84,7 +169,20 @@ export function getPipelineStages(
   const commissionPaid = lead.status === LeadStatus.COMMISSION_PAID;
 
   const idleBuild =
-    whatsappVerified && !previewReady && !demoVerified && !finalVerified && !commissionPaid;
+    whatsappVerified && !previewMarkedReady && !demoVerified && !finalVerified && !commissionPaid;
+
+  const canConvert =
+    !converted &&
+    !terminal &&
+    lead.status === advancePaymentStatus &&
+    !advancePending &&
+    !advanceVerified;
+  const canRecordFinalPayment =
+    accountsVerified &&
+    !finalVerified &&
+    !finalPending &&
+    !terminal &&
+    lead.status === finalPaymentStatus;
 
   const stages: PipelineStageView[] = [
     {
@@ -99,13 +197,17 @@ export function getPipelineStages(
       title: "Deal & advance payment",
       repActor: true,
       adminActor: false,
-      state: !converted
-        ? "actionable"
+      state: advanceVerified
+        ? "verified"
         : advancePending
           ? "pending_admin"
-          : advanceVerified
-            ? "verified"
-            : "actionable"
+          : canConvert
+            ? "actionable"
+            : "locked",
+      blockedReason:
+        !converted && !canConvert && !advancePending
+          ? `Convert is available when lead status is ${advancePaymentStatus}.`
+          : undefined
     },
     {
       key: "advance_verify",
@@ -144,21 +246,25 @@ export function getPipelineStages(
       adminActor: true,
       state: !whatsappVerified
         ? "locked"
-        : previewReady
+        : previewMarkedReady
           ? "verified"
-          : idleBuild
-            ? "pending_admin"
-            : isAdmin
-              ? "actionable"
-              : "pending_admin",
-      hint: idleBuild && !isAdmin ? "Waiting on technical team" : undefined
+          : isAdmin
+            ? "actionable"
+            : "pending_admin",
+      hint: idleBuild && !isAdmin ? "Waiting on technical team" : undefined,
+      blockedReason:
+        !whatsappVerified
+          ? "Verify the WhatsApp group before the demo link step."
+          : isAdmin && previewUrlSaved && !previewMarkedReady
+            ? "Save the preview URL, then mark demo ready."
+            : undefined
     },
     {
       key: "demo_finalized",
       title: "Demo approved by client",
       repActor: true,
       adminActor: true,
-      state: !previewReady
+      state: !previewMarkedReady
         ? "locked"
         : demoVerified
           ? "verified"
@@ -194,7 +300,13 @@ export function getPipelineStages(
           ? "verified"
           : finalPending
             ? "pending_admin"
-            : "actionable"
+            : canRecordFinalPayment
+              ? "actionable"
+              : "locked",
+      blockedReason:
+        accountsVerified && !canRecordFinalPayment && !finalPending && !finalVerified
+          ? `Record due payment when lead status is ${finalPaymentStatus}.`
+          : undefined
     },
     {
       key: "final_verify",
@@ -266,7 +378,24 @@ export function getPipelineStages(
     }
   ];
 
-  return stages;
+  return enrichLockedReasons(stages, {
+    converted,
+    advanceVerified,
+    advancePending,
+    whatsappVerified,
+    previewMarkedReady,
+    demoVerified,
+    accountsVerified,
+    finalVerified,
+    finalPending,
+    repoDone,
+    deploySubmitted,
+    deployVerified,
+    advancePaymentStatus,
+    finalPaymentStatus,
+    canConvert,
+    canRecordFinalPayment
+  });
 }
 
 export function summarizePipelineStages(stages: PipelineStageView[]): {

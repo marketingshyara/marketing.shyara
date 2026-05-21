@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
+  errToast,
   useLeadQuery,
   useMarkCommissionPaidMutation,
   usePatchCommissionMutation,
@@ -28,10 +29,14 @@ import {
   useVerifyLeadStageMutation,
   useVerifyPaymentMutation
 } from "../../hooks/useSalesQueries";
+import { prepareHttpUrlForMutation } from "../../lib/httpUrl";
 import type { LeadPayment, PipelineStageKey, PipelineStageVerifyKey, PipelineStageView } from "../../types";
 import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
 import { leadStatusLabel } from "../../lib/copy";
 import { formatTemplateOption } from "../../lib/templateLabel";
+import { toastIfStageBlocked } from "../../lib/pipelineStageGuard";
+import { getPipelineFocus } from "../../lib/pipelineCopy";
+import { toast } from "sonner";
 
 const STAGE_TO_VERIFY: Partial<Record<PipelineStageKey, PipelineStageVerifyKey>> = {
   whatsapp_group: "whatsapp",
@@ -104,6 +109,10 @@ export function AdminProjectPage() {
     }
   }, [lead?.commission?.amountCents, commissionEditRupees]);
 
+  useEffect(() => {
+    setPreviewUrl(lead?.project?.previewUrl ?? "");
+  }, [lead?.project?.previewUrl]);
+
   const pendingAdvance = lead?.payments?.find(
     (p) => p.kind === "ADVANCE" && p.verificationStatus === "PENDING"
   );
@@ -113,6 +122,7 @@ export function AdminProjectPage() {
 
   const handleStageClick = (key: PipelineStageKey) => {
     if (!lead) return;
+    if (toastIfStageBlocked(stages, key)) return;
     if (key === "advance_verify" && pendingAdvance) {
       setVerifyPayment(pendingAdvance);
       return;
@@ -129,6 +139,9 @@ export function AdminProjectPage() {
       return;
     }
     if (key === "deployment_submit") {
+      if (!lead.project?.deploymentSubmittedAt) {
+        return;
+      }
       setActiveStage("deployment_submit");
       return;
     }
@@ -147,7 +160,17 @@ export function AdminProjectPage() {
       markCommissionPaid.mutate(lead.commission.id, { onSuccess: closeModal });
       return;
     }
-    verifyStage.mutate(apiKey, { onSuccess: closeModal });
+    verifyStage.mutate(apiKey, {
+      onSuccess: () => {
+        closeModal();
+        const next = getPipelineFocus(stages, "admin");
+        if (next.headline && next.kind !== "idle") {
+          toast.success(`Verified. Next: ${next.headline}`);
+        } else {
+          toast.success("Verified.");
+        }
+      }
+    });
   };
 
   const runDecline = () => {
@@ -192,7 +215,11 @@ export function AdminProjectPage() {
     );
   }
 
-  const idleBuild = stages.find((s) => s.key === "build_demo")?.hint;
+  const buildDemoStage = stages.find((s) => s.key === "build_demo");
+  const repWaitingForPreview =
+    buildDemoStage?.state === "actionable" &&
+    !lead.project?.previewUrl &&
+    lead.whatsappVerifiedAt != null;
   const rejectable = activeStage ? STAGE_REJECTABLE[activeStage] : undefined;
 
   const verifiedAdvance = lead.payments?.find(
@@ -244,10 +271,12 @@ export function AdminProjectPage() {
         onPrimaryAction={handleStageClick}
       />
 
-      {idleBuild ? (
+      {repWaitingForPreview ? (
         <Alert>
-          <AlertTitle>With technical team</AlertTitle>
-          <AlertDescription>{idleBuild}</AlertDescription>
+          <AlertTitle>Rep waiting for demo link</AlertTitle>
+          <AlertDescription>
+            Save the preview URL and mark demo ready so the rep can show the site to the client.
+          </AlertDescription>
         </Alert>
       ) : null}
 
@@ -283,13 +312,13 @@ export function AdminProjectPage() {
           <p className="font-medium">Verified payments</p>
           {verifiedAdvance?.externalReference ? (
             <p>
-              Advance ref:{" "}
+              Advance Razorpay reference:{" "}
               <span className="font-mono text-xs">{verifiedAdvance.externalReference}</span>
             </p>
           ) : null}
           {verifiedFinal?.externalReference ? (
             <p>
-              Due ref:{" "}
+              Due Razorpay reference:{" "}
               <span className="font-mono text-xs">{verifiedFinal.externalReference}</span>
             </p>
           ) : null}
@@ -326,9 +355,14 @@ export function AdminProjectPage() {
           declineNote,
           onDeclineNoteChange: setDeclineNote
         }}
-        onSavePreview={() =>
-          patch.mutate({ previewUrl: previewUrl.trim() || null }, { onSuccess: closeModal })
-        }
+        onSavePreview={() => {
+          try {
+            const url = prepareHttpUrlForMutation(previewUrl);
+            patch.mutate({ previewUrl: url });
+          } catch (e) {
+            errToast(e);
+          }
+        }}
         savePreviewPending={patch.isPending}
         onPatchCommission={() => {
           const cents = parseRupeeInputToCents(commissionEditRupees);

@@ -30,6 +30,20 @@ export function PipelineNewLeadPage() {
           Back to pipeline
         </Link>
       </Button>
+
+      <Card className="border-dashed bg-muted/30">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">How this works</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground space-y-2">
+          <ol className="list-decimal list-inside space-y-1">
+            <li>Add the prospect&apos;s details below.</li>
+            <li>Convert to a client and record the advance payment on the project page.</li>
+            <li>Admin verifies the payment; then you continue with WhatsApp and demo steps.</li>
+          </ol>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Add lead</CardTitle>
@@ -52,23 +66,23 @@ export function PipelineNewLeadPage() {
             })}
           >
             <div className="space-y-2">
-              <Label htmlFor="clientName">Business / contact name</Label>
-              <Input id="clientName" className="min-h-11" {...form.register("clientName", { required: true })} />
+              <Label htmlFor="new-client-name">Client name</Label>
+              <Input id="new-client-name" className="min-h-11" {...form.register("clientName", { required: true })} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="clientPhone">Phone</Label>
-              <Input id="clientPhone" className="min-h-11" {...form.register("clientPhone")} />
+              <Label htmlFor="new-client-phone">Phone</Label>
+              <Input id="new-client-phone" className="min-h-11" {...form.register("clientPhone")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="clientEmail">Email (optional)</Label>
-              <Input id="clientEmail" className="min-h-11" type="email" {...form.register("clientEmail")} />
+              <Label htmlFor="new-client-email">Email (optional)</Label>
+              <Input id="new-client-email" type="email" className="min-h-11" {...form.register("clientEmail")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" {...form.register("notes")} />
+              <Label htmlFor="new-notes">Notes</Label>
+              <Textarea id="new-notes" {...form.register("notes")} />
             </div>
             <Button type="submit" className="min-h-11 w-full" disabled={create.isPending}>
-              Save lead
+              Create lead
             </Button>
           </form>
         </CardContent>

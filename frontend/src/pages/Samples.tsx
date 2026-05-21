@@ -1,4 +1,4 @@
-import { Globe, ArrowRight, MessageCircle } from "lucide-react";
+import { Globe, Share2, ArrowRight, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
@@ -31,10 +31,10 @@ export default function Samples() {
 
       <section className="py-20 lg:py-28 bg-background">
         <div className="container">
-          <div className="max-w-5xl mx-auto flex justify-center">
+          <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-2">
             <Link
               to="/samples/websites"
-              className="group w-full max-w-2xl rounded-card border border-border bg-card shadow-card overflow-hidden hover:shadow-elevated hover:border-accent/40 transition-all duration-300"
+              className="group w-full rounded-card border border-border bg-card shadow-card overflow-hidden hover:shadow-elevated hover:border-accent/40 transition-all duration-300"
             >
               <div className="h-48 bg-gradient-to-br from-primary/5 to-muted/30 flex items-center justify-center relative overflow-hidden">
                 <div className="w-[75%] aspect-video rounded-lg border border-border bg-card shadow-card opacity-50 group-hover:opacity-70 transition-opacity">
@@ -73,6 +73,26 @@ export default function Samples() {
                 </div>
                 <span className="inline-flex items-center gap-1 text-accent text-sm font-semibold group-hover:gap-2 transition-all">
                   Explore Websites <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+            </Link>
+
+            <Link
+              to="/samples/social-media"
+              className="group w-full rounded-card border border-border bg-card shadow-card overflow-hidden hover:shadow-elevated hover:border-accent/40 transition-all duration-300"
+            >
+              <div className="h-48 bg-gradient-to-br from-accent/10 to-muted/30 flex items-center justify-center">
+                <div className="icon-well-lg bg-background/80 backdrop-blur-sm group-hover:bg-accent/10 transition-colors">
+                  <Share2 className="h-8 w-8 text-accent" />
+                </div>
+              </div>
+              <div className="p-7">
+                <h2 className="text-xl font-semibold text-foreground mb-2">Social Media Samples</h2>
+                <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                  Reels, posts, and campaign creatives from client work — browse by category.
+                </p>
+                <span className="inline-flex items-center gap-1 text-accent text-sm font-semibold group-hover:gap-2 transition-all">
+                  View portfolio <ArrowRight className="h-4 w-4" />
                 </span>
               </div>
             </Link>

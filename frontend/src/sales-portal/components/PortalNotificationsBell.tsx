@@ -17,6 +17,8 @@ import {
 } from "../hooks/useSalesQueries";
 import type { SessionUser } from "../types";
 import { defaultPortalHome } from "../lib/portalPaths";
+import { stageShortTitle } from "../lib/pipelineCopy";
+import type { PipelineStageKey } from "../types";
 
 type Props = {
   user: SessionUser;
@@ -71,6 +73,11 @@ export function PortalNotificationsBell({ user }: Props) {
           list.data?.items.map((n) => (
             <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 py-2">
               <span className="text-sm leading-snug">{n.message}</span>
+              {n.stageKey ? (
+                <span className="text-xs text-muted-foreground">
+                  Step: {stageShortTitle(n.stageKey as PipelineStageKey)}
+                </span>
+              ) : null}
               <span className="text-xs text-muted-foreground">
                 {new Date(n.createdAt).toLocaleString()}
               </span>

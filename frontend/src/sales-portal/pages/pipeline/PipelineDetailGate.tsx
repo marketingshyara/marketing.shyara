@@ -40,7 +40,7 @@ function AdminPipelineDetailRedirect({ leadId }: { leadId: string | undefined })
             <Link to="/portal/team">Team</Link>
           </Button>
           <Button asChild variant="outline" className="min-h-11">
-            <Link to="/portal/reviews">Verification queue</Link>
+            <Link to="/portal/reviews">Reviews</Link>
           </Button>
         </div>
       </div>

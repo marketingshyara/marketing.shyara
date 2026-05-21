@@ -469,9 +469,28 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         };
 
         if (body.previewUrl !== undefined && user.role === UserRole.ADMIN) {
-          const project = await tx.project.findUnique({ where: { leadId: id } });
+          let project = await tx.project.findUnique({ where: { leadId: id } });
           if (!project) {
-            throw new HttpError(400, "INVALID_STATE", "Create a project first (verify advance payment).");
+            if (!hasVerifiedAdvance(lead)) {
+              throw new HttpError(
+                400,
+                "INVALID_STATE",
+                "Verify advance payment before adding a preview URL."
+              );
+            }
+            if (!lead.convertedAt) {
+              throw new HttpError(
+                400,
+                "INVALID_STATE",
+                "Lead must be converted before adding a preview URL."
+              );
+            }
+            project = await tx.project.create({
+              data: {
+                leadId: id,
+                title: `${lead.clientName} website`
+              }
+            });
           }
           await tx.project.updateMany({
             where: { id: project.id },

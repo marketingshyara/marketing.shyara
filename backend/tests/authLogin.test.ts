@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildApp } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import { inject } from "./helpers/inject.js";
+import { createMockPortalSessionModel } from "./helpers/mockPortalSession.js";
 
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = "postgresql://u:p@127.0.0.1:5432/db";
@@ -35,7 +36,8 @@ describe("auth login bcrypt edge cases", () => {
     const updateMany = vi.fn().mockResolvedValue({ count: 0 });
     const mockPrisma = {
       user: { findUnique, update, updateMany },
-      activityLog: { create: vi.fn().mockResolvedValue({}) }
+      activityLog: { create: vi.fn().mockResolvedValue({}) },
+      portalSession: createMockPortalSessionModel()
     } as unknown as PrismaClient;
 
     const app = await buildApp({ config, prismaClient: mockPrisma });
@@ -80,7 +82,8 @@ describe("auth login session cookie max-age", () => {
       const updateMany = vi.fn().mockResolvedValue({ count: 0 });
       const mockPrisma = {
         user: { findUnique, update, updateMany },
-        activityLog: { create: vi.fn().mockResolvedValue({}) }
+        activityLog: { create: vi.fn().mockResolvedValue({}) },
+        portalSession: createMockPortalSessionModel()
       } as unknown as PrismaClient;
 
       function cookieExpiresMs(setCookie: string | string[] | undefined): number {

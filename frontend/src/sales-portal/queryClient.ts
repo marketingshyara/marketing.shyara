@@ -1,29 +1,27 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
-import { ApiError } from "./api/client";
+import { toast } from "sonner";
+import { apiJson, ApiError } from "./api/client";
 import { normalizePortalReturnCandidate } from "./lib/sanitizeRedirect";
 import { qk } from "./queryKeys";
+import type { SessionUser } from "./types";
 
 /**
  * Module-scoped guard so we only schedule one redirect per page lifetime even if many in-flight
  * queries fail with 401 concurrently. `window.location.assign` triggers a full reload which
  * resets the module state, so we never need to clear this flag - the assignment itself is the reset.
- * If the surrounding shell ever stops doing a hard navigation here, reset this flag in the
- * post-redirect bootstrap or queued 401s after the first reload won't be honoured.
  */
 let authRedirectScheduled = false;
 let passwordChangeRedirectScheduled = false;
+let unauthorizedProbeTimer: ReturnType<typeof setTimeout> | null = null;
+
+const UNAUTHORIZED_PROBE_MS = 300;
 
 function currentPortalPathWithSearch(): string {
   return `${window.location.pathname}${window.location.search}`;
 }
 
-function scheduleUnauthorizedRedirect(client: QueryClient) {
-  if (authRedirectScheduled) return;
-  if (typeof window === "undefined") return;
+function redirectToLogin() {
   const path = window.location.pathname;
-  if (path.startsWith("/portal/login")) return;
-  authRedirectScheduled = true;
-  client.setQueryData(qk.session, { user: null });
   const full = currentPortalPathWithSearch();
   const safe = normalizePortalReturnCandidate(full);
   const base = "/portal/login?reason=session_expired";
@@ -32,6 +30,47 @@ function scheduleUnauthorizedRedirect(client: QueryClient) {
   } else {
     window.location.assign(base);
   }
+}
+
+async function confirmSessionThenRedirect(client: QueryClient): Promise<void> {
+  if (authRedirectScheduled) return;
+  if (typeof window === "undefined") return;
+  const path = window.location.pathname;
+  if (path.startsWith("/portal/login")) return;
+
+  try {
+    const data = await apiJson<{ user: SessionUser | null }>("GET", "/auth/session");
+    if (data.user) {
+      await client.invalidateQueries();
+      toast.error("Couldn't refresh data. Try again.");
+      return;
+    }
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) {
+      /* confirmed logged out */
+    } else {
+      toast.error("Connection problem. Try again.");
+      return;
+    }
+  }
+
+  authRedirectScheduled = true;
+  client.setQueryData(qk.session, { user: null });
+  redirectToLogin();
+}
+
+function scheduleUnauthorizedRedirect(client: QueryClient) {
+  if (authRedirectScheduled) return;
+  if (typeof window === "undefined") return;
+  if (window.location.pathname.startsWith("/portal/login")) return;
+
+  if (unauthorizedProbeTimer != null) {
+    clearTimeout(unauthorizedProbeTimer);
+  }
+  unauthorizedProbeTimer = setTimeout(() => {
+    unauthorizedProbeTimer = null;
+    void confirmSessionThenRedirect(client);
+  }, UNAUTHORIZED_PROBE_MS);
 }
 
 function schedulePasswordChangeRedirect(client: QueryClient) {
@@ -84,11 +123,10 @@ export function createPortalQueryClient() {
     }),
     defaultOptions: {
       queries: {
-        staleTime: 0,
-        refetchOnMount: "always",
-        /** Aggressive for data queries; `useSessionQuery` opts out to reduce false "logged out" UX on tab focus. */
-        refetchOnWindowFocus: "always",
-        refetchOnReconnect: "always",
+        staleTime: 30_000,
+        refetchOnMount: true,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
         retry: (failureCount, error) => {
           if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
             return false;
@@ -102,4 +140,21 @@ export function createPortalQueryClient() {
     }
   });
   return queryClient;
+}
+
+/** @internal Exported for unit tests */
+export function resetAuthRedirectStateForTest(): void {
+  authRedirectScheduled = false;
+  passwordChangeRedirectScheduled = false;
+  if (unauthorizedProbeTimer != null) {
+    clearTimeout(unauthorizedProbeTimer);
+    unauthorizedProbeTimer = null;
+  }
+}
+
+/** @internal Exported for unit tests */
+export async function confirmSessionThenRedirectForTest(
+  client: QueryClient
+): Promise<void> {
+  return confirmSessionThenRedirect(client);
 }

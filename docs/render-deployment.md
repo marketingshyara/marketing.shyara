@@ -143,7 +143,9 @@ If both are subdomains of the **same** registrable domain (e.g. `app.example.com
 | Key | Purpose |
 |-----|---------|
 | `COOKIE_NAME` | Session cookie name (default `shyara_sales_session`) |
+| `COOKIE_DOMAIN` | Optional (e.g. `.shyara.co.in`) if the session cookie must be explicit across marketing/API subdomains |
 | `SESSION_MAX_AGE_SECONDS` | Default `604800` (7 days) |
+| `SESSION_REMEMBER_ME_MAX_AGE_SECONDS` | Default 30 days when “Remember this device” is checked |
 | `LOGIN_RATE_LIMIT_MAX` | Default `5` |
 | `LOGIN_RATE_LIMIT_WINDOW_MS` | Default `900000` |
 | `BCRYPT_ROUNDS` | Default `10` |
@@ -250,7 +252,7 @@ Point your marketing domain to this static site; then add **`https://that-exact-
 2. **`VITE_API_BASE_URL`** matches the backend URL you want browsers to call.
 3. If login fails with CORS: fix `ALLOWED_ORIGINS`.
 4. If login fails with no cookie / 401 on next request: try **`COOKIE_SAMESITE=none`** when frontend and API are different sites (see above).
-5. **Pre-Deploy** migrations: first deploy after schema changes must succeed (`db:migrate:deploy`).
+5. **Pre-Deploy** migrations: first deploy after schema changes must succeed (`db:migrate:deploy`). Includes `portal_sessions` for shared login state across instances.
 
 ---
 

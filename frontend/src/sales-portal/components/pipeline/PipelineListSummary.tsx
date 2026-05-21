@@ -11,6 +11,7 @@ type Props = {
   href: string;
   badgeLabel: string;
   badgeVariant: "default" | "secondary" | "outline" | "destructive";
+  waitingSubline?: string | null;
 };
 
 export function PipelineListSummary({
@@ -19,7 +20,8 @@ export function PipelineListSummary({
   agreedTotalCents,
   href,
   badgeLabel,
-  badgeVariant
+  badgeVariant,
+  waitingSubline
 }: Props) {
   const stepLine = stageShortTitle(summary.currentStageKey, summary.currentStageTitle);
 
@@ -37,6 +39,12 @@ export function PipelineListSummary({
         </div>
         <p className="break-words text-sm text-muted-foreground">
           Current step: <span className="font-medium text-foreground">{stepLine}</span>
+          {waitingSubline ? (
+            <>
+              <br />
+              <span>{waitingSubline}</span>
+            </>
+          ) : null}
         </p>
         {agreedTotalCents != null ? (
           <p className="text-xs text-muted-foreground">{formatMinorUnits(agreedTotalCents)}</p>

@@ -69,6 +69,9 @@ export function PipelineProgress({
               {!compact && stage.hint ? (
                 <p className="text-xs text-muted-foreground">{stage.hint}</p>
               ) : null}
+              {!compact && stage.state === "locked" && stage.blockedReason ? (
+                <p className="text-xs text-muted-foreground">{stage.blockedReason}</p>
+              ) : null}
               {!compact && showActorHints ? (
                 <p className="text-xs text-muted-foreground">
                   {stage.repActor && stage.adminActor

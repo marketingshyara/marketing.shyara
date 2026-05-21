@@ -9,6 +9,7 @@ import type { AppConfig } from "./config.js";
 import { HttpError, httpErrorToBody, isHttpError } from "./errors/httpError.js";
 import { makeOriginGuard } from "./auth/originGuard.js";
 import { prisma } from "./lib/prisma.js";
+import { PrismaSessionStore } from "./lib/prismaSessionStore.js";
 import { registerActivityLogRoutes } from "./routes/activityLogs.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerCommissionRoutes } from "./routes/commissions.js";
@@ -72,12 +73,16 @@ export async function buildApp(options: BuildAppOptions) {
   await app.register(session, {
     secret: config.sessionSecret,
     cookieName: config.cookieName,
+    store: new PrismaSessionStore(db),
+    saveUninitialized: false,
+    rolling: true,
     cookie: {
       httpOnly: true,
       secure: sessionCookieSecure,
       sameSite: config.cookieSameSite,
       path: "/",
-      maxAge: options.config.sessionMaxAgeSeconds * 1000
+      maxAge: options.config.sessionMaxAgeSeconds * 1000,
+      ...(config.cookieDomain ? { domain: config.cookieDomain } : {})
     }
   });
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getPipelineFocus, stageShortTitle } from "./pipelineCopy";
+import {
+  getPipelineFocus,
+  listWaitingSubline,
+  stageNextStepHint,
+  stageShortTitle
+} from "./pipelineCopy";
+import type { LeadPipelineSummary } from "../types";
 import type { PipelineStageView } from "../types";
 
 function stage(
@@ -46,12 +52,39 @@ describe("getPipelineFocus", () => {
     );
     expect(focus.kind).toBe("waiting");
     expect(focus.stageKey).toBe("demo_finalized");
-    expect(focus.primaryLabel).toMatch(/review/i);
+    expect(focus.primaryLabel).toMatch(/verify demo approved/i);
   });
 });
 
 describe("stageShortTitle", () => {
   it("returns friendly short label", () => {
     expect(stageShortTitle("convert_deal")).toBe("Convert to client");
+  });
+});
+
+describe("listWaitingSubline", () => {
+  const pendingSummary = { pendingAdmin: true } as LeadPipelineSummary;
+
+  it("shows admin-waiting copy for rep when pending admin", () => {
+    expect(listWaitingSubline(pendingSummary, "rep")).toMatch(/admin will review/i);
+  });
+
+  it("returns null when not waiting on admin", () => {
+    expect(listWaitingSubline({ pendingAdmin: false } as LeadPipelineSummary, "rep")).toBeNull();
+    expect(listWaitingSubline(pendingSummary, "admin")).toBeNull();
+  });
+});
+
+describe("stageNextStepHint", () => {
+  it("returns rep hint after convert", () => {
+    expect(stageNextStepHint("convert_deal", "rep")).toMatch(/advance payment/i);
+  });
+
+  it("returns admin hint after advance verify", () => {
+    expect(stageNextStepHint("advance_verify", "admin")).toMatch(/whatsapp/i);
+  });
+
+  it("returns undefined when no hint defined", () => {
+    expect(stageNextStepHint("commission", "rep")).toBeUndefined();
   });
 });

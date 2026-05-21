@@ -73,7 +73,8 @@ export default function Contact() {
               <button
                 onClick={openWhatsApp}
                 type="button"
-                className="w-full rounded-card border-2 border-[#25D366] bg-[#25D366]/5 hover:bg-[#25D366]/10 shadow-card p-6 text-left flex items-center gap-4 transition-all duration-300 group cursor-pointer"
+                aria-label="Chat with Shyara Marketing on WhatsApp"
+                className="w-full min-h-11 rounded-card border-2 border-[#25D366] bg-[#25D366]/5 hover:bg-[#25D366]/10 shadow-card p-6 text-left flex items-center gap-4 transition-all duration-300 group cursor-pointer"
               >
                 <div className="w-14 h-14 rounded-xl bg-[#25D366] flex items-center justify-center flex-shrink-0">
                   <MessageCircle className="h-7 w-7 text-white" />

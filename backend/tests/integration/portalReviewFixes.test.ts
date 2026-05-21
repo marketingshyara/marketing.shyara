@@ -493,7 +493,7 @@ d("portal review fixes - integration", () => {
     await app.close();
   });
 
-  it("[M9] verify-deployment creates commission from agreed total using bankers rounding", async () => {
+  it("[M9] verify deployment stage creates commission from agreed total using bankers rounding", async () => {
     const settings = portalSettingsSchema.parse({
       commissionRateBps: 3000,
       commissionRounding: "bankers"
@@ -527,7 +527,7 @@ d("portal review fixes - integration", () => {
     const { app, cookieHeader } = await loginAs(adminEmail, "AdminPass123!");
     const res = await inject(app, {
       method: "POST",
-      url: `/api/projects/${project.id}/verify-deployment`,
+      url: `/api/leads/${lead.id}/stages/deployment/verify`,
       headers: { cookie: cookieHeader, "content-type": "application/json" },
       payload: {}
     });

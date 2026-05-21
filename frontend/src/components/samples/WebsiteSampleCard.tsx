@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -83,7 +84,7 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({ sample }: { s
             <>
               <img
                 src={posterUrl}
-                alt=""
+                alt={`${sample.name} preview poster`}
                 className="absolute inset-0 h-full w-full object-cover"
                 loading="lazy"
                 decoding="async"
@@ -156,19 +157,19 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({ sample }: { s
           </div>
           <p className="text-sm text-muted-foreground line-clamp-2">{sample.description}</p>
           <div className={`grid gap-2 mt-3 ${waitingRoomUrl ? "grid-cols-2" : "grid-cols-1"}`}>
-            <Button variant="outline" size="sm" className="flex-1" onClick={handlePreviewClick}>
+            <Button variant="outline" size="sm" className="min-h-11 flex-1" onClick={handlePreviewClick}>
               <ExternalLink className="h-4 w-4 mr-2" />
               {hasPoster ? "Live preview" : "Preview"}
             </Button>
             {waitingRoomUrl && (
-              <Button variant="outline" size="sm" className="flex-1" onClick={openWaitingRoomInNewTab}>
+              <Button variant="outline" size="sm" className="min-h-11 flex-1" onClick={openWaitingRoomInNewTab}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Waiting Room
               </Button>
             )}
             <Button
               size="sm"
-              className={`bg-[#25D366] hover:bg-[#1fb855] text-white ${waitingRoomUrl ? "col-span-2" : ""}`}
+              className={`min-h-11 bg-[#25D366] hover:bg-[#1fb855] text-white ${waitingRoomUrl ? "col-span-2" : ""}`}
               onClick={openWhatsAppInquire}
             >
               <MessageCircle className="h-4 w-4 mr-1" />
@@ -182,6 +183,9 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({ sample }: { s
         <DialogContent className="max-w-[min(96vw,72rem)] w-[min(96vw,72rem)] p-0 gap-0 h-[min(90vh,52rem)] flex flex-col border-border sm:rounded-lg overflow-hidden">
           <DialogHeader className="px-4 pt-4 pb-2 shrink-0 border-b border-border text-left space-y-1">
             <DialogTitle className="text-base pr-8">{sample.name}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Live interactive preview of {sample.name}. Use your browser back gesture or close to exit.
+            </DialogDescription>
           </DialogHeader>
           <div className="relative flex-1 min-h-0 bg-muted">
             {dialogIframeSrc ? (

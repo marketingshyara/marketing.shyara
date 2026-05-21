@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalHttpUrlSchema } from "../lib/httpUrl";
 
 export const userRoleSchema = z.enum(["ADMIN", "SALES_REP"]);
 export const leadStatusSchema = z.enum([
@@ -93,11 +94,11 @@ export const patchLeadSchema = z.object({
   advanceAmountCents: z.number().int().min(0).optional().nullable(),
   finalQuoteCents: z.number().int().min(0).optional().nullable(),
   websiteTemplateId: z.string().min(1).max(64).optional().nullable(),
-  whatsappGroupLink: z.union([z.string().url().max(2000), z.literal("")]).optional().nullable(),
+  whatsappGroupLink: optionalHttpUrlSchema,
   markDemoFinalized: z.boolean().optional(),
   markAccountsReady: z.boolean().optional(),
   assignedToUserId: z.string().min(1).optional().nullable(),
-  previewUrl: z.union([z.string().url().max(2000), z.literal("")]).optional().nullable()
+  previewUrl: optionalHttpUrlSchema
 });
 
 export const transitionSchema = z.object({
@@ -176,7 +177,7 @@ export const createProjectSchema = z.object({
 export const patchProjectSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   metadata: z.record(z.unknown()).optional().nullable(),
-  previewUrl: z.union([z.string().url().max(2000), z.null()]).optional(),
-  deployedUrl: z.union([z.string().url().max(2000), z.null()]).optional(),
+  previewUrl: optionalHttpUrlSchema,
+  deployedUrl: optionalHttpUrlSchema,
   markDeploymentSubmitted: z.boolean().optional()
 });

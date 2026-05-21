@@ -212,9 +212,6 @@ export const salesApi = {
   patchProject: (id: string, body: Record<string, unknown>) =>
     apiJson<{ project: Project }>("PATCH", `/projects/${id}`, body),
 
-  verifyProjectDeployment: (projectId: string) =>
-    apiJson<{ project: Project; lead: Lead }>("POST", `/projects/${projectId}/verify-deployment`, {}),
-
   websiteTemplates: () => apiJson<{ items: WebsiteTemplate[] }>("GET", "/website-templates"),
 
   teamReps: () => apiJson<{ items: import("../types").TeamRepSummary[] }>("GET", "/team/reps"),

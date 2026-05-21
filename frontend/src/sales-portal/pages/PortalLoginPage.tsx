@@ -11,10 +11,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ApiError } from "../api/client";
-import { resolvePortalDestination } from "../lib/portalPaths";
+import {
+  resolvePortalDestination,
+  resolvePortalDestinationAfterLogin
+} from "../lib/portalPaths";
+import { salesApi } from "../api/salesApi";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
+import {
+  getRememberDevicePreference,
+  setRememberDevicePreference
+} from "../lib/rememberDevice";
 
 function formatLockoutWait(seconds: number): string {
   if (seconds >= 120) {
@@ -78,7 +86,11 @@ export function PortalLoginPage() {
 
   const form = useForm({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", rememberDevice: false }
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberDevice: getRememberDevicePreference()
+    }
   });
 
   const rememberDevice = !!form.watch("rememberDevice");
@@ -170,7 +182,7 @@ export function PortalLoginPage() {
                       rememberDevice: values.rememberDevice
                     },
                     {
-                      onSuccess: (data) => {
+                      onSuccess: async (data) => {
                         setSubmitError(null);
                         setLockoutSecondsLeft(null);
                         if (data.user.mustChangePassword) {
@@ -178,15 +190,25 @@ export function PortalLoginPage() {
                             replace: true,
                             state: { from: intendedDestination }
                           });
-                        } else {
-                          navigate(
-                            resolvePortalDestination(
-                              data.user.role,
-                              intendedDestination
-                            ),
-                            { replace: true }
-                          );
+                          return;
                         }
+                        let pendingTotal: number | undefined;
+                        if (data.user.role === "ADMIN") {
+                          try {
+                            const pending = await salesApi.pendingActionsCount();
+                            pendingTotal = pending.total;
+                          } catch {
+                            pendingTotal = undefined;
+                          }
+                        }
+                        navigate(
+                          resolvePortalDestinationAfterLogin(
+                            data.user.role,
+                            intendedDestination,
+                            pendingTotal
+                          ),
+                          { replace: true }
+                        );
                       },
                       onError: (e) => {
                         triggerErrorHighlight();
@@ -282,9 +304,14 @@ export function PortalLoginPage() {
                     <Checkbox
                       id="remember-device"
                       checked={rememberDevice}
-                      onCheckedChange={(c) =>
-                        form.setValue("rememberDevice", c === true, { shouldDirty: true, shouldTouch: true })
-                      }
+                      onCheckedChange={(c) => {
+                        const value = c === true;
+                        form.setValue("rememberDevice", value, {
+                          shouldDirty: true,
+                          shouldTouch: true
+                        });
+                        setRememberDevicePreference(value);
+                      }}
                     />
                     <span>Remember this device</span>
                   </label>

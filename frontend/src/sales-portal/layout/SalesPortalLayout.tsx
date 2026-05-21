@@ -4,13 +4,16 @@ import {
   BookOpen,
   ClipboardList,
   FileCheck2,
+  History,
+  IndianRupee,
   LogOut,
   Menu,
   UserCircle,
   Shield,
   Settings,
   Users,
-  UsersRound
+  UsersRound,
+  Wallet
 } from "lucide-react";
 import {
   useSessionQuery,
@@ -46,12 +49,15 @@ type NavItem = {
 
 const REP_NAV: NavItem[] = [
   { to: "/portal/pipeline", label: "Pipeline", icon: ClipboardList, end: true },
+  { to: "/portal/commission", label: "Commission", icon: IndianRupee },
   { to: "/portal/resources", label: "Resources", icon: BookOpen }
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { to: "/portal/team", label: "Team", icon: UsersRound, end: true },
   { to: "/portal/reviews", label: "Reviews", icon: FileCheck2, approvalsBadge: true },
+  { to: "/portal/payments", label: "Payments", icon: Wallet },
+  { to: "/portal/activity", label: "Activity", icon: History },
   { to: "/portal/users", label: "Users", icon: Users },
   { to: "/portal/settings", label: "Settings", icon: Settings }
 ];
@@ -219,7 +225,9 @@ export function SalesPortalLayout() {
         {primaryMobileNav.map((item) => (
           <NavLink key={item.to} to={item.to} end={item.end} className={mobileTabNavClass}>
             {renderMobileTabIcon(item)}
-            <span className="max-w-[5rem] truncate text-[10px] font-medium leading-tight">{item.label}</span>
+            <span className="max-w-[5.5rem] truncate text-[10px] font-medium leading-tight" title={item.label}>
+              {item.label}
+            </span>
           </NavLink>
         ))}
         {isAdmin ? (
@@ -240,7 +248,26 @@ export function SalesPortalLayout() {
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
               <div className="mt-4 flex flex-col gap-1">
-                {ADMIN_NAV.filter((i) => i.to !== "/portal/team" && i.to !== "/portal/reviews").map((item) => (
+                <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Work
+                </p>
+                {ADMIN_NAV.filter((i) => i.to === "/portal/payments").map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={sheetNavClass}
+                    onClick={() => setMoreOpen(false)}
+                  >
+                    {renderSheetIcon(item)}
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+                <p className="mt-2 px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Admin
+                </p>
+                {ADMIN_NAV.filter((i) =>
+                  ["/portal/activity", "/portal/users", "/portal/settings"].includes(i.to)
+                ).map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}

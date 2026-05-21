@@ -6,6 +6,15 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Lead, PipelineStageKey } from "../../types";
 import { formatMinorUnits } from "../../lib/money";
 import { formatTemplateOption } from "../../lib/templateLabel";
+import { stageNextStepHint } from "../../lib/pipelineCopy";
+
+function hasVerifiedAdvance(lead: Lead): boolean {
+  return (
+    lead.payments?.some(
+      (p) => p.kind === "ADVANCE" && p.verificationStatus === "VERIFIED"
+    ) ?? false
+  );
+}
 
 type VerifyHandlers = {
   onVerify: () => void;
@@ -74,6 +83,8 @@ export function AdminVerifyModals({
     ? formatTemplateOption(lead.websiteTemplate)
     : lead.websiteTemplateId ?? "—";
 
+  const adminModalHint = activeStage ? stageNextStepHint(activeStage, "admin") : undefined;
+
   return (
     <>
       <StageModalShell
@@ -112,6 +123,7 @@ export function AdminVerifyModals({
             ? `Rep submitted: ${lead.whatsappGroupLink}`
             : "Rep has not saved a group link yet."
         }
+        nextStepHint={adminModalHint}
         footer={
           <VerifyFooter
             verify={{
@@ -144,6 +156,7 @@ export function AdminVerifyModals({
             ? `Rep marked client approval on ${new Date(lead.demoFinalizedAt).toLocaleString()}.`
             : "Rep has not marked demo approval yet."
         }
+        nextStepHint={adminModalHint}
         footer={
           <VerifyFooter verify={verify} verifyLabel="Verify demo approval" />
         }
@@ -169,34 +182,62 @@ export function AdminVerifyModals({
       <StageModalShell
         open={activeStage === "build_demo"}
         onOpenChange={(o) => !o && onClose()}
-        title="Demo link"
+        title="Demo preview link"
+        description="Step 1: Save the staging or preview URL. Step 2: Mark demo ready so the rep can continue."
         footer={
           <>
             <Button
+              type="button"
+              variant="outline"
               className="min-h-11 w-full sm:w-auto"
-              disabled={savePreviewPending}
+              disabled={
+                savePreviewPending || !hasVerifiedAdvance(lead) || !previewUrl.trim()
+              }
               onClick={onSavePreview}
             >
-              Save preview URL
+              {savePreviewPending ? "Saving…" : "1. Save preview URL"}
             </Button>
             <Button
+              type="button"
               className="min-h-11 w-full sm:w-auto"
-              disabled={verify.isPending || !previewUrl.trim()}
+              disabled={verify.isPending || !lead.project?.previewUrl}
               onClick={verify.onVerify}
             >
-              Mark demo ready
+              2. Mark demo ready
             </Button>
           </>
         }
       >
+        {!hasVerifiedAdvance(lead) ? (
+          <p className="mb-3 text-sm text-amber-700 dark:text-amber-400">
+            Verify the advance payment first — a project record is created when advance is approved.
+          </p>
+        ) : null}
+        {lead.project?.previewUrl ? (
+          <dl className="mb-3 grid gap-1 text-sm">
+            <dt className="text-muted-foreground">Saved on server</dt>
+            <dd className="break-all font-medium">{lead.project.previewUrl}</dd>
+          </dl>
+        ) : (
+          <p className="mb-3 text-sm text-muted-foreground">
+            No preview URL saved yet. The rep cannot proceed until you save and mark demo ready.
+          </p>
+        )}
         <div className="space-y-2">
           <Label htmlFor="admin-preview">Preview URL</Label>
           <Input
             id="admin-preview"
             className="min-h-11"
+            type="url"
+            inputMode="url"
+            placeholder="https://… or example.com"
             value={previewUrl}
             onChange={(e) => onPreviewUrlChange(e.target.value)}
+            disabled={!hasVerifiedAdvance(lead)}
           />
+          <p className="text-xs text-muted-foreground">
+            You can paste a link without https:// — we will add it automatically.
+          </p>
         </div>
       </StageModalShell>
 
@@ -209,6 +250,7 @@ export function AdminVerifyModals({
             ? `Rep marked on ${new Date(lead.accountsReadyAt).toLocaleString()}.`
             : "Rep has not marked accounts ready."
         }
+        nextStepHint={adminModalHint}
         footer={<VerifyFooter verify={verify} verifyLabel="Verify accounts" />}
       >
         {verify.onDecline ? (
@@ -227,7 +269,12 @@ export function AdminVerifyModals({
         open={activeStage === "deployment_submit"}
         onOpenChange={(o) => !o && onClose()}
         title="Deployment submitted"
-        description="Rep submitted the live URL. Verify on the next step when ready."
+        description="Rep submitted the live URL. Open deployment verify when you are ready to approve."
+        footer={
+          <Button type="button" className="min-h-11 w-full sm:w-auto" onClick={onClose}>
+            Close
+          </Button>
+        }
       >
         <dl className="grid gap-2 text-sm">
           <div>
@@ -241,9 +288,6 @@ export function AdminVerifyModals({
             </div>
           ) : null}
         </dl>
-        <Button type="button" className="mt-4 min-h-11" onClick={onClose}>
-          Close
-        </Button>
       </StageModalShell>
 
       <StageModalShell
@@ -255,6 +299,7 @@ export function AdminVerifyModals({
             ? `Live URL: ${lead.project.deployedUrl}`
             : "Rep has not submitted a live URL yet."
         }
+        nextStepHint={adminModalHint}
         footer={<VerifyFooter verify={verify} verifyLabel="Verify deployment" />}
       >
         {verify.onDecline ? (
@@ -273,6 +318,7 @@ export function AdminVerifyModals({
         open={activeStage === "repo_transfer"}
         onOpenChange={(o) => !o && onClose()}
         title="Verify repository transfer"
+        description="Confirm repository ownership moved to the client after due payment is verified and before the rep submits the live URL."
         footer={<VerifyFooter verify={verify} verifyLabel="Verify repo transfer" />}
       >
         <p className="text-sm text-muted-foreground">
@@ -284,6 +330,12 @@ export function AdminVerifyModals({
         open={activeStage === "commission"}
         onOpenChange={(o) => !o && onClose()}
         title="Commission payout"
+        description={
+          lead.commission?.isPaid
+            ? "Commission has been marked paid."
+            : "Adjust the payout amount if needed, then mark commission paid after deployment is verified."
+        }
+        nextStepHint={adminModalHint}
         footer={
           lead.commission && !lead.commission.isPaid ? (
             <>

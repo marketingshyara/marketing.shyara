@@ -53,6 +53,16 @@ export function PipelineFocusCard({ stages, actorMode, onPrimaryAction, onViewSu
             {whoActsNext(focus.stage, actorMode)}
           </p>
         ) : null}
+        {focus.kind === "waiting" && actorMode === "rep" ? (
+          <p className="text-xs text-muted-foreground pt-1">
+            You cannot change this step until admin approves.
+          </p>
+        ) : null}
+        {focus.kind === "waiting" && actorMode === "admin" ? (
+          <p className="text-xs text-muted-foreground pt-1">
+            The rep submitted this step. Review and approve or decline.
+          </p>
+        ) : null}
       </CardHeader>
       {focus.primaryLabel && focus.stageKey ? (
         <CardContent className="flex flex-col gap-2 pt-0 sm:flex-row sm:flex-wrap">

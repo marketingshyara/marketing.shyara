@@ -54,6 +54,8 @@ export type AppConfig = {
   databaseUrl: string;
   sessionSecret: string;
   cookieName: string;
+  /** Optional cookie Domain (e.g. `.shyara.co.in`) for subdomain sharing. */
+  cookieDomain: string | undefined;
   /** Session cookie SameSite. Use `none` when the browser origin is a different site than the API (e.g. SPA on your domain, API on onrender.com). Requires `secureCookie: true`. */
   cookieSameSite: "lax" | "strict" | "none";
   trustProxy: boolean;
@@ -108,6 +110,10 @@ export function loadConfig(): AppConfig {
     databaseUrl: readEnv("DATABASE_URL"),
     sessionSecret: stripOuterQuotes(readEnv("SESSION_SECRET")),
     cookieName: readOptionalEnv("COOKIE_NAME", "shyara_sales_session"),
+    cookieDomain: (() => {
+      const d = readOptionalEnv("COOKIE_DOMAIN", "").trim();
+      return d.length > 0 ? d : undefined;
+    })(),
     cookieSameSite,
     trustProxy: readOptionalEnv("TRUST_PROXY", isProd ? "true" : "false") === "true",
     allowedOrigins: readOptionalEnv("ALLOWED_ORIGINS", "http://localhost:8080")

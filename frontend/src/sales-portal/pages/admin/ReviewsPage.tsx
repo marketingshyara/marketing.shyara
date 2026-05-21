@@ -8,6 +8,7 @@ import {
   useVerifyPaymentMutation
 } from "../../hooks/useSalesQueries";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
+import { PortalPageHeader } from "../../components/PortalPageHeader";
 import { PaymentVerifyDialog } from "../../components/pipeline/PaymentVerifyDialog";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { Badge } from "@/components/ui/badge";
@@ -87,19 +88,17 @@ export function ReviewsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Verification queue</h1>
-          <p className="text-sm text-muted-foreground">
-            All items waiting for admin action — payments, stages, and payouts.
-          </p>
-        </div>
-        <DataStaleToolbar
-          dataUpdatedAt={dataUpdatedAt}
-          onRefresh={() => refetch()}
-          isFetching={isFetching}
-        />
-      </div>
+      <PortalPageHeader
+        title="Reviews"
+        description="All items waiting for your approval — payments, stages, and payouts. Use Payments for advance and due payments only."
+        toolbar={
+          <DataStaleToolbar
+            dataUpdatedAt={dataUpdatedAt}
+            onRefresh={() => refetch()}
+            isFetching={isFetching}
+          />
+        }
+      />
 
       <Select
         value={actionType}
