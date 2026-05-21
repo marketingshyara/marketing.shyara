@@ -194,13 +194,18 @@ export function ReviewsPage() {
 
 function PendingActionRow({
   item,
+  reps,
   onReviewPayment
 }: {
   item: PendingActionItem;
   reps: { id: string; displayName: string | null; email: string }[];
   onReviewPayment: () => void;
 }) {
-  const repLabel = reps.find((r) => r.id === item.repId)?.displayName ?? item.repId ?? "—";
+  const repLabel =
+    reps.find((r) => r.id === item.repId)?.displayName ??
+    reps.find((r) => r.id === item.repId)?.email ??
+    item.repId ??
+    "—";
 
   return (
     <Card>
