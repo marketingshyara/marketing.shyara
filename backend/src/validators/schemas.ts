@@ -19,10 +19,19 @@ export const paginationQuerySchema = z.object({
 
 export const usersListQuerySchema = paginationQuerySchema;
 
+const emptyToUndefined = (v: unknown) =>
+  v === "" || v === null || v === undefined ? undefined : v;
+
 export const createUserBodySchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).max(128).optional(),
-  displayName: z.string().min(1).max(120).optional(),
+  email: z.string().email().transform((e) => e.toLowerCase().trim()),
+  password: z.preprocess(
+    emptyToUndefined,
+    z.string().min(8).max(128).optional()
+  ),
+  displayName: z.preprocess(
+    emptyToUndefined,
+    z.string().min(1).max(120).optional()
+  ),
   role: z.nativeEnum(UserRole),
   mustChangePassword: z.boolean().optional()
 });

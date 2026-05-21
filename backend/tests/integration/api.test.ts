@@ -166,6 +166,45 @@ d("integration: auth and RBAC", () => {
     await app.close();
   });
 
+  it("admin can create another ADMIN user", async () => {
+    await prisma.user.deleteMany({ where: { email: "it-second-admin@test.local" } });
+    const config = loadConfig();
+    const app = await buildApp({ config });
+
+    const login = await inject(app, {
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "it-admin@test.local", password: "AdminPass123!" }
+    });
+    expect(login.statusCode).toBe(200);
+    const cookie = login.cookies.find((c) => c.name === config.cookieName);
+    expect(cookie).toBeDefined();
+
+    const create = await inject(app, {
+      method: "POST",
+      url: "/api/users",
+      headers: {
+        cookie: `${config.cookieName}=${cookie!.value}`,
+        "content-type": "application/json"
+      },
+      payload: {
+        email: "it-second-admin@test.local",
+        role: "ADMIN",
+        displayName: "Second Admin"
+      }
+    });
+
+    expect(create.statusCode).toBe(201);
+    const body = JSON.parse(create.body);
+    expect(body.user.role).toBe("ADMIN");
+    expect(body.user.email).toBe("it-second-admin@test.local");
+    expect(body.temporaryPassword).toBeDefined();
+    expect(body.user.mustChangePassword).toBe(true);
+
+    await prisma.user.deleteMany({ where: { email: "it-second-admin@test.local" } });
+    await app.close();
+  });
+
   it("admin create duplicate email returns 409", async () => {
     const config = loadConfig();
     const app = await buildApp({ config });

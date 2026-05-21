@@ -66,8 +66,9 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
           data: {
             email,
             passwordHash,
-            displayName: body.displayName,
+            displayName: body.displayName ?? null,
             role: body.role,
+            isActive: true,
             mustChangePassword
           },
           select: {
@@ -82,6 +83,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
         });
       } catch (err) {
         mapUserCreateError(err);
+        throw err;
       }
 
       await logActivity({

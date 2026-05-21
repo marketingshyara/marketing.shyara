@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useCreateUserMutation,
@@ -61,6 +61,7 @@ export function UsersPage() {
     }
   });
 
+  const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
   const editForm = useForm({
@@ -105,77 +106,133 @@ export function UsersPage() {
               isFetching={isFetching}
             />
           )}
-          <Dialog>
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button className="min-h-11 w-full sm:w-auto">Add user</Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90dvh] overflow-y-auto">
+          <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
             <DialogHeader>
               <DialogTitle>New user</DialogTitle>
             </DialogHeader>
             <form
               className="space-y-4"
-              onSubmit={createForm.handleSubmit((v) =>
-                createUser.mutate(
-                  {
-                    email: v.email,
-                    ...(v.password?.trim() ? { password: v.password.trim() } : {}),
-                    ...(v.displayName?.trim() ? { displayName: v.displayName.trim() } : {}),
-                    role: v.role,
-                    mustChangePassword: v.mustChangePassword
-                  },
-                  {
-                    onSuccess: (data) => {
-                      createForm.reset();
-                      if (data.temporaryPassword) {
-                        setNewUserTempPassword(data.temporaryPassword);
-                      } else {
-                        toast.success("User created");
+              onSubmit={createForm.handleSubmit(
+                (v) =>
+                  createUser.mutate(
+                    {
+                      email: v.email,
+                      ...(v.password?.trim() ? { password: v.password.trim() } : {}),
+                      ...(v.displayName?.trim() ? { displayName: v.displayName.trim() } : {}),
+                      role: v.role,
+                      mustChangePassword: v.mustChangePassword
+                    },
+                    {
+                      onSuccess: (data) => {
+                        createForm.reset({
+                          email: "",
+                          password: "",
+                          displayName: "",
+                          role: "SALES_REP",
+                          mustChangePassword: false
+                        });
+                        setCreateOpen(false);
+                        const roleLabel = userRoleLabel(data.user.role);
+                        if (data.temporaryPassword) {
+                          setNewUserTempPassword(data.temporaryPassword);
+                          toast.success(
+                            `${roleLabel} created. Share the temporary password — they must change it at first sign-in.`
+                          );
+                        } else {
+                          toast.success(`${roleLabel} created. They can sign in with the password you set.`);
+                        }
                       }
                     }
-                  }
-                )
+                  ),
+                () => toast.error("Check the form — fix any highlighted fields and try again.")
               )}
             >
               <div className="space-y-2">
                 <Label htmlFor="create-user-email">Email</Label>
-                <Input id="create-user-email" type="email" autoComplete="email" className="min-h-11" {...createForm.register("email")} />
+                <Input
+                  id="create-user-email"
+                  type="email"
+                  autoComplete="email"
+                  className="min-h-11"
+                  aria-invalid={!!createForm.formState.errors.email}
+                  {...createForm.register("email")}
+                />
+                {createForm.formState.errors.email ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {createForm.formState.errors.email.message}
+                  </p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="create-user-password">Password (optional — generated if empty)</Label>
-                <Input id="create-user-password" type="password" className="min-h-11" {...createForm.register("password")} />
+                <Input
+                  id="create-user-password"
+                  type="password"
+                  autoComplete="new-password"
+                  className="min-h-11"
+                  aria-invalid={!!createForm.formState.errors.password}
+                  {...createForm.register("password")}
+                />
+                {createForm.formState.errors.password ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {createForm.formState.errors.password.message}
+                  </p>
+                ) : null}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="create-user-display-name">Display name</Label>
-                <Input id="create-user-display-name" className="min-h-11" {...createForm.register("displayName")} />
+                <Label htmlFor="create-user-display-name">Display name (optional)</Label>
+                <Input
+                  id="create-user-display-name"
+                  className="min-h-11"
+                  aria-invalid={!!createForm.formState.errors.displayName}
+                  {...createForm.register("displayName")}
+                />
+                {createForm.formState.errors.displayName ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {createForm.formState.errors.displayName.message}
+                  </p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="create-user-role">Role</Label>
-                <Select
-                  value={createForm.watch("role")}
-                  onValueChange={(r) =>
-                    createForm.setValue("role", r as "ADMIN" | "SALES_REP")
-                  }
-                >
-                  <SelectTrigger id="create-user-role" className="min-h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SALES_REP">Sales rep</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="role"
+                  control={createForm.control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="create-user-role" className="min-h-11 w-full">
+                        <SelectValue placeholder="Choose role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SALES_REP">Sales rep</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {createForm.watch("role") === "ADMIN" ? (
+                  <p className="text-xs text-muted-foreground">
+                    Admins can manage team, verify payments, and create other admin accounts. Leave
+                    password empty to generate a one-time password they must change at first login.
+                  </p>
+                ) : null}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex min-h-11 items-center gap-2">
                 <Switch
                   id="create-user-must-change-password"
                   checked={createForm.watch("mustChangePassword")}
                   onCheckedChange={(c) => createForm.setValue("mustChangePassword", c)}
                 />
-                <Label htmlFor="create-user-must-change-password">Password reset required</Label>
+                <Label htmlFor="create-user-must-change-password" className="leading-snug">
+                  Require password change on first login (only when you set a password above)
+                </Label>
               </div>
-              <Button type="submit" className="min-h-11 w-full" disabled={createUser.isPending}>
-                Create
+              <Button type="submit" className="min-h-11 w-full touch-manipulation" disabled={createUser.isPending}>
+                {createUser.isPending ? "Creating…" : "Create"}
               </Button>
             </form>
           </DialogContent>
@@ -341,20 +398,21 @@ export function UsersPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-user-role">Role</Label>
-                <Select
-                  value={editForm.watch("role")}
-                  onValueChange={(r) =>
-                    editForm.setValue("role", r as "ADMIN" | "SALES_REP")
-                  }
-                >
-                  <SelectTrigger id="edit-user-role" className="min-h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SALES_REP">Sales rep</SelectItem>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="role"
+                  control={editForm.control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="edit-user-role" className="min-h-11 w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SALES_REP">Sales rep</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="flex items-center gap-2">
                 <Switch
@@ -413,7 +471,8 @@ export function UsersPage() {
             <DialogTitle>Temporary password</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Share this password with the user once. They must change it when they sign in.
+            Share this password once. The user must set a new password at first sign-in before using
+            the portal.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Input readOnly className="min-h-11 font-mono text-sm" value={newUserTempPassword ?? ""} />

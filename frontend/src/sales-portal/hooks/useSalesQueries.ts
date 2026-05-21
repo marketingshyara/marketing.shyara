@@ -45,6 +45,12 @@ export function errToast(e: unknown, qc?: QueryClient) {
       invalidateQueryPrefixes(qc, [...CONCURRENT_MODIFICATION_PREFIXES]);
       return;
     }
+    if (e.code === "EMAIL_IN_USE") {
+      toast.error(
+        "That email is already registered. Refresh the users list — the account may already exist."
+      );
+      return;
+    }
     toast.error(e.message);
   } else toast.error("Something went wrong");
 }

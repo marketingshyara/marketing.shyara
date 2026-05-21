@@ -47,7 +47,7 @@ export const paginationSchema = z.object({
 });
 
 export const createUserSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email("Enter a valid email address."),
   password: z
     .string()
     .optional()
