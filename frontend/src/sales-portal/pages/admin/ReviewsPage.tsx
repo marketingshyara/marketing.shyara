@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
+  errToast,
   useLeadQuery,
   usePendingActionsQuery,
   useTeamRepsQuery,
@@ -52,6 +54,7 @@ function actionTypeLabel(t: PendingActionType): string {
 }
 
 export function ReviewsPage() {
+  const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const pageSize = 20;
   const [actionType, setActionType] = useState<PendingActionType | "all">("all");
@@ -184,7 +187,13 @@ export function ReviewsPage() {
         templateLabel={null}
         agreedTotalCents={leadQr.data?.lead.agreedTotalCents}
         onVerify={(paymentId, body: VerifyPaymentRequestBody) =>
-          verifyPay.mutate({ paymentId, body }, { onSuccess: () => setPaymentVerify(null) })
+          verifyPay.mutate(
+            { paymentId, body },
+            {
+              onSuccess: () => setPaymentVerify(null),
+              onError: (e) => errToast(e, qc)
+            }
+          )
         }
       />
     </div>

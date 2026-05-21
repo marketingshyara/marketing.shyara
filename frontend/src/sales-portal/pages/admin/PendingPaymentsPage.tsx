@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
+  errToast,
   useLeadQuery,
   usePendingPaymentsQuery,
   useVerifyPaymentMutation
@@ -26,6 +28,7 @@ import { paymentKindLabel } from "../../lib/copy";
 import type { VerifyPaymentRequestBody } from "../../api/salesApi";
 
 export function PendingPaymentsPage() {
+  const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const pageSize = 20;
   const [kind, setKind] = useState<"all" | "ADVANCE" | "FINAL">("all");
@@ -176,7 +179,10 @@ export function PendingPaymentsPage() {
         onVerify={(paymentId, body: VerifyPaymentRequestBody) =>
           verifyPay.mutate(
             { paymentId, body },
-            { onSuccess: () => setVerifyTarget(null) }
+            {
+              onSuccess: () => setVerifyTarget(null),
+              onError: (e) => errToast(e, qc)
+            }
           )
         }
       />

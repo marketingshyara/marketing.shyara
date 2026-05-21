@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { AdminVerifyModals } from "../../components/pipeline/AdminVerifyModals";
@@ -29,7 +30,7 @@ import {
   useVerifyLeadStageMutation,
   useVerifyPaymentMutation
 } from "../../hooks/useSalesQueries";
-import { prepareHttpUrlForMutation } from "../../lib/httpUrl";
+import { prepareHttpUrlForMutation, tryNormalizeHttpUrl } from "../../lib/httpUrl";
 import type { LeadPayment, PipelineStageKey, PipelineStageVerifyKey, PipelineStageView } from "../../types";
 import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
 import { leadStatusLabel } from "../../lib/copy";
@@ -64,6 +65,7 @@ function isAdminActionable(stage: PipelineStageView): boolean {
 export function AdminProjectPage() {
   const { repId, leadId } = useParams<{ repId: string; leadId: string }>();
   const [searchParams] = useSearchParams();
+  const qc = useQueryClient();
   const leadQr = useLeadQuery(leadId);
   const repsQr = useTeamRepsQuery(true);
   const [activeStage, setActiveStage] = useState<PipelineStageKey | null>(null);
@@ -71,6 +73,7 @@ export function AdminProjectPage() {
   const [previewUrl, setPreviewUrl] = useState("");
   const [declineNote, setDeclineNote] = useState("");
   const [commissionEditRupees, setCommissionEditRupees] = useState("");
+  const [previewUrlError, setPreviewUrlError] = useState<string | null>(null);
 
   const verifyPay = useVerifyPaymentMutation(leadId ?? "", repId);
   const verifyStage = useVerifyLeadStageMutation(leadId ?? "", repId);
@@ -123,12 +126,26 @@ export function AdminProjectPage() {
   const handleStageClick = (key: PipelineStageKey) => {
     if (!lead) return;
     if (toastIfStageBlocked(stages, key)) return;
-    if (key === "advance_verify" && pendingAdvance) {
-      setVerifyPayment(pendingAdvance);
+    if (key === "advance_verify") {
+      if (pendingAdvance) {
+        setVerifyPayment(pendingAdvance);
+        return;
+      }
+      const advStage = stages.find((s) => s.key === "advance_verify");
+      if (advStage?.state === "actionable" || advStage?.state === "pending_admin") {
+        toast.error("No pending advance payment found. Refresh the page.");
+      }
       return;
     }
-    if (key === "final_verify" && pendingFinal) {
-      setVerifyPayment(pendingFinal);
+    if (key === "final_verify") {
+      if (pendingFinal) {
+        setVerifyPayment(pendingFinal);
+        return;
+      }
+      const finStage = stages.find((s) => s.key === "final_verify");
+      if (finStage?.state === "actionable" || finStage?.state === "pending_admin") {
+        toast.error("No pending due payment found. Refresh the page.");
+      }
       return;
     }
     if (key === "build_demo") {
@@ -157,19 +174,32 @@ export function AdminProjectPage() {
     const apiKey = STAGE_TO_VERIFY[activeStage];
     if (!apiKey) return;
     if (activeStage === "commission" && lead?.commission) {
-      markCommissionPaid.mutate(lead.commission.id, { onSuccess: closeModal });
+      if (!lead.project?.deploymentVerifiedAt) {
+        toast.error("Verify deployment before marking commission paid.");
+        return;
+      }
+      markCommissionPaid.mutate(lead.commission.id, {
+        meta: { skipSuccessToast: true },
+        onSuccess: () => {
+          closeModal();
+          toast.success("Commission marked paid.");
+        },
+        onError: (e) => errToast(e, qc)
+      });
       return;
     }
     verifyStage.mutate(apiKey, {
-      onSuccess: () => {
+      meta: { skipSuccessToast: true },
+      onSuccess: (data) => {
         closeModal();
-        const next = getPipelineFocus(stages, "admin");
+        const next = getPipelineFocus(data.pipelineStages, "admin");
         if (next.headline && next.kind !== "idle") {
           toast.success(`Verified. Next: ${next.headline}`);
         } else {
           toast.success("Verified.");
         }
-      }
+      },
+      onError: (e) => errToast(e, qc)
     });
   };
 
@@ -179,9 +209,88 @@ export function AdminProjectPage() {
     if (!apiKey) return;
     rejectStage.mutate(
       { stageKey: apiKey, adminNote: declineNote.trim() || null },
-      { onSuccess: closeModal }
+      { onSuccess: closeModal, onError: (e) => errToast(e, qc) }
     );
   };
+
+  const verifyPreviewReady = (onDone?: () => void, skipStageToast = false) => {
+    verifyStage.mutate("preview_ready", {
+      meta: skipStageToast ? { skipSuccessToast: true } : undefined,
+      onSuccess: (data) => {
+        closeModal();
+        const next = getPipelineFocus(data.pipelineStages, "admin");
+        if (next.headline && next.kind !== "idle") {
+          toast.success(`Demo marked ready. Next: ${next.headline}`);
+        } else {
+          toast.success("Demo marked ready for the rep.");
+        }
+        onDone?.();
+      },
+      onError: (e) => errToast(e, qc)
+    });
+  };
+
+  const runSavePreview = (onDone?: () => void) => {
+    setPreviewUrlError(null);
+    try {
+      const url = prepareHttpUrlForMutation(previewUrl);
+      patch.mutate(
+        { previewUrl: url },
+        {
+          meta: { skipSuccessToast: true },
+          onSuccess: () => {
+            toast.success("Preview URL saved. You can mark demo ready next.");
+            onDone?.();
+          },
+          onError: (e) => errToast(e, qc)
+        }
+      );
+    } catch (e) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : "Enter a valid link (e.g. https://example.com or example.com).";
+      setPreviewUrlError(msg);
+      errToast(e, qc);
+    }
+  };
+
+  const runMarkDemoReady = () => {
+    if (activeStage !== "build_demo" || !lead) return;
+    setPreviewUrlError(null);
+    let draftNormalized: string | null;
+    try {
+      draftNormalized = prepareHttpUrlForMutation(previewUrl);
+    } catch (e) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : "Enter a valid link (e.g. https://example.com or example.com).";
+      setPreviewUrlError(msg);
+      errToast(e, qc);
+      return;
+    }
+    const serverNormalized = lead.project?.previewUrl
+      ? tryNormalizeHttpUrl(lead.project.previewUrl)
+      : null;
+    const needsSave =
+      draftNormalized != null &&
+      (serverNormalized == null || draftNormalized !== serverNormalized);
+
+    if (!needsSave && serverNormalized) {
+      verifyPreviewReady();
+      return;
+    }
+    if (draftNormalized) {
+      runSavePreview(() => verifyPreviewReady(undefined, true));
+      return;
+    }
+    const msg = "Enter a valid preview URL before marking demo ready.";
+    setPreviewUrlError(msg);
+    toast.error(msg);
+  };
+
+  const markDemoPending = patch.isPending || verifyStage.isPending;
 
   if (leadQr.isLoading) {
     return (
@@ -291,7 +400,10 @@ export function AdminProjectPage() {
         <Select
           value={lead.assignedToUserId ?? "__none__"}
           onValueChange={(v) =>
-            patch.mutate({ assignedToUserId: v === "__none__" ? null : v })
+            patch.mutate(
+              { assignedToUserId: v === "__none__" ? null : v },
+              { onError: (e) => errToast(e, qc) }
+            )
           }
         >
           <SelectTrigger id="assign-rep" className="min-h-11">
@@ -344,7 +456,11 @@ export function AdminProjectPage() {
         activeStage={activeStage}
         onClose={closeModal}
         previewUrl={previewUrl}
-        onPreviewUrlChange={setPreviewUrl}
+        onPreviewUrlChange={(v) => {
+          setPreviewUrl(v);
+          if (previewUrlError) setPreviewUrlError(null);
+        }}
+        previewUrlError={previewUrlError}
         commissionEditRupees={commissionEditRupees}
         onCommissionEditRupeesChange={setCommissionEditRupees}
         verify={{
@@ -355,19 +471,26 @@ export function AdminProjectPage() {
           declineNote,
           onDeclineNoteChange: setDeclineNote
         }}
-        onSavePreview={() => {
-          try {
-            const url = prepareHttpUrlForMutation(previewUrl);
-            patch.mutate({ previewUrl: url });
-          } catch (e) {
-            errToast(e);
-          }
-        }}
+        onSavePreview={() => runSavePreview()}
         savePreviewPending={patch.isPending}
+        onMarkDemoReady={runMarkDemoReady}
+        markDemoPending={markDemoPending}
         onPatchCommission={() => {
           const cents = parseRupeeInputToCents(commissionEditRupees);
-          if (cents == null || !lead.commission) return;
-          patchCommission.mutate({ id: lead.commission.id, amountCents: cents });
+          if (!lead.commission) return;
+          if (cents == null || cents <= 0) {
+            toast.error("Enter a valid commission amount in rupees.");
+            return;
+          }
+          patchCommission.mutate(
+            { id: lead.commission.id, amountCents: cents },
+            {
+              onSuccess: () => {
+                void leadQr.refetch();
+              },
+              onError: (e) => errToast(e, qc)
+            }
+          );
         }}
         patchCommissionPending={patchCommission.isPending}
       />
@@ -381,7 +504,10 @@ export function AdminProjectPage() {
         templateLabel={lead.websiteTemplate ? formatTemplateOption(lead.websiteTemplate) : null}
         agreedTotalCents={lead.agreedTotalCents}
         onVerify={(paymentId, body) =>
-          verifyPay.mutate({ paymentId, body }, { onSuccess: () => setVerifyPayment(null) })
+          verifyPay.mutate(
+            { paymentId, body },
+            { onSuccess: () => setVerifyPayment(null), onError: (e) => errToast(e, qc) }
+          )
         }
       />
     </div>

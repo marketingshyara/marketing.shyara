@@ -598,6 +598,60 @@ d("portal review fixes - integration", () => {
     await app.close();
   });
 
+  it("admin PATCH previewUrl then preview_ready verify sets PREVIEW_SENT", async () => {
+    const lead = await prisma.lead.create({
+      data: {
+        createdByUserId: adminId,
+        assignedToUserId: repId,
+        clientName: "Preview Flow Lead",
+        status: LeadStatus.BUILDING,
+        convertedAt: new Date(),
+        agreedTotalCents: 50000,
+        advanceAmountCents: 25000
+      }
+    });
+    const payment = await prisma.leadPayment.create({
+      data: {
+        leadId: lead.id,
+        kind: PaymentKind.ADVANCE,
+        amountCents: 25000,
+        markedByUserId: repId,
+        verificationStatus: PaymentVerificationStatus.VERIFIED,
+        externalReference: "pay_preview_adv",
+        verifiedAt: new Date(),
+        verifiedByUserId: adminId
+      }
+    });
+    const { app, cookieHeader } = await loginAs(adminEmail, "AdminPass123!");
+    const patchRes = await inject(app, {
+      method: "PATCH",
+      url: `/api/leads/${lead.id}`,
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: { previewUrl: "https://staging.example.com/demo" }
+    });
+    expect(patchRes.statusCode).toBe(200);
+    const patchBody = JSON.parse(patchRes.body);
+    expect(patchBody.lead.project?.previewUrl).toBe("https://staging.example.com/demo");
+
+    const verifyRes = await inject(app, {
+      method: "POST",
+      url: `/api/leads/${lead.id}/stages/preview_ready/verify`,
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: {}
+    });
+    expect(verifyRes.statusCode).toBe(200);
+    const verifyBody = JSON.parse(verifyRes.body);
+    expect(verifyBody.lead.status).toBe(LeadStatus.PREVIEW_SENT);
+
+    const stored = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    expect(stored.status).toBe(LeadStatus.PREVIEW_SENT);
+
+    await prisma.leadPayment.delete({ where: { id: payment.id } });
+    await prisma.project.deleteMany({ where: { leadId: lead.id } });
+    await prisma.lead.delete({ where: { id: lead.id } });
+    await app.close();
+  });
+
   it("[C3] trust-proxy off: X-Forwarded-For is ignored in audit IP", async () => {
     // Force trustProxy off.
     const config = { ...loadConfig(), trustProxy: false };

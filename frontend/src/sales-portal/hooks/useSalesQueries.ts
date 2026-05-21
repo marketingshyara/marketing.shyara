@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ApiError } from "../api/client";
 import { salesApi, type VerifyPaymentRequestBody } from "../api/salesApi";
 import { qk } from "../queryKeys";
+import { applyLeadDetailToCache } from "../lib/applyLeadDetailToCache";
 import { invalidateAdminQueues, invalidateLeadAndRep } from "../lib/invalidateLeadAndRep";
 import type {
   LeadStatus,
@@ -69,6 +70,10 @@ export function errToast(e: unknown, qc?: QueryClient) {
     }
     if (e.code === "PENDING_PAYMENT") {
       toast.error(e.message || "A payment is already waiting for admin approval.");
+      return;
+    }
+    if (e.code === "ALREADY_PROCESSED") {
+      toast.error(e.message || "This step was already completed. Refresh and check the pipeline.");
       return;
     }
     toast.error(e.message);
@@ -248,7 +253,8 @@ export function usePatchLeadMutation(leadId: string, repId?: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => salesApi.patchLead(leadId, body),
-    onSuccess: (data) => {
+    onSuccess: (data, _vars, _ctx, context) => {
+      applyLeadDetailToCache(qc, leadId, data);
       invalidateLeadAndRep(qc, {
         leadId,
         repId: repId ?? data.lead.assignedToUserId
@@ -257,7 +263,8 @@ export function usePatchLeadMutation(leadId: string, repId?: string | null) {
       invalidateAdminQueues(qc);
       invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "projects"]);
       void qc.invalidateQueries({ queryKey: qk.notificationsUnreadCount });
-      toast.success("Saved");
+      const meta = context?.meta as { skipSuccessToast?: boolean } | undefined;
+      if (!meta?.skipSuccessToast) toast.success("Saved");
     },
     onError: (e) => errToast(e, qc)
   });
@@ -290,7 +297,8 @@ export function useVerifyLeadStageMutation(leadId: string, repId?: string | null
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (stageKey: PipelineStageVerifyKey) => salesApi.verifyLeadStage(leadId, stageKey),
-    onSuccess: (data) => {
+    onSuccess: (data, _vars, _ctx, context) => {
+      applyLeadDetailToCache(qc, leadId, data);
       invalidateLeadAndRep(qc, {
         leadId,
         repId: repId ?? data.lead.assignedToUserId
@@ -299,7 +307,8 @@ export function useVerifyLeadStageMutation(leadId: string, repId?: string | null
       invalidateAdminQueues(qc);
       invalidateQueryPrefixes(qc, ["commissions", "activity-logs"]);
       void qc.invalidateQueries({ queryKey: qk.notificationsUnreadCount });
-      toast.success("Stage verified");
+      const meta = context?.meta as { skipSuccessToast?: boolean } | undefined;
+      if (!meta?.skipSuccessToast) toast.success("Stage verified");
     },
     onError: (e) => errToast(e, qc)
   });
@@ -316,6 +325,7 @@ export function useRejectLeadStageMutation(leadId: string, repId?: string | null
       adminNote?: string | null;
     }) => salesApi.rejectLeadStage(leadId, stageKey, { adminNote }),
     onSuccess: (data) => {
+      applyLeadDetailToCache(qc, leadId, data);
       invalidateLeadAndRep(qc, {
         leadId,
         repId: repId ?? data.lead.assignedToUserId
@@ -354,6 +364,7 @@ export function useVerifyPaymentMutation(leadId: string, repId?: string | null) 
     mutationFn: ({ paymentId, body }: { paymentId: string; body: VerifyPaymentRequestBody }) =>
       salesApi.verifyPayment(paymentId, body),
     onSuccess: (data) => {
+      applyLeadDetailToCache(qc, leadId, data);
       invalidateLeadAndRep(qc, {
         leadId,
         repId: repId ?? data.lead.assignedToUserId
@@ -402,7 +413,7 @@ export function useMarkCommissionPaidMutation(repId?: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: salesApi.markCommissionPaid,
-    onSuccess: (data) => {
+    onSuccess: (data, _vars, _ctx, context) => {
       invalidateLeadAndRep(qc, {
         leadId: data.lead.id,
         repId: repId ?? data.lead.assignedToUserId
@@ -411,7 +422,8 @@ export function useMarkCommissionPaidMutation(repId?: string | null) {
       qc.invalidateQueries({ queryKey: ["leads"] });
       invalidateAdminQueues(qc);
       invalidateQueryPrefixes(qc, ["activity-logs"]);
-      toast.success("Commission marked paid");
+      const meta = context?.meta as { skipSuccessToast?: boolean } | undefined;
+      if (!meta?.skipSuccessToast) toast.success("Commission marked paid");
     },
     onError: (e) => errToast(e, qc)
   });

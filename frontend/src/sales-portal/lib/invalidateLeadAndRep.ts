@@ -1,6 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { qk } from "../queryKeys";
 
+export { applyLeadDetailToCache } from "./applyLeadDetailToCache";
+
 export type InvalidateLeadScope = {
   leadId: string;
   repId?: string | null;

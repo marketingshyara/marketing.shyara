@@ -418,6 +418,34 @@ cd frontend && npm run lint
 
 Manual: Home → Services → Samples (website + social) → Contact → `/portal/login` → admin Reviews + rep Pipeline.
 
+### Admin project page — all stage modals
+
+Team → rep → project (`/portal/team/:repId/projects/:leadId`). Optional deep link: `?stage=<key>`.
+
+| Step | Modal / dialog | Admin actions | Disabled until |
+|------|----------------|---------------|----------------|
+| Convert deal | Read-only summary | Close; verify advance via payment dialog | — |
+| Advance / due verify | `PaymentVerifyDialog` | Approve (Razorpay ref required), Decline (note required) | Ref for approve |
+| WhatsApp | Verify / Decline (note optional) | Verify | Rep saved group link |
+| Build demo | Save URL + Mark demo ready | Save, Mark (save-then-verify if needed) | Advance verified; valid URL |
+| Demo approval | Verify / Decline | Verify | Rep marked client approval |
+| Accounts ready | Verify / Decline | Verify | Rep marked accounts ready |
+| Due payment + verify | Rep marks payment; admin Reviews or `final_verify` step | Same payment dialog | Pending payment row |
+| Repo transfer | Verify only (no decline) | Verify | Due payment verified |
+| Deployment submit | Read-only (rep submitted URL) | Close | Rep submitted |
+| Deployment verify | Verify / Decline | Verify | Rep submitted live URL |
+| Commission | Save amount (₹) + Mark paid | Both | Deployment verified; valid amount |
+
+**build_demo (preview URL)** — detailed:
+
+1. Open modal — header, two-step helper, “No preview URL saved yet” when empty.
+2. With advance verified, type `example.com` → **1. Save preview URL** enables → click → toast “Preview URL saved…” and **Saved on server** line → **2. Mark demo ready** enables.
+3. Click **2. Mark demo ready** — success toast, modal closes, build_demo verified (one-click runs save-then-verify if URL not saved yet; edits to saved URL are saved before verify).
+4. Negative: no advance — Save and Mark disabled with reasons.
+5. Negative: invalid URL `!!!` — inline error, no API call.
+
+**Also spot-check:** Reviews queue payment verify; repo transfer with due not verified (button disabled + hint).
+
 
 
 ### Deploy

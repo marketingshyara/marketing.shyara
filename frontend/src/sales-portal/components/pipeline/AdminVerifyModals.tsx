@@ -4,14 +4,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Lead, PipelineStageKey } from "../../types";
-import { formatMinorUnits } from "../../lib/money";
+import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { stageNextStepHint } from "../../lib/pipelineCopy";
+import { tryNormalizeHttpUrl } from "../../lib/httpUrl";
+
+function ModalDisabledHints({ reasons }: { reasons: string[] }) {
+  if (reasons.length === 0) return null;
+  return (
+    <ul className="w-full list-disc space-y-1 pl-5 text-left text-xs text-muted-foreground">
+      {reasons.map((r) => (
+        <li key={r}>{r}</li>
+      ))}
+    </ul>
+  );
+}
 
 function hasVerifiedAdvance(lead: Lead): boolean {
   return (
     lead.payments?.some(
       (p) => p.kind === "ADVANCE" && p.verificationStatus === "VERIFIED"
+    ) ?? false
+  );
+}
+
+function hasVerifiedFinal(lead: Lead): boolean {
+  return (
+    lead.payments?.some(
+      (p) => p.kind === "FINAL" && p.verificationStatus === "VERIFIED"
     ) ?? false
   );
 }
@@ -35,11 +55,22 @@ type Props = {
   verify: VerifyHandlers;
   onSavePreview: () => void;
   savePreviewPending: boolean;
+  onMarkDemoReady: () => void;
+  markDemoPending: boolean;
+  previewUrlError?: string | null;
   onPatchCommission?: () => void;
   patchCommissionPending?: boolean;
 };
 
-function VerifyFooter({ verify, verifyLabel = "Verify" }: { verify: VerifyHandlers; verifyLabel?: string }) {
+function VerifyFooter({
+  verify,
+  verifyLabel = "Verify",
+  verifyDisabled = false
+}: {
+  verify: VerifyHandlers;
+  verifyLabel?: string;
+  verifyDisabled?: boolean;
+}) {
   return (
     <>
       {verify.onDecline ? (
@@ -56,7 +87,7 @@ function VerifyFooter({ verify, verifyLabel = "Verify" }: { verify: VerifyHandle
       <Button
         type="button"
         className="min-h-11 w-full sm:w-auto"
-        disabled={verify.isPending}
+        disabled={verify.isPending || verifyDisabled}
         onClick={verify.onVerify}
       >
         {verifyLabel}
@@ -76,6 +107,9 @@ export function AdminVerifyModals({
   verify,
   onSavePreview,
   savePreviewPending,
+  onMarkDemoReady,
+  markDemoPending,
+  previewUrlError,
   onPatchCommission,
   patchCommissionPending
 }: Props) {
@@ -84,6 +118,46 @@ export function AdminVerifyModals({
     : lead.websiteTemplateId ?? "—";
 
   const adminModalHint = activeStage ? stageNextStepHint(activeStage, "admin") : undefined;
+  const advanceOk = hasVerifiedAdvance(lead);
+  const previewOnServer = Boolean(lead.project?.previewUrl);
+  const previewDraftValid = tryNormalizeHttpUrl(previewUrl.trim()) != null;
+  const canMarkDemoReady =
+    advanceOk && (previewOnServer || previewDraftValid) && !markDemoPending;
+
+  const saveDisabledReasons: string[] = [];
+  if (!advanceOk) saveDisabledReasons.push("Verify the advance payment before saving a preview URL.");
+  else if (!previewUrl.trim()) saveDisabledReasons.push("Enter a preview URL to save.");
+
+  const markDisabledReasons: string[] = [];
+  if (!advanceOk) markDisabledReasons.push("Verify the advance payment first.");
+  else if (!previewOnServer && !previewDraftValid)
+    markDisabledReasons.push("Enter a valid preview URL, or save it first.");
+  else if (!previewOnServer && previewDraftValid)
+    markDisabledReasons.push("We will save your URL, then mark the demo ready.");
+
+  const finalOk = hasVerifiedFinal(lead);
+  const repoDone = Boolean(lead.repoTransferVerifiedAt);
+  const deploySubmitted = Boolean(
+    lead.project?.deploymentSubmittedAt && lead.project?.deployedUrl
+  );
+  const deployVerified = Boolean(lead.project?.deploymentVerifiedAt);
+
+  const repoDisabledReasons: string[] = [];
+  if (!finalOk) repoDisabledReasons.push("Verify the due (final) payment before confirming repo transfer.");
+  if (repoDone) repoDisabledReasons.push("Repository transfer is already verified.");
+
+  const deployDisabledReasons: string[] = [];
+  if (!deploySubmitted)
+    deployDisabledReasons.push("Rep must submit the live URL before you can verify deployment.");
+  if (deployVerified) deployDisabledReasons.push("Deployment is already verified.");
+
+  const commissionCents = parseRupeeInputToCents(commissionEditRupees);
+  const commissionSaveValid =
+    commissionCents != null && commissionCents > 0 && lead.commission != null;
+  const commissionUnchanged =
+    lead.commission != null &&
+    commissionCents != null &&
+    commissionCents === lead.commission.amountCents;
 
   return (
     <>
@@ -125,14 +199,20 @@ export function AdminVerifyModals({
         }
         nextStepHint={adminModalHint}
         footer={
-          <VerifyFooter
-            verify={{
-              ...verify,
-              onVerify: verify.onVerify,
-              onDecline: verify.onDecline
-            }}
-            verifyLabel="Verify WhatsApp"
-          />
+          <>
+            <VerifyFooter
+              verify={{
+                ...verify,
+                onVerify: verify.onVerify,
+                onDecline: verify.onDecline
+              }}
+              verifyLabel="Verify WhatsApp"
+              verifyDisabled={!lead.whatsappGroupLink}
+            />
+            {!lead.whatsappGroupLink ? (
+              <ModalDisabledHints reasons={["Rep has not submitted a WhatsApp group link yet."]} />
+            ) : null}
+          </>
         }
       >
         {verify.onDecline ? (
@@ -158,7 +238,16 @@ export function AdminVerifyModals({
         }
         nextStepHint={adminModalHint}
         footer={
-          <VerifyFooter verify={verify} verifyLabel="Verify demo approval" />
+          <>
+            <VerifyFooter
+              verify={verify}
+              verifyLabel="Verify demo approval"
+              verifyDisabled={!lead.demoFinalizedAt}
+            />
+            {!lead.demoFinalizedAt ? (
+              <ModalDisabledHints reasons={["Rep has not marked demo approval from the client yet."]} />
+            ) : null}
+          </>
         }
       >
         <dl className="grid gap-2 text-sm">
@@ -184,28 +273,35 @@ export function AdminVerifyModals({
         onOpenChange={(o) => !o && onClose()}
         title="Demo preview link"
         description="Step 1: Save the staging or preview URL. Step 2: Mark demo ready so the rep can continue."
+        nextStepHint={adminModalHint}
         footer={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-11 w-full sm:w-auto"
-              disabled={
-                savePreviewPending || !hasVerifiedAdvance(lead) || !previewUrl.trim()
-              }
-              onClick={onSavePreview}
-            >
-              {savePreviewPending ? "Saving…" : "1. Save preview URL"}
-            </Button>
-            <Button
-              type="button"
-              className="min-h-11 w-full sm:w-auto"
-              disabled={verify.isPending || !lead.project?.previewUrl}
-              onClick={verify.onVerify}
-            >
-              2. Mark demo ready
-            </Button>
-          </>
+          <div className="flex w-full flex-col gap-2">
+            <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 w-full sm:w-auto"
+                disabled={savePreviewPending || !advanceOk || !previewUrl.trim()}
+                onClick={onSavePreview}
+              >
+                {savePreviewPending ? "Saving…" : "1. Save preview URL"}
+              </Button>
+              <Button
+                type="button"
+                className="min-h-11 w-full sm:w-auto"
+                disabled={!canMarkDemoReady}
+                onClick={onMarkDemoReady}
+              >
+                {markDemoPending ? "Working…" : "2. Mark demo ready"}
+              </Button>
+            </div>
+            <ModalDisabledHints
+              reasons={[
+                ...(savePreviewPending || !advanceOk || !previewUrl.trim() ? saveDisabledReasons : []),
+                ...(!canMarkDemoReady ? markDisabledReasons : [])
+              ]}
+            />
+          </div>
         }
       >
         {!hasVerifiedAdvance(lead) ? (
@@ -228,16 +324,25 @@ export function AdminVerifyModals({
           <Input
             id="admin-preview"
             className="min-h-11"
-            type="url"
+            type="text"
             inputMode="url"
+            autoComplete="url"
             placeholder="https://… or example.com"
             value={previewUrl}
             onChange={(e) => onPreviewUrlChange(e.target.value)}
-            disabled={!hasVerifiedAdvance(lead)}
+            disabled={!advanceOk}
+            aria-invalid={!!previewUrlError}
+            aria-describedby={previewUrlError ? "admin-preview-error" : "admin-preview-hint"}
           />
-          <p className="text-xs text-muted-foreground">
-            You can paste a link without https:// — we will add it automatically.
-          </p>
+          {previewUrlError ? (
+            <p id="admin-preview-error" className="text-xs text-destructive" role="alert">
+              {previewUrlError}
+            </p>
+          ) : (
+            <p id="admin-preview-hint" className="text-xs text-muted-foreground">
+              You can paste a link without https:// — we will add it automatically.
+            </p>
+          )}
         </div>
       </StageModalShell>
 
@@ -251,7 +356,18 @@ export function AdminVerifyModals({
             : "Rep has not marked accounts ready."
         }
         nextStepHint={adminModalHint}
-        footer={<VerifyFooter verify={verify} verifyLabel="Verify accounts" />}
+        footer={
+          <>
+            <VerifyFooter
+              verify={verify}
+              verifyLabel="Verify accounts"
+              verifyDisabled={!lead.accountsReadyAt}
+            />
+            {!lead.accountsReadyAt ? (
+              <ModalDisabledHints reasons={["Rep has not marked accounts ready yet."]} />
+            ) : null}
+          </>
+        }
       >
         {verify.onDecline ? (
           <div className="space-y-2">
@@ -300,7 +416,18 @@ export function AdminVerifyModals({
             : "Rep has not submitted a live URL yet."
         }
         nextStepHint={adminModalHint}
-        footer={<VerifyFooter verify={verify} verifyLabel="Verify deployment" />}
+        footer={
+          <>
+            <VerifyFooter
+              verify={verify}
+              verifyLabel="Verify deployment"
+              verifyDisabled={!deploySubmitted || deployVerified}
+            />
+            <ModalDisabledHints
+              reasons={!deploySubmitted || deployVerified ? deployDisabledReasons : []}
+            />
+          </>
+        }
       >
         {verify.onDecline ? (
           <div className="space-y-2">
@@ -319,11 +446,26 @@ export function AdminVerifyModals({
         onOpenChange={(o) => !o && onClose()}
         title="Verify repository transfer"
         description="Confirm repository ownership moved to the client after due payment is verified and before the rep submits the live URL."
-        footer={<VerifyFooter verify={verify} verifyLabel="Verify repo transfer" />}
+        nextStepHint={adminModalHint}
+        footer={
+          <>
+            <VerifyFooter
+              verify={verify}
+              verifyLabel="Verify repo transfer"
+              verifyDisabled={!finalOk || repoDone}
+            />
+            <ModalDisabledHints reasons={!finalOk || repoDone ? repoDisabledReasons : []} />
+          </>
+        }
       >
         <p className="text-sm text-muted-foreground">
-          Confirm repository ownership moved to the client.
+          Confirm repository ownership moved to the client after due payment is verified.
         </p>
+        {!finalOk ? (
+          <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
+            Verify the due payment in Reviews or the progress step first.
+          </p>
+        ) : null}
       </StageModalShell>
 
       <StageModalShell
@@ -344,7 +486,11 @@ export function AdminVerifyModals({
                   type="button"
                   variant="outline"
                   className="min-h-11 w-full sm:w-auto"
-                  disabled={patchCommissionPending}
+                  disabled={
+                    patchCommissionPending ||
+                    !commissionSaveValid ||
+                    commissionUnchanged
+                  }
                   onClick={onPatchCommission}
                 >
                   Save amount
@@ -353,11 +499,27 @@ export function AdminVerifyModals({
               <Button
                 type="button"
                 className="min-h-11 w-full sm:w-auto"
-                disabled={verify.isPending}
+                disabled={verify.isPending || !lead.project?.deploymentVerifiedAt}
                 onClick={verify.onVerify}
               >
                 Mark commission paid
               </Button>
+              <ModalDisabledHints
+                reasons={[
+                  ...(!commissionSaveValid || commissionUnchanged
+                    ? [
+                        !commissionEditRupees.trim()
+                          ? "Enter a commission amount in rupees to save."
+                          : commissionUnchanged
+                            ? "Amount unchanged — edit the value before saving."
+                            : "Enter a valid positive amount in rupees."
+                      ]
+                    : []),
+                  ...(!lead.project?.deploymentVerifiedAt
+                    ? ["Verify deployment first — commission is due after the site is live."]
+                    : [])
+                ]}
+              />
             </>
           ) : (
             <p className="text-sm text-muted-foreground">Commission already paid or not due yet.</p>

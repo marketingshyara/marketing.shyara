@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { StageModalShell } from "./StageModalShell";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,12 @@ export function PaymentVerifyDialog({
 }: Props) {
   const [ref, setRef] = useState("");
   const [note, setNote] = useState("");
+
+  useEffect(() => {
+    if (!open || !payment) return;
+    setRef("");
+    setNote("");
+  }, [open, payment?.id]);
 
   if (!payment) return null;
 
@@ -76,6 +82,11 @@ export function PaymentVerifyDialog({
           >
             Approve payment
           </Button>
+          {!ref.trim() ? (
+            <p className="w-full text-left text-xs text-muted-foreground">
+              Enter the Razorpay reference to enable Approve.
+            </p>
+          ) : null}
         </>
       }
     >
