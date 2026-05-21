@@ -65,7 +65,11 @@ export function RepProjectsPage() {
         <StatPill label="Clients" value={rep.activeClients} />
         <StatPill label="Ongoing" value={rep.ongoingProjects} />
         <StatPill label="Pending payments" value={rep.pendingPayments} />
-        <StatPill label="Needs action" value={rep.needsAdminAction} alert={rep.needsAdminAction > 0} />
+        <StatPill
+          label="Needs your approval"
+          value={rep.needsAdminAction}
+          alert={rep.needsAdminAction > 0}
+        />
       </div>
 
       <div
@@ -95,10 +99,15 @@ export function RepProjectsPage() {
             : "No projects in this filter."}
         </p>
       ) : (
-        <div className="space-y-4">
-          {projects.map((p) => (
-            <AdminProjectCard key={p.id} repId={repId} project={p} />
-          ))}
+        <div className="space-y-3">
+          {[...projects]
+            .sort((a, b) => {
+              if (a.pendingAdmin === b.pendingAdmin) return 0;
+              return a.pendingAdmin ? -1 : 1;
+            })
+            .map((p) => (
+              <AdminProjectCard key={p.id} repId={repId} project={p} />
+            ))}
         </div>
       )}
     </div>

@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PipelineProgress } from "../../components/pipeline/PipelineProgress";
+import { PipelineFocusCard } from "../../components/pipeline/PipelineFocusCard";
+import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import {
@@ -163,14 +164,27 @@ export function PipelineDetailPage() {
         </p>
       </div>
 
+      <PipelineFocusCard
+        stages={stages}
+        actorMode="rep"
+        onPrimaryAction={handleStageClick}
+        onViewSubmission={handleStageClick}
+      />
+
       {idleBuild ? (
         <Alert>
-          <AlertTitle>Waiting on technical team</AlertTitle>
-          <AlertDescription>{idleBuild}</AlertDescription>
+          <AlertTitle>With technical team</AlertTitle>
+          <AlertDescription>
+            Technical team is preparing the demo link. You will be notified when it is ready.
+          </AlertDescription>
         </Alert>
       ) : null}
 
-      <PipelineProgress stages={stages} onStageClick={handleStageClick} actorMode="rep" />
+      <PipelineStepsAccordion
+        stages={stages}
+        actorMode="rep"
+        onStageClick={handleStageClick}
+      />
 
       {lead.commission && (
         <div className="rounded-lg border p-4 text-sm">

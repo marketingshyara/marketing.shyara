@@ -6,12 +6,11 @@ import { useLeadsQuery } from "../../hooks/useSalesQueries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
-import { leadStatusLabel } from "../../lib/copy";
-import { formatMinorUnits } from "../../lib/money";
+import { PipelineListSummary } from "../../components/pipeline/PipelineListSummary";
+import { listBadgeLabel } from "../../lib/pipelineCopy";
 import { cn } from "@/lib/utils";
 
 type ViewTab = "leads" | "clients";
@@ -59,7 +58,11 @@ export function PipelineListPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Pipeline</h1>
-          <p className="text-sm text-muted-foreground">Your leads and clients</p>
+          <p className="text-sm text-muted-foreground">
+            {tab === "leads"
+              ? "Prospects — not yet converted to clients"
+              : "Active clients — after admin approves advance"}
+          </p>
         </div>
         <DataStaleToolbar
           dataUpdatedAt={dataUpdatedAt}
@@ -72,7 +75,7 @@ export function PipelineListPage() {
         <div
           className="inline-flex rounded-lg border bg-muted/40 p-1"
           role="tablist"
-          aria-label="Leads or clients"
+          aria-label="Prospects or active clients"
         >
           {(["leads", "clients"] as const).map((v) => (
             <Button
@@ -81,17 +84,17 @@ export function PipelineListPage() {
               role="tab"
               aria-selected={tab === v}
               variant={tab === v ? "secondary" : "ghost"}
-              className={cn("min-h-11 capitalize", tab === v && "shadow-sm")}
+              className={cn("min-h-11", tab === v && "shadow-sm")}
               onClick={() => setTab(v)}
             >
-              {v === "leads" ? "Leads" : "Clients"}
+              {v === "leads" ? "Prospects" : "Active clients"}
             </Button>
           ))}
         </div>
         <Button asChild className="min-h-11">
           <Link to="/portal/pipeline/new">
             <Plus className="mr-2 h-4 w-4" aria-hidden />
-            Add lead
+            Add prospect
           </Link>
         </Button>
       </div>
@@ -127,35 +130,33 @@ export function PipelineListPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           {data?.items.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
-              {tab === "leads" ? "No leads yet. Add your first lead." : "No clients yet."}
+              {tab === "leads"
+                ? "No prospects yet. Add your first prospect."
+                : "No active clients yet. Converted clients appear here after admin approves advance."}
             </p>
           ) : (
-            data?.items.map((lead) => (
-              <Card key={lead.id}>
-                <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <Link
-                      to={`/portal/pipeline/${lead.id}`}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      {lead.clientName}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">
-                      {leadStatusLabel(lead.status)}
-                      {lead.agreedTotalCents
-                        ? ` · ${formatMinorUnits(lead.agreedTotalCents)}`
-                        : ""}
-                    </p>
-                  </div>
-                  <Button asChild variant="outline" className="min-h-11 shrink-0">
-                    <Link to={`/portal/pipeline/${lead.id}`}>Open</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
+            data?.items.map((lead) => {
+              const summary = lead.pipelineSummary ?? {
+                currentStageKey: "lead_capture" as const,
+                currentStageTitle: "Lead details",
+                pendingAdmin: false
+              };
+              const { label, variant } = listBadgeLabel(summary, undefined, "rep");
+              return (
+                <PipelineListSummary
+                  key={lead.id}
+                  clientName={lead.clientName}
+                  summary={summary}
+                  agreedTotalCents={lead.agreedTotalCents}
+                  href={`/portal/pipeline/${lead.id}`}
+                  badgeLabel={label}
+                  badgeVariant={variant}
+                />
+              );
+            })
           )}
         </div>
       )}

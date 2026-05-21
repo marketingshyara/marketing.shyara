@@ -113,6 +113,8 @@ export interface Lead {
   commission?: Commission | null;
   project?: Project | null;
   websiteTemplate?: WebsiteTemplate | null;
+  /** Present on GET /api/leads list items */
+  pipelineSummary?: LeadPipelineSummary;
 }
 
 /** Pending payment row from GET /api/payments/pending (admin queue). */
@@ -230,6 +232,12 @@ export type PipelineStageKey =
   | "deployment_submit"
   | "deployment_verify"
   | "commission";
+
+export type LeadPipelineSummary = {
+  currentStageKey: PipelineStageKey;
+  currentStageTitle: string;
+  pendingAdmin: boolean;
+};
 
 export type StageUiState = "locked" | "actionable" | "pending_admin" | "verified";
 

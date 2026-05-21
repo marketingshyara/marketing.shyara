@@ -19,7 +19,7 @@ import { assertAdminLeadPatchBody, assertSalesRepActor } from "../services/leadM
 import { assertLeadMutable } from "../services/leadGuards.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings, getRequiredLeadStatusForPaymentKind } from "../services/settings.js";
-import { getPipelineStages } from "../services/pipeline.js";
+import { getPipelineStages, summarizePipelineStages } from "../services/pipeline.js";
 import { notifyActiveAdmins } from "../services/notifications.js";
 import { PortalNotificationKind } from "@prisma/client";
 import {
@@ -117,10 +117,26 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         where,
         skip,
         take: query.pageSize,
-        orderBy: { createdAt: "desc" }
+        orderBy: { createdAt: "desc" },
+        include: {
+          payments: { orderBy: { markedAt: "desc" } },
+          project: true
+        }
       });
 
-      return reply.send({ items, total, page, pageSize: query.pageSize });
+      const settings = await getPortalSettings(app.prisma);
+      const itemsWithSummary = items.map((lead) => {
+        const pipelineStages = getPipelineStages(lead, settings, user.role);
+        const pipelineSummary = summarizePipelineStages(pipelineStages);
+        return { ...lead, pipelineSummary };
+      });
+
+      return reply.send({
+        items: itemsWithSummary,
+        total,
+        page,
+        pageSize: query.pageSize
+      });
     }
   );
 

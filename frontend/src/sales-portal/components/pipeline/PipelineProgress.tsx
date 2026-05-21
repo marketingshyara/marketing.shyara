@@ -11,6 +11,8 @@ type Props = {
   actorMode?: "rep" | "admin";
   compact?: boolean;
   highlightKey?: PipelineStageKey;
+  /** Hide per-row “Sales rep / Admin” hints (accordion view) */
+  showActorHints?: boolean;
 };
 
 function stageIsClickable(stage: PipelineStageView, actorMode: "rep" | "admin"): boolean {
@@ -41,7 +43,8 @@ export function PipelineProgress({
   mode = "interactive",
   actorMode = "rep",
   compact = false,
-  highlightKey
+  highlightKey,
+  showActorHints = true
 }: Props) {
   const readonly = mode === "readonly";
   const list = (
@@ -52,7 +55,7 @@ export function PipelineProgress({
         const highlighted = highlightKey === stage.key;
         const row = (
           <>
-            <VerificationTick state={stage.state} />
+            <VerificationTick state={stage.state} stageKey={stage.key} />
             <div className="min-w-0 flex-1">
               <span
                 className={
@@ -66,7 +69,7 @@ export function PipelineProgress({
               {!compact && stage.hint ? (
                 <p className="text-xs text-muted-foreground">{stage.hint}</p>
               ) : null}
-              {!compact ? (
+              {!compact && showActorHints ? (
                 <p className="text-xs text-muted-foreground">
                   {stage.repActor && stage.adminActor
                     ? "Sales rep & admin"
@@ -95,7 +98,7 @@ export function PipelineProgress({
               <Button
                 type="button"
                 variant="ghost"
-                className="h-auto min-h-11 w-full justify-start gap-3 px-2 py-2 text-left font-normal"
+                className="h-auto min-h-11 w-full touch-manipulation justify-start gap-3 px-2 py-2 text-left font-normal"
                 disabled={!canOpen}
                 onClick={() => canOpen && onStageClick!(stage.key)}
               >

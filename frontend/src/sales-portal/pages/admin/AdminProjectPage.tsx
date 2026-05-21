@@ -6,7 +6,8 @@ import { PaymentVerifyDialog } from "../../components/pipeline/PaymentVerifyDial
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PipelineProgress } from "../../components/pipeline/PipelineProgress";
+import { PipelineFocusCard } from "../../components/pipeline/PipelineFocusCard";
+import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import {
@@ -237,6 +238,25 @@ export function AdminProjectPage() {
         </p>
       </div>
 
+      <PipelineFocusCard
+        stages={stages}
+        actorMode="admin"
+        onPrimaryAction={handleStageClick}
+      />
+
+      {idleBuild ? (
+        <Alert>
+          <AlertTitle>With technical team</AlertTitle>
+          <AlertDescription>{idleBuild}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <PipelineStepsAccordion
+        stages={stages}
+        actorMode="admin"
+        onStageClick={handleStageClick}
+      />
+
       <div className="space-y-2 rounded-lg border p-4">
         <Label htmlFor="assign-rep">Assigned rep</Label>
         <Select
@@ -257,13 +277,6 @@ export function AdminProjectPage() {
           </SelectContent>
         </Select>
       </div>
-
-      {idleBuild ? (
-        <Alert>
-          <AlertTitle>Waiting on technical team</AlertTitle>
-          <AlertDescription>{idleBuild}</AlertDescription>
-        </Alert>
-      ) : null}
 
       {(verifiedAdvance?.externalReference || verifiedFinal?.externalReference) && (
         <div className="rounded-lg border p-4 text-sm space-y-2">
@@ -296,8 +309,6 @@ export function AdminProjectPage() {
           </p>
         </div>
       ) : null}
-
-      <PipelineProgress stages={stages} onStageClick={handleStageClick} actorMode="admin" />
 
       <AdminVerifyModals
         lead={lead}
