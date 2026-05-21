@@ -36,4 +36,10 @@ describe("patchLeadBodySchema previewUrl", () => {
     const body = patchLeadBodySchema.parse({ previewUrl: null });
     expect(body.previewUrl).toBeNull();
   });
+
+  it("does not inject whatsappGroupLink when only previewUrl is sent", () => {
+    const body = patchLeadBodySchema.parse({ previewUrl: "test.com" });
+    expect(body.previewUrl).toBe("https://test.com/");
+    expect(body).not.toHaveProperty("whatsappGroupLink");
+  });
 });

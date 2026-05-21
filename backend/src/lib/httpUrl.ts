@@ -14,8 +14,12 @@ export function tryNormalizeHttpUrl(raw: string): string | null {
   }
 }
 
-const emptyToNull = (v: unknown) =>
-  v === "" || v === null || v === undefined ? null : v;
+/** Empty string clears to null; omit key when field was not sent (undefined). */
+const emptyToNull = (v: unknown) => {
+  if (v === undefined) return undefined;
+  if (v === "" || v === null) return null;
+  return v;
+};
 
 /** Optional nullable HTTP(S) URL for PATCH bodies (empty string clears). */
 export const optionalHttpUrlSchema = z.preprocess(

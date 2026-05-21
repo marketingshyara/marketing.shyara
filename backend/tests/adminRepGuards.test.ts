@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { UserRole } from "@prisma/client";
 import { assertAdminLeadPatchBody, assertSalesRepActor } from "../src/services/leadMutations.js";
+import { patchLeadBodySchema } from "../src/validators/schemas.js";
 import { HttpError } from "../src/errors/httpError.js";
 
 describe("admin rep mutation guards", () => {
@@ -35,5 +36,10 @@ describe("admin rep mutation guards", () => {
       assertAdminLeadPatchBody({ assignedToUserId: "rep-1", previewUrl: "https://preview.example" })
     ).not.toThrow();
     expect(() => assertAdminLeadPatchBody({})).not.toThrow();
+  });
+
+  it("allows admin previewUrl-only PATCH after schema parse", () => {
+    const body = patchLeadBodySchema.parse({ previewUrl: "test.com" });
+    expect(() => assertAdminLeadPatchBody(body)).not.toThrow();
   });
 });

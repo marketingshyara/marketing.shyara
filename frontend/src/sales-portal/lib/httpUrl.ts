@@ -25,8 +25,11 @@ export function prepareHttpUrlForMutation(raw: string): string | null {
   return normalized;
 }
 
-const emptyToNull = (v: unknown) =>
-  v === "" || v === null || v === undefined ? null : v;
+const emptyToNull = (v: unknown) => {
+  if (v === undefined) return undefined;
+  if (v === "" || v === null) return null;
+  return v;
+};
 
 export const optionalHttpUrlSchema = z.preprocess(
   emptyToNull,
