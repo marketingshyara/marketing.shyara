@@ -77,7 +77,7 @@ export async function notifyRepOfAdminDecision(
   params: {
     leadId: string;
     repUserId: string | null;
-    kind: PortalNotificationKind.ADMIN_VERIFIED | PortalNotificationKind.ADMIN_DECLINED;
+    kind: Extract<PortalNotificationKind, "ADMIN_VERIFIED" | "ADMIN_DECLINED">;
     stageKey: string;
     message: string;
   }
