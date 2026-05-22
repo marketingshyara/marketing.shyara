@@ -58,10 +58,11 @@ export const pipelineStageKeySchema = z.enum([
 
 export const leadsListQuerySchema = paginationQuerySchema
   .extend({
-    /** `leads` = not converted; `clients` = rep submitted deal form */
-    view: z.enum(["leads", "clients"]).optional(),
+    /** `leads` = prospects; `clients` = in-flight converted; `completed` = commission settled */
+    view: z.enum(["leads", "clients", "completed"]).optional(),
     /** Admin-only: filter pipeline by assigned sales rep. */
     assignedToUserId: z.string().cuid().optional(),
+    /** Ignored when `view` is `clients` or `completed` (view applies status filters). */
     status: z.nativeEnum(LeadStatus).optional(),
     /**
      * Server-side minimum length defends the functional `lower(...)` indexes from degenerate
@@ -76,7 +77,11 @@ export const leadsListQuerySchema = paginationQuerySchema
   })
   .refine((q) => !q.from || !q.to || q.from <= q.to, {
     message: "Query parameter 'from' must be on or before 'to'."
-  });
+  })
+  .refine(
+    (q) => !q.status || !q.view || q.view === "leads",
+    { message: "Use view=clients or view=completed instead of status for converted lists." }
+  );
 
 const optionalLeadEmail = z.preprocess(
   (v) => (v === "" ? null : v),

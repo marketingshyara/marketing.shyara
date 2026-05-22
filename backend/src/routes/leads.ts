@@ -78,11 +78,22 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         throw new HttpError(403, "FORBIDDEN", "Only admins can filter leads by assignee.");
       }
 
+      const viewStatusFilter =
+        query.view === "clients"
+          ? { status: { not: LeadStatus.COMMISSION_PAID } }
+          : query.view === "completed"
+            ? { status: LeadStatus.COMMISSION_PAID }
+            : query.status
+              ? { status: query.status }
+              : {};
+
       const filters = {
         ...(query.view === "leads" ? { convertedAt: null } : {}),
-        ...(query.view === "clients" ? { convertedAt: { not: null } } : {}),
+        ...(query.view === "clients" || query.view === "completed"
+          ? { convertedAt: { not: null } }
+          : {}),
+        ...viewStatusFilter,
         ...(query.assignedToUserId ? { assignedToUserId: query.assignedToUserId } : {}),
-        ...(query.status ? { status: query.status } : {}),
         ...(query.search
           ? {
               OR: [
@@ -109,6 +120,15 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               ...repLeadScope(user.id),
               ...filters
             };
+
+      await app.prisma.lead.updateMany({
+        where: {
+          ...where,
+          status: { not: LeadStatus.COMMISSION_PAID },
+          commission: { is: { isPaid: true } }
+        },
+        data: { status: LeadStatus.COMMISSION_PAID }
+      });
 
       const total = await app.prisma.lead.count({ where });
       const page = clampPage(query.page, query.pageSize, total);

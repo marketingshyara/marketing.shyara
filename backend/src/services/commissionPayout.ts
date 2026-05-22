@@ -44,6 +44,29 @@ export async function promoteLeadToDeployedIfEligible(
   });
 }
 
+/** Align lead status when commission was paid before status-heal shipped (legacy rows). */
+export async function healLeadToCommissionPaidIfNeeded(
+  tx: Prisma.TransactionClient,
+  leadId: string
+): Promise<boolean> {
+  const lead = await tx.lead.findUnique({
+    where: { id: leadId },
+    include: { commission: true }
+  });
+  if (!lead?.commission?.isPaid || lead.status === LeadStatus.COMMISSION_PAID) {
+    return false;
+  }
+  const claim = await tx.lead.updateMany({
+    where: {
+      id: leadId,
+      status: { not: LeadStatus.COMMISSION_PAID },
+      commission: { is: { isPaid: true } }
+    },
+    data: { status: LeadStatus.COMMISSION_PAID }
+  });
+  return claim.count > 0;
+}
+
 export async function loadLeadDetailForAdmin(tx: Prisma.TransactionClient, leadId: string) {
   const settings = await getPortalSettings(tx);
   const lead = await tx.lead.findUniqueOrThrow({

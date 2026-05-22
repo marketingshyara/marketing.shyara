@@ -5,7 +5,11 @@ import { ApiError } from "../api/client";
 import { salesApi, type VerifyPaymentRequestBody } from "../api/salesApi";
 import { qk } from "../queryKeys";
 import { applyLeadDetailToCache } from "../lib/applyLeadDetailToCache";
-import { invalidateAdminQueues, invalidateLeadAndRep } from "../lib/invalidateLeadAndRep";
+import {
+  invalidateAdminQueues,
+  invalidateLeadAndRep,
+  removeLeadFromTeamRepActiveCache
+} from "../lib/invalidateLeadAndRep";
 import type {
   LeadStatus,
   PipelineStageVerifyKey,
@@ -214,7 +218,7 @@ export function useResetPasswordMutation() {
 export function useLeadsQuery(params: {
   page: number;
   pageSize: number;
-  view?: "leads" | "clients";
+  view?: "leads" | "clients" | "completed";
   status?: LeadStatus;
   search?: string;
   from?: Date;
@@ -424,9 +428,13 @@ export function useMarkCommissionPaidMutation(leadId: string, repId?: string | n
     mutationFn: salesApi.markCommissionPaid,
     onSuccess: (data, _vars, _ctx, context) => {
       applyLeadDetailToCache(qc, leadId, data);
+      const assignedRepId = repId ?? data.lead.assignedToUserId;
+      if (assignedRepId && data.lead.status === "COMMISSION_PAID") {
+        removeLeadFromTeamRepActiveCache(qc, assignedRepId, leadId);
+      }
       invalidateLeadAndRep(qc, {
         leadId,
-        repId: repId ?? data.lead.assignedToUserId
+        repId: assignedRepId
       });
       qc.invalidateQueries({ queryKey: ["commissions"] });
       qc.invalidateQueries({ queryKey: ["leads"] });

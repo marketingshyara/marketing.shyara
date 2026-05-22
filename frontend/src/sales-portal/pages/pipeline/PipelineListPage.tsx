@@ -11,14 +11,34 @@ import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
 import { PipelineListSummary } from "../../components/pipeline/PipelineListSummary";
-import { listBadgeLabel, listWaitingSubline } from "../../lib/pipelineCopy";
+import { listStatusChip } from "../../lib/pipelineCopy";
 import { cn } from "@/lib/utils";
 
-type ViewTab = "leads" | "clients";
+const VIEW_TABS = ["leads", "clients", "completed"] as const;
+type ViewTab = (typeof VIEW_TABS)[number];
+
+function isViewTab(v: string | null): v is ViewTab {
+  return v === "leads" || v === "clients" || v === "completed";
+}
+
+function tabLabel(v: ViewTab): string {
+  if (v === "leads") return "Prospects";
+  if (v === "clients") return "Active clients";
+  return "Settled";
+}
+
+function emptyMessage(tab: ViewTab): string {
+  if (tab === "leads") return "No prospects yet.";
+  if (tab === "clients") {
+    return "No active clients yet. Converted clients appear here after admin approves advance.";
+  }
+  return "No settled clients yet. Projects move here after commission is marked paid.";
+}
 
 export function PipelineListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = (searchParams.get("view") as ViewTab | null) ?? "leads";
+  const urlView = searchParams.get("view");
+  const initialTab = isViewTab(urlView) ? urlView : "leads";
   const [tab, setTab] = useState<ViewTab>(initialTab);
   const [page, setPage] = useState(1);
   const pageSize = 20;
@@ -32,11 +52,10 @@ export function PipelineListPage() {
   }, [tab, searchTrimmed]);
 
   useEffect(() => {
-    const urlView = searchParams.get("view");
-    if (urlView === "leads" || urlView === "clients") {
+    if (isViewTab(urlView)) {
       setTab(urlView);
     }
-  }, [searchParams]);
+  }, [urlView]);
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
@@ -58,11 +77,7 @@ export function PipelineListPage() {
     <div className="mx-auto max-w-4xl space-y-4">
       <PortalPageHeader
         title="Pipeline"
-        description={
-          tab === "leads"
-            ? "Prospects — not yet converted to clients"
-            : "Active clients — after admin approves advance"
-        }
+        variant="operational"
         toolbar={
           <DataStaleToolbar
             dataUpdatedAt={dataUpdatedAt}
@@ -74,11 +89,11 @@ export function PipelineListPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         <div
-          className="inline-flex rounded-lg border bg-muted/40 p-1"
+          className="inline-flex flex-wrap rounded-lg border bg-muted/40 p-1"
           role="tablist"
-          aria-label="Prospects or active clients"
+          aria-label="Pipeline list"
         >
-          {(["leads", "clients"] as const).map((v) => (
+          {VIEW_TABS.map((v) => (
             <Button
               key={v}
               type="button"
@@ -88,7 +103,7 @@ export function PipelineListPage() {
               className={cn("min-h-11", tab === v && "shadow-sm")}
               onClick={() => setTab(v)}
             >
-              {v === "leads" ? "Prospects" : "Active clients"}
+              {tabLabel(v)}
             </Button>
           ))}
         </div>
@@ -134,11 +149,7 @@ export function PipelineListPage() {
         <div className="min-w-0 space-y-2">
           {data?.items.length === 0 ? (
             <div className="space-y-3 py-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                {tab === "leads"
-                  ? "No prospects yet."
-                  : "No active clients yet. Converted clients appear here after admin approves advance."}
-              </p>
+              <p className="text-sm text-muted-foreground">{emptyMessage(tab)}</p>
               {tab === "leads" ? (
                 <Button className="min-h-11" asChild>
                   <Link to="/portal/pipeline/new">
@@ -146,11 +157,11 @@ export function PipelineListPage() {
                     Add lead
                   </Link>
                 </Button>
-              ) : (
+              ) : tab === "clients" ? (
                 <Button variant="outline" className="min-h-11" onClick={() => setTab("leads")}>
                   View prospects
                 </Button>
-              )}
+              ) : null}
             </div>
           ) : (
             data?.items.map((lead) => {
@@ -159,7 +170,7 @@ export function PipelineListPage() {
                 currentStageTitle: "Lead details",
                 pendingAdmin: false
               };
-              const { label, variant } = listBadgeLabel(summary, undefined, "rep");
+              const statusChip = listStatusChip(summary, undefined, "rep");
               return (
                 <PipelineListSummary
                   key={lead.id}
@@ -167,9 +178,7 @@ export function PipelineListPage() {
                   summary={summary}
                   agreedTotalCents={lead.agreedTotalCents}
                   href={`/portal/pipeline/${lead.id}`}
-                  badgeLabel={label}
-                  badgeVariant={variant}
-                  waitingSubline={listWaitingSubline(summary, "rep")}
+                  statusChip={statusChip}
                 />
               );
             })

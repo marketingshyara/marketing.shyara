@@ -443,6 +443,9 @@ Team → rep → project (`/portal/team/:repId/projects/:leadId`). Optional deep
 3. **Save amount** — toast “Commission amount saved”; summary updates.
 4. **Mark commission paid** — works when deployment is verified even if lead status was still `FINAL_PAID` (server promotes to `DEPLOYED`); success toast; pipeline shows commission verified; rep **Commission** page shows Paid.
 5. From **Reviews** COMMISSION row (`?stage=commission` deep link) — same flow as project page.
+6. **Lists after payout:** Rep Pipeline → project **not** on **Active clients**; appears under **Settled**. Admin Team → rep → **Active** empty for that project; **Completed** shows it.
+
+**Rep pipeline tabs:** Prospects (`view=leads`) · Active clients (in-flight, not `COMMISSION_PAID`) · Settled (`view=completed`).
 
 **build_demo (preview URL)** — detailed:
 

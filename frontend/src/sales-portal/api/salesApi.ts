@@ -61,7 +61,7 @@ export const salesApi = {
   leads: (params: {
     page?: number;
     pageSize?: number;
-    view?: "leads" | "clients";
+    view?: "leads" | "clients" | "completed";
     status?: LeadStatus;
     search?: string;
     from?: Date;

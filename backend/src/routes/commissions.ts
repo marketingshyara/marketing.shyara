@@ -7,6 +7,7 @@ import { HttpError } from "../errors/httpError.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings } from "../services/settings.js";
 import {
+  healLeadToCommissionPaidIfNeeded,
   loadLeadDetailForAdmin,
   promoteLeadToDeployedIfEligible
 } from "../services/commissionPayout.js";
@@ -123,7 +124,10 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
             throw new HttpError(404, "NOT_FOUND", "Commission not found.");
           }
           if (commission.isPaid) {
-            throw new HttpError(400, "ALREADY_PAID", "Commission is already marked paid.");
+            await healLeadToCommissionPaidIfNeeded(tx, commission.leadId);
+            const healed = await tx.commission.findUniqueOrThrow({ where: { id } });
+            const detail = await loadLeadDetailForAdmin(tx, commission.leadId);
+            return { commission: healed, ...detail };
           }
 
           const project = commission.lead.project;

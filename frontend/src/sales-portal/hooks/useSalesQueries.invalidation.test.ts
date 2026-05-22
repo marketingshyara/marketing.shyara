@@ -18,19 +18,21 @@ describe("invalidateQueryPrefixes", () => {
 });
 
 describe("invalidateLeadAndRep", () => {
-  it("invalidates only the scoped lead and rep keys", () => {
+  it("invalidates lead detail, all team-rep tabs for rep, and team-reps", () => {
     const qc = new QueryClient();
     const spy = vi.spyOn(qc, "invalidateQueries").mockResolvedValue();
     invalidateLeadAndRep(qc, { leadId: "lead-a", repId: "rep-1" });
     expect(spy).toHaveBeenCalledWith({ queryKey: qk.lead("lead-a") });
-    expect(spy).toHaveBeenCalledWith({ queryKey: [...qk.teamRep("rep-1"), "active"] });
     expect(spy).toHaveBeenCalledWith({ queryKey: qk.teamReps });
-    const leadOnlyCalls = spy.mock.calls.filter(
-      (c) => (c[0] as { queryKey: string[] }).queryKey[0] === "lead"
+    const predicateCall = spy.mock.calls.find(
+      (c) => typeof (c[0] as { predicate?: unknown }).predicate === "function"
     );
-    expect(leadOnlyCalls.every((c) => (c[0] as { queryKey: string[] }).queryKey[1] === "lead-a")).toBe(
-      true
-    );
+    expect(predicateCall).toBeDefined();
+    const predicate = (predicateCall![0] as { predicate: (q: { queryKey: unknown }) => boolean })
+      .predicate;
+    expect(predicate({ queryKey: ["team-rep", "rep-1", "active"] })).toBe(true);
+    expect(predicate({ queryKey: ["team-rep", "rep-1", "completed"] })).toBe(true);
+    expect(predicate({ queryKey: ["team-rep", "other", "active"] })).toBe(false);
   });
 });
 
