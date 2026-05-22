@@ -172,8 +172,6 @@ export function AdminProjectPage() {
 
   const runVerify = () => {
     if (!activeStage) return;
-    const apiKey = STAGE_TO_VERIFY[activeStage];
-    if (!apiKey) return;
     if (activeStage === "commission" && lead?.commission) {
       if (!lead.project?.deploymentVerifiedAt) {
         toast.error("Verify deployment before marking commission paid.");
@@ -181,14 +179,21 @@ export function AdminProjectPage() {
       }
       markCommissionPaid.mutate(lead.commission.id, {
         meta: { skipSuccessToast: true },
-        onSuccess: () => {
+        onSuccess: (data) => {
           closeModal();
-          toast.success("Commission marked paid.");
+          const next = getPipelineFocus(data.pipelineStages, "admin");
+          if (next.headline && next.kind !== "idle") {
+            toast.success(`Commission marked paid. Next: ${next.headline}`);
+          } else {
+            toast.success("Commission marked paid.");
+          }
         },
         onError: (e) => errToast(e, qc)
       });
       return;
     }
+    const apiKey = STAGE_TO_VERIFY[activeStage];
+    if (!apiKey) return;
     verifyStage.mutate(apiKey, {
       meta: { skipSuccessToast: true },
       onSuccess: (data) => {

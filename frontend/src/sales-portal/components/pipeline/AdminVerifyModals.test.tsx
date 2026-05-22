@@ -314,6 +314,31 @@ describe("AdminVerifyModals commission", () => {
     expect(screen.getByLabelText(/Payout amount/i)).toHaveValue("");
   });
 
+  it("calls onVerify when Mark commission paid is clicked", async () => {
+    const user = userEvent.setup();
+    const onVerify = vi.fn();
+    render(
+      <AdminVerifyModals
+        lead={leadWithCommission()}
+        activeStage="commission"
+        onClose={vi.fn()}
+        previewUrl=""
+        onPreviewUrlChange={vi.fn()}
+        verify={{ ...verifyStub, onVerify }}
+        onSavePreview={vi.fn()}
+        savePreviewPending={false}
+        onMarkDemoReady={vi.fn()}
+        markDemoPending={false}
+        commissionEditRupees="100"
+        onCommissionEditRupeesChange={vi.fn()}
+        onPatchCommission={vi.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Mark commission paid" }));
+    expect(onVerify).toHaveBeenCalledTimes(1);
+  });
+
   it("shows calculated estimate from portal settings", () => {
     render(
       <AdminVerifyModals
