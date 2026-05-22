@@ -26,7 +26,12 @@ describe("updateMany/deleteMany are scoped by primary key", () => {
       const text = readFileSync(file, "utf8");
       const blocks = text.match(/\.updateMany\(\{[\s\S]*?\}\)/g) ?? [];
       for (const block of blocks) {
-        if (!/\bwhere:\s*\{[\s\S]*?\bid\b/.test(block) && !/\bwhere:\s*\{[\s\S]*?leadId\b/.test(block)) {
+        const hasPrimaryKey =
+          /\bwhere:\s*\{[\s\S]*?\bid\b/.test(block) ||
+          /\bwhere:\s*\{[\s\S]*?leadId\b/.test(block);
+        // Bulk updates that spread a `where` built above (list filters + rep scope) stay scoped.
+        const spreadsScopedWhere = /\bwhere:\s*\{[\s\S]*?\.\.\.\s*where\b/.test(block);
+        if (!hasPrimaryKey && !spreadsScopedWhere) {
           offenders.push(`${file}: ${block.slice(0, 80)}…`);
         }
       }

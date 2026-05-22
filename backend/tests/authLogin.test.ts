@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildApp } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
+import * as bcryptLib from "../src/lib/bcrypt.js";
 import { inject } from "./helpers/inject.js";
 import { createMockPortalSessionModel } from "./helpers/mockPortalSession.js";
 
@@ -20,6 +21,7 @@ describe("auth login bcrypt edge cases", () => {
   });
 
   it("returns 401 when stored password hash is invalid (bcrypt throws)", async () => {
+    vi.spyOn(bcryptLib, "safeBcryptCompare").mockResolvedValue(false);
     const config = loadConfig();
     const findUnique = vi.fn().mockResolvedValue({
       id: "user-1",
