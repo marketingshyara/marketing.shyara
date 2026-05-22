@@ -26,9 +26,10 @@ const REP_ONLY_PATCH_FIELDS: (keyof PatchLeadBody)[] = [
   "markAccountsReady"
 ];
 
-export function assertAdminLeadPatchBody(body: PatchLeadBody): void {
+/** Reject rep-only PATCH fields present in the raw request body (not Zod-parsed defaults). */
+export function assertAdminLeadPatchBody(raw: Record<string, unknown>): void {
   for (const key of REP_ONLY_PATCH_FIELDS) {
-    if (body[key] !== undefined) {
+    if (Object.prototype.hasOwnProperty.call(raw, key) && raw[key] !== undefined) {
       throw new HttpError(
         403,
         "FORBIDDEN",

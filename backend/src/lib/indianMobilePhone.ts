@@ -24,8 +24,15 @@ export const indianMobilePhoneSchema = z
   .refine((d) => d.length === 10, "Enter a 10-digit mobile number.")
   .refine(isValidIndianMobile, "Enter a valid Indian mobile number (starts with 6–9).");
 
-/** Patch/create flows that allow clearing the phone. */
+/**
+ * PATCH optional phone: omit key = no change; null/"" = clear; string = validate & store.
+ * Must not map missing keys to null (Zod would otherwise inject clientPhone on unrelated PATCHes).
+ */
 export const optionalIndianMobilePhoneSchema = z.preprocess(
-  (v) => (v === "" || v === null || v === undefined ? null : v),
-  z.union([indianMobilePhoneSchema, z.null()])
+  (v) => {
+    if (v === undefined) return undefined;
+    if (v === "" || v === null) return null;
+    return v;
+  },
+  z.union([indianMobilePhoneSchema, z.null()]).optional()
 );

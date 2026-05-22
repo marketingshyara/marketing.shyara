@@ -25,6 +25,10 @@ export const indianMobilePhoneSchema = z
   .refine(isValidIndianMobile, "Enter a valid Indian mobile number (starts with 6–9).");
 
 export const optionalIndianMobilePhoneSchema = z.preprocess(
-  (v) => (v === "" || v === null || v === undefined ? null : v),
-  z.union([indianMobilePhoneSchema, z.null()])
+  (v) => {
+    if (v === undefined) return undefined;
+    if (v === "" || v === null) return null;
+    return v;
+  },
+  z.union([indianMobilePhoneSchema, z.null()]).optional()
 );

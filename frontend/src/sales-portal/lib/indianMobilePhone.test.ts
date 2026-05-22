@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLeadSchema } from "../validation/schemas";
+import { createLeadSchema, patchLeadSchema } from "../validation/schemas";
 import { normalizeIndianMobileInput } from "./indianMobilePhone";
 
 describe("indianMobilePhone (frontend)", () => {
@@ -22,5 +22,11 @@ describe("indianMobilePhone (frontend)", () => {
       notes: ""
     });
     expect(parsed.clientPhone).toBe("9876543210");
+  });
+
+  it("patchLeadSchema does not inject clientPhone when only previewUrl is sent", () => {
+    const parsed = patchLeadSchema.parse({ previewUrl: "example.com/demo" });
+    expect(parsed.previewUrl).toBe("https://example.com/demo");
+    expect(parsed).not.toHaveProperty("clientPhone");
   });
 });

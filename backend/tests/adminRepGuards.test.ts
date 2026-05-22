@@ -22,10 +22,8 @@ describe("admin rep mutation guards", () => {
     expect(() => assertSalesRepActor(rep as never)).not.toThrow();
   });
 
-  it("assertAdminLeadPatchBody rejects rep-only fields", () => {
-    expect(() =>
-      assertAdminLeadPatchBody({ clientName: "Acme" })
-    ).toThrow(HttpError);
+  it("assertAdminLeadPatchBody rejects rep-only fields in raw body", () => {
+    expect(() => assertAdminLeadPatchBody({ clientName: "Acme" })).toThrow(HttpError);
     expect(() =>
       assertAdminLeadPatchBody({ whatsappGroupLink: "https://chat.whatsapp.com/x" })
     ).toThrow(HttpError);
@@ -39,7 +37,8 @@ describe("admin rep mutation guards", () => {
   });
 
   it("allows admin previewUrl-only PATCH after schema parse", () => {
-    const body = patchLeadBodySchema.parse({ previewUrl: "test.com" });
-    expect(() => assertAdminLeadPatchBody(body)).not.toThrow();
+    const raw = { previewUrl: "test.com" };
+    patchLeadBodySchema.parse(raw);
+    expect(() => assertAdminLeadPatchBody(raw)).not.toThrow();
   });
 });

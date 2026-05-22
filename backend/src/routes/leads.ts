@@ -380,9 +380,10 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const user = request.currentUser!;
       const { id } = request.params as { id: string };
-      const body = patchLeadBodySchema.parse(request.body);
+      const rawBody = (request.body ?? {}) as Record<string, unknown>;
+      const body = patchLeadBodySchema.parse(rawBody);
       if (user.role === UserRole.ADMIN) {
-        assertAdminLeadPatchBody(body);
+        assertAdminLeadPatchBody(rawBody);
       }
 
       const result = await app.prisma.$transaction(async (tx) => {

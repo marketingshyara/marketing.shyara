@@ -42,4 +42,15 @@ describe("patchLeadBodySchema previewUrl", () => {
     expect(body.previewUrl).toBe("https://test.com/");
     expect(body).not.toHaveProperty("whatsappGroupLink");
   });
+
+  it("does not inject clientPhone when only previewUrl is sent", () => {
+    const body = patchLeadBodySchema.parse({ previewUrl: "test.com" });
+    expect(body.previewUrl).toBe("https://test.com/");
+    expect(body).not.toHaveProperty("clientPhone");
+  });
+
+  it("still accepts explicit clientPhone null on rep patch", () => {
+    const body = patchLeadBodySchema.parse({ clientPhone: null });
+    expect(body.clientPhone).toBeNull();
+  });
 });
