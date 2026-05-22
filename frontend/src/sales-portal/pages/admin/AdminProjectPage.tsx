@@ -36,6 +36,7 @@ import { leadStatusLabel } from "../../lib/copy";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { toastIfStageBlocked } from "../../lib/pipelineStageGuard";
 import { getPipelineFocus } from "../../lib/pipelineCopy";
+import { adminCanOpenStageModal } from "../../lib/adminPipelineStageClick";
 import { toast } from "sonner";
 
 const STAGE_TO_VERIFY: Partial<Record<PipelineStageKey, PipelineStageVerifyKey>> = {
@@ -53,13 +54,6 @@ const STAGE_REJECTABLE: Partial<Record<PipelineStageKey, PipelineStageVerifyKey>
   accounts_ready: "accounts_ready",
   deployment_verify: "deployment"
 };
-
-function isAdminActionable(stage: PipelineStageView): boolean {
-  return (
-    stage.adminActor &&
-    (stage.state === "actionable" || stage.state === "pending_admin")
-  );
-}
 
 export function AdminProjectPage() {
   const { repId, leadId } = useParams<{ repId: string; leadId: string }>();
@@ -124,6 +118,13 @@ export function AdminProjectPage() {
         setVerifyPayment(pendingAdvance);
         return;
       }
+      const verifiedAdvancePayment = lead.payments?.find(
+        (p) => p.kind === "ADVANCE" && p.verificationStatus === "VERIFIED"
+      );
+      if (verifiedAdvancePayment) {
+        setVerifyPayment(verifiedAdvancePayment);
+        return;
+      }
       const advStage = stages.find((s) => s.key === "advance_verify");
       if (advStage?.state === "actionable" || advStage?.state === "pending_admin") {
         toast.error("No pending advance payment found. Refresh the page.");
@@ -133,6 +134,13 @@ export function AdminProjectPage() {
     if (key === "final_verify") {
       if (pendingFinal) {
         setVerifyPayment(pendingFinal);
+        return;
+      }
+      const verifiedFinalPayment = lead.payments?.find(
+        (p) => p.kind === "FINAL" && p.verificationStatus === "VERIFIED"
+      );
+      if (verifiedFinalPayment) {
+        setVerifyPayment(verifiedFinalPayment);
         return;
       }
       const finStage = stages.find((s) => s.key === "final_verify");
@@ -164,7 +172,7 @@ export function AdminProjectPage() {
       setActiveStage(key);
       return;
     }
-    if (isAdminActionable(stage)) {
+    if (adminCanOpenStageModal(stage)) {
       setActiveStage(key);
     }
   };

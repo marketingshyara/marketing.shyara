@@ -37,6 +37,26 @@ describe("PipelineFocusCard", () => {
     expect(screen.getByRole("button", { name: /view submission/i })).toBeInTheDocument();
   });
 
+  it("calls onPrimaryAction for idle View last step (admin caught up)", async () => {
+    const user = userEvent.setup();
+    const onPrimary = vi.fn();
+    render(
+      <PipelineFocusCard
+        stages={[
+          stage("lead_capture", "verified", { adminActor: false }),
+          stage("accounts_ready", "verified", {
+            repActor: true,
+            adminActor: true
+          })
+        ]}
+        actorMode="admin"
+        onPrimaryAction={onPrimary}
+      />
+    );
+    await user.click(screen.getByRole("button", { name: /view last step/i }));
+    expect(onPrimary).toHaveBeenCalledWith("accounts_ready");
+  });
+
   it("calls onPrimaryAction for admin actionable stage", async () => {
     const user = userEvent.setup();
     const onPrimary = vi.fn();
