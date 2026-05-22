@@ -15,7 +15,11 @@ import { clampPage } from "../lib/pagination.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
 import { assertManualTransition, commissionAmountCents } from "../services/leadFsm.js";
 import { assertLeadAccess } from "../services/leadAccess.js";
-import { assertAdminLeadPatchBody, assertSalesRepActor } from "../services/leadMutations.js";
+import {
+  assertAdminLeadPatchBody,
+  assertSalesRepActor,
+  wasPatchFieldSent
+} from "../services/leadMutations.js";
 import { assertLeadMutable } from "../services/leadGuards.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings, getRequiredLeadStatusForPaymentKind } from "../services/settings.js";
@@ -399,10 +403,12 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         assertLeadMutable(lead, settings);
         const commission = await tx.commission.findUnique({ where: { leadId: id } });
 
-        await assertWebsiteTemplateExists(tx, body.websiteTemplateId);
+        if (wasPatchFieldSent(rawBody, "websiteTemplateId")) {
+          await assertWebsiteTemplateExists(tx, body.websiteTemplateId);
+        }
 
         let assignedToUserId: string | null | undefined = undefined;
-        if (body.assignedToUserId !== undefined) {
+        if (wasPatchFieldSent(rawBody, "assignedToUserId") && body.assignedToUserId !== undefined) {
           if (user.role !== UserRole.ADMIN) {
             throw new HttpError(403, "FORBIDDEN", "Only admins can change lead assignment.");
           }
@@ -424,7 +430,11 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           }
         }
 
-        if (body.agreedTotalCents != null && body.agreedTotalCents < settings.minAgreedTotalCents) {
+        if (
+          wasPatchFieldSent(rawBody, "agreedTotalCents") &&
+          body.agreedTotalCents != null &&
+          body.agreedTotalCents < settings.minAgreedTotalCents
+        ) {
           throw new HttpError(
             400,
             "MIN_PRICE",
@@ -432,20 +442,25 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           );
         }
 
-        if (body.whatsappGroupLink !== undefined) {
+        if (wasPatchFieldSent(rawBody, "whatsappGroupLink") && body.whatsappGroupLink !== undefined) {
           if (!hasVerifiedAdvance(lead)) {
             throw new HttpError(400, "INVALID_STATE", "Advance must be verified before WhatsApp link.");
           }
         }
 
-        if (body.markDemoFinalized === true) {
+        if (wasPatchFieldSent(rawBody, "markDemoFinalized") && body.markDemoFinalized === true) {
           const project = await tx.project.findUnique({ where: { leadId: id } });
           if (!project?.previewUrl) {
             throw new HttpError(400, "INVALID_STATE", "Demo link must be ready before finalizing.");
           }
         }
 
-        if (body.markAccountsReady === true && !lead.demoFinalizedVerifiedAt && body.markDemoFinalized !== true) {
+        if (
+          wasPatchFieldSent(rawBody, "markAccountsReady") &&
+          body.markAccountsReady === true &&
+          !lead.demoFinalizedVerifiedAt &&
+          !(wasPatchFieldSent(rawBody, "markDemoFinalized") && body.markDemoFinalized === true)
+        ) {
           throw new HttpError(400, "INVALID_STATE", "Admin must verify demo approval before accounts ready.");
         }
 
@@ -454,7 +469,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           advanceAmountCents?: number | null;
           finalQuoteCents?: number | null;
         } = {};
-        if (body.agreedTotalCents !== undefined) {
+        if (wasPatchFieldSent(rawBody, "agreedTotalCents") && body.agreedTotalCents !== undefined) {
           if (body.agreedTotalCents === null) {
             agreedPatch = { agreedTotalCents: null };
           } else {
@@ -471,41 +486,61 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         }
 
         const data: Prisma.LeadUncheckedUpdateManyInput = {
-          ...(body.clientName !== undefined ? { clientName: body.clientName } : {}),
-          ...(body.clientEmail !== undefined ? { clientEmail: body.clientEmail } : {}),
-          ...(body.clientPhone !== undefined ? { clientPhone: body.clientPhone } : {}),
-          ...(body.notes !== undefined ? { notes: body.notes } : {}),
-          ...agreedPatch,
-          ...(body.agreedTotalCents === undefined && body.advanceAmountCents !== undefined
+          ...(wasPatchFieldSent(rawBody, "clientName") && body.clientName !== undefined
+            ? { clientName: body.clientName }
+            : {}),
+          ...(wasPatchFieldSent(rawBody, "clientEmail") && body.clientEmail !== undefined
+            ? { clientEmail: body.clientEmail }
+            : {}),
+          ...(wasPatchFieldSent(rawBody, "clientPhone") && body.clientPhone !== undefined
+            ? { clientPhone: body.clientPhone }
+            : {}),
+          ...(wasPatchFieldSent(rawBody, "notes") && body.notes !== undefined ? { notes: body.notes } : {}),
+          ...(wasPatchFieldSent(rawBody, "agreedTotalCents") ? agreedPatch : {}),
+          ...(wasPatchFieldSent(rawBody, "advanceAmountCents") &&
+          !wasPatchFieldSent(rawBody, "agreedTotalCents") &&
+          body.advanceAmountCents !== undefined
             ? { advanceAmountCents: body.advanceAmountCents }
             : {}),
-          ...(body.agreedTotalCents === undefined && body.finalQuoteCents !== undefined
+          ...(wasPatchFieldSent(rawBody, "finalQuoteCents") &&
+          !wasPatchFieldSent(rawBody, "agreedTotalCents") &&
+          body.finalQuoteCents !== undefined
             ? { finalQuoteCents: body.finalQuoteCents }
             : {}),
-          ...(body.websiteTemplateId !== undefined ? { websiteTemplateId: body.websiteTemplateId } : {}),
-          ...(body.whatsappGroupLink !== undefined
+          ...(wasPatchFieldSent(rawBody, "websiteTemplateId") && body.websiteTemplateId !== undefined
+            ? { websiteTemplateId: body.websiteTemplateId }
+            : {}),
+          ...(wasPatchFieldSent(rawBody, "whatsappGroupLink") && body.whatsappGroupLink !== undefined
             ? { whatsappGroupLink: body.whatsappGroupLink }
             : {}),
-          ...(body.markDemoFinalized === true ? { demoFinalizedAt: new Date() } : {}),
-          ...(body.markAccountsReady === true ? { accountsReadyAt: new Date() } : {}),
+          ...(wasPatchFieldSent(rawBody, "markDemoFinalized") && body.markDemoFinalized === true
+            ? { demoFinalizedAt: new Date() }
+            : {}),
+          ...(wasPatchFieldSent(rawBody, "markAccountsReady") && body.markAccountsReady === true
+            ? { accountsReadyAt: new Date() }
+            : {}),
           ...(assignedToUserId !== undefined ? { assignedToUserId } : {})
         };
 
         const declineClearKeys: StageDeclineNoteKey[] = [];
-        if (body.whatsappGroupLink) {
+        if (wasPatchFieldSent(rawBody, "whatsappGroupLink") && body.whatsappGroupLink) {
           declineClearKeys.push("whatsapp_group");
         }
-        if (body.markDemoFinalized === true) {
+        if (wasPatchFieldSent(rawBody, "markDemoFinalized") && body.markDemoFinalized === true) {
           declineClearKeys.push("demo_finalized");
         }
-        if (body.markAccountsReady === true) {
+        if (wasPatchFieldSent(rawBody, "markAccountsReady") && body.markAccountsReady === true) {
           declineClearKeys.push("accounts_ready");
         }
         if (declineClearKeys.length > 0) {
           data.stageDeclineNotes = stageDeclineNotesAfterClear(lead, ...declineClearKeys);
         }
 
-        if (body.previewUrl !== undefined && user.role === UserRole.ADMIN) {
+        if (
+          wasPatchFieldSent(rawBody, "previewUrl") &&
+          body.previewUrl !== undefined &&
+          user.role === UserRole.ADMIN
+        ) {
           let project = await tx.project.findUnique({ where: { leadId: id } });
           if (!project) {
             if (!hasVerifiedAdvance(lead)) {
@@ -564,8 +599,12 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
             }
           }
           if (
-            (settings.commissionBasis === "FINAL_QUOTE" && body.finalQuoteCents !== undefined) ||
-            (settings.commissionBasis === "AGREED_TOTAL" && body.agreedTotalCents !== undefined)
+            (settings.commissionBasis === "FINAL_QUOTE" &&
+              wasPatchFieldSent(rawBody, "finalQuoteCents") &&
+              body.finalQuoteCents !== undefined) ||
+            (settings.commissionBasis === "AGREED_TOTAL" &&
+              wasPatchFieldSent(rawBody, "agreedTotalCents") &&
+              body.agreedTotalCents !== undefined)
           ) {
             const amountCents = commissionAmountCents(updated, 0, settings);
             if (amountCents !== commission.amountCents) {
@@ -603,7 +642,11 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         });
 
         if (user.role === UserRole.SALES_REP) {
-          if (body.whatsappGroupLink !== undefined && body.whatsappGroupLink) {
+          if (
+            wasPatchFieldSent(rawBody, "whatsappGroupLink") &&
+            body.whatsappGroupLink !== undefined &&
+            body.whatsappGroupLink
+          ) {
             await notifyActiveAdmins(tx, {
               leadId: id,
               kind: PortalNotificationKind.REP_SUBMITTED,
@@ -612,7 +655,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               excludeUserId: user.id
             });
           }
-          if (body.markDemoFinalized === true) {
+          if (wasPatchFieldSent(rawBody, "markDemoFinalized") && body.markDemoFinalized === true) {
             await notifyActiveAdmins(tx, {
               leadId: id,
               kind: PortalNotificationKind.REP_SUBMITTED,
@@ -621,7 +664,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               excludeUserId: user.id
             });
           }
-          if (body.markAccountsReady === true) {
+          if (wasPatchFieldSent(rawBody, "markAccountsReady") && body.markAccountsReady === true) {
             await notifyActiveAdmins(tx, {
               leadId: id,
               kind: PortalNotificationKind.REP_SUBMITTED,

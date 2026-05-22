@@ -13,5 +13,6 @@ alwaysApply: true
 - Never implement read-then-write checks for uniqueness/invariants without DB-level enforcement.
 - Keep machine-readable error codes stable and explicit (`PASSWORD_CHANGE_REQUIRED`, `PENDING_PAYMENT`, etc.).
 - Changes to route request/response shape must include matching tests.
+- PATCH optional Zod fields must not map omitted keys to `null`; admin/rep guards and DB updates must use **raw request keys** (`wasPatchFieldSent`), not parsed defaults alone.
 - For settings-dependent mutations, read settings in the same transaction scope used for the mutation.
 - For admin/permission invariants, include concurrent-modification handling (`409` style errors where appropriate).

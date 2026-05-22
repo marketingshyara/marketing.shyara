@@ -12,7 +12,8 @@ export function assertSalesRepActor(user: User): void {
 
 type PatchLeadBody = z.infer<typeof patchLeadBodySchema>;
 
-const REP_ONLY_PATCH_FIELDS: (keyof PatchLeadBody)[] = [
+/** Rep-owned lead fields — admins must use verify/reject flows instead of PATCH. */
+export const REP_ONLY_LEAD_PATCH_FIELDS = [
   "clientName",
   "clientEmail",
   "clientPhone",
@@ -24,12 +25,17 @@ const REP_ONLY_PATCH_FIELDS: (keyof PatchLeadBody)[] = [
   "whatsappGroupLink",
   "markDemoFinalized",
   "markAccountsReady"
-];
+] as const satisfies readonly (keyof PatchLeadBody)[];
+
+/** True when the client sent this key (omit vs null vs value). Guards against Zod injecting omitted keys. */
+export function wasPatchFieldSent(raw: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(raw, key) && raw[key] !== undefined;
+}
 
 /** Reject rep-only PATCH fields present in the raw request body (not Zod-parsed defaults). */
 export function assertAdminLeadPatchBody(raw: Record<string, unknown>): void {
-  for (const key of REP_ONLY_PATCH_FIELDS) {
-    if (Object.prototype.hasOwnProperty.call(raw, key) && raw[key] !== undefined) {
+  for (const key of REP_ONLY_LEAD_PATCH_FIELDS) {
+    if (wasPatchFieldSent(raw, key)) {
       throw new HttpError(
         403,
         "FORBIDDEN",

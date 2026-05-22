@@ -29,4 +29,10 @@ describe("indianMobilePhone (frontend)", () => {
     expect(parsed.previewUrl).toBe("https://example.com/demo");
     expect(parsed).not.toHaveProperty("clientPhone");
   });
+
+  it("patchLeadSchema does not inject whatsappGroupLink when only assignedToUserId is sent", () => {
+    const parsed = patchLeadSchema.parse({ assignedToUserId: "rep-1" });
+    expect(parsed.assignedToUserId).toBe("rep-1");
+    expect(parsed).not.toHaveProperty("whatsappGroupLink");
+  });
 });

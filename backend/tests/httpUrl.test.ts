@@ -49,6 +49,13 @@ describe("patchLeadBodySchema previewUrl", () => {
     expect(body).not.toHaveProperty("clientPhone");
   });
 
+  it("does not inject clientEmail when only assignedToUserId is sent", () => {
+    const body = patchLeadBodySchema.parse({ assignedToUserId: "rep-abc" });
+    expect(body.assignedToUserId).toBe("rep-abc");
+    expect(body).not.toHaveProperty("clientEmail");
+    expect(body).not.toHaveProperty("whatsappGroupLink");
+  });
+
   it("still accepts explicit clientPhone null on rep patch", () => {
     const body = patchLeadBodySchema.parse({ clientPhone: null });
     expect(body.clientPhone).toBeNull();

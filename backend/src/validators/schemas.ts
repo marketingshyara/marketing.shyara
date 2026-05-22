@@ -87,8 +87,13 @@ export const leadsListQuerySchema = paginationQuerySchema
     { message: "Use view=clients or view=completed instead of status for converted lists." }
   );
 
+/** Omit key = no change; null/"" = clear; string = validate (must not map missing keys to null). */
 const optionalLeadEmail = z.preprocess(
-  (v) => (v === "" ? null : v),
+  (v) => {
+    if (v === undefined) return undefined;
+    if (v === "" || v === null) return null;
+    return v;
+  },
   z.union([z.string().email(), z.null()]).optional()
 );
 
