@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { optionalHttpUrlSchema } from "../lib/httpUrl";
+import {
+  indianMobilePhoneSchema,
+  optionalIndianMobilePhoneSchema
+} from "../lib/indianMobilePhone";
 
 export const userRoleSchema = z.enum(["ADMIN", "SALES_REP"]);
 export const leadStatusSchema = z.enum([
@@ -74,9 +78,9 @@ export const resetPasswordSchema = z.object({
 });
 
 export const createLeadSchema = z.object({
-  clientName: z.string().min(1).max(200),
-  clientEmail: z.union([z.string().email(), z.literal("")]).optional(),
-  clientPhone: z.string().max(40).optional().nullable(),
+  clientName: z.string().min(1, "Client name is required.").max(200),
+  clientEmail: z.union([z.string().email("Enter a valid email."), z.literal("")]).optional(),
+  clientPhone: indianMobilePhoneSchema,
   notes: z.string().max(8000).optional().nullable(),
   agreedTotalCents: z.number().int().min(0).optional().nullable(),
   advanceAmountCents: z.number().int().min(0).optional().nullable(),
@@ -88,7 +92,7 @@ export const createLeadSchema = z.object({
 export const patchLeadSchema = z.object({
   clientName: z.string().min(1).max(200).optional(),
   clientEmail: z.union([z.string().email(), z.literal("")]).optional().nullable(),
-  clientPhone: z.string().max(40).optional().nullable(),
+  clientPhone: optionalIndianMobilePhoneSchema,
   notes: z.string().max(8000).optional().nullable(),
   agreedTotalCents: z.number().int().min(0).optional().nullable(),
   advanceAmountCents: z.number().int().min(0).optional().nullable(),

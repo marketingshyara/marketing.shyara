@@ -36,6 +36,8 @@ import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { Badge } from "@/components/ui/badge";
 import { leadStatusLabel } from "../../lib/copy";
+import { IndianMobileField } from "../../components/IndianMobileField";
+import { isValidIndianMobile, normalizeIndianMobileInput } from "../../lib/indianMobilePhone";
 
 export function PipelineDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -60,6 +62,7 @@ export function PipelineDetailPage() {
   const [whatsappLink, setWhatsappLink] = useState("");
   const [dueRupees, setDueRupees] = useState("");
   const [deployUrl, setDeployUrl] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   useEffect(() => {
     setActiveStage(null);
@@ -118,6 +121,7 @@ export function PipelineDetailPage() {
       setClientName(lead.clientName);
       setClientPhone(lead.clientPhone ?? "");
       setNotes(lead.notes ?? "");
+      setPhoneError(null);
     }
     if (key === "convert_deal") {
       setTemplateId(lead.websiteTemplateId ?? "");
@@ -218,16 +222,22 @@ export function PipelineDetailPage() {
             <Button
               className="min-h-11 w-full sm:w-auto"
               disabled={patch.isPending}
-              onClick={() =>
+              onClick={() => {
+                const digits = normalizeIndianMobileInput(clientPhone);
+                if (digits.length > 0 && !isValidIndianMobile(digits)) {
+                  setPhoneError("Enter a valid 10-digit mobile number.");
+                  return;
+                }
+                setPhoneError(null);
                 patch.mutate(
                   {
                     clientName: clientName.trim(),
-                    clientPhone: clientPhone.trim() || null,
+                    clientPhone: digits || null,
                     notes: notes.trim() || null
                   },
                   { onSuccess: closeModal }
-                )
-              }
+                );
+              }}
             >
               Save
             </Button>
@@ -239,10 +249,16 @@ export function PipelineDetailPage() {
             <Label htmlFor="edit-name">Name</Label>
             <Input id="edit-name" className="min-h-11" value={clientName} onChange={(e) => setClientName(e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-phone">Phone</Label>
-            <Input id="edit-phone" className="min-h-11" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} />
-          </div>
+          <IndianMobileField
+            id="edit-phone"
+            label="Mobile number"
+            value={clientPhone}
+            onChange={(v) => {
+              setClientPhone(v);
+              if (phoneError) setPhoneError(null);
+            }}
+            error={phoneError ?? undefined}
+          />
           <div className="space-y-2">
             <Label htmlFor="edit-notes">Notes</Label>
             <Textarea id="edit-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />

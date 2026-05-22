@@ -1,6 +1,10 @@
 import { LeadStatus, PaymentKind, PaymentVerificationStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { optionalHttpUrlSchema, requiredHttpUrlSchema } from "../lib/httpUrl.js";
+import {
+  indianMobilePhoneSchema,
+  optionalIndianMobilePhoneSchema
+} from "../lib/indianMobilePhone.js";
 
 export const loginBodySchema = z.object({
   email: z.string().email(),
@@ -91,7 +95,7 @@ const optionalLeadEmail = z.preprocess(
 export const createLeadBodySchema = z.object({
   clientName: z.string().min(1).max(200),
   clientEmail: optionalLeadEmail,
-  clientPhone: z.string().max(40).optional().nullable(),
+  clientPhone: indianMobilePhoneSchema,
   notes: z.string().max(8000).optional().nullable(),
   agreedTotalCents: z.number().int().min(0).optional().nullable(),
   advanceAmountCents: z.number().int().min(0).optional().nullable(),
@@ -103,7 +107,7 @@ export const createLeadBodySchema = z.object({
 export const patchLeadBodySchema = z.object({
   clientName: z.string().min(1).max(200).optional(),
   clientEmail: optionalLeadEmail,
-  clientPhone: z.string().max(40).optional().nullable(),
+  clientPhone: optionalIndianMobilePhoneSchema,
   notes: z.string().max(8000).optional().nullable(),
   agreedTotalCents: z.number().int().min(0).optional().nullable(),
   advanceAmountCents: z.number().int().min(0).optional().nullable(),

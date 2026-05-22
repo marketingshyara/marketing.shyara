@@ -5,6 +5,7 @@ describe("optionalLeadEmail (create/patch)", () => {
   it("maps empty string clientEmail to null on create", () => {
     const body = createLeadBodySchema.parse({
       clientName: "Acme",
+      clientPhone: "9876543210",
       clientEmail: ""
     });
     expect(body.clientEmail).toBeNull();

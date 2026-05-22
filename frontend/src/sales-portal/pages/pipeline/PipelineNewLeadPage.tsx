@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useCreateLeadMutation } from "../../hooks/useSalesQueries";
@@ -8,20 +9,22 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NewLeadStepper } from "../../components/ui/NewLeadStepper";
+import { IndianMobileField } from "../../components/IndianMobileField";
+import { createLeadSchema } from "../../validation/schemas";
+import { z } from "zod";
 
-type FormValues = {
-  clientName: string;
-  clientPhone: string;
-  clientEmail: string;
-  notes: string;
-};
+type FormValues = z.infer<typeof createLeadSchema>;
 
 export function PipelineNewLeadPage() {
   const navigate = useNavigate();
   const create = useCreateLeadMutation();
   const form = useForm<FormValues>({
-    defaultValues: { clientName: "", clientPhone: "", clientEmail: "", notes: "" }
+    resolver: zodResolver(createLeadSchema),
+    defaultValues: { clientName: "", clientPhone: "", clientEmail: "", notes: "" },
+    mode: "onBlur"
   });
+
+  const phoneError = form.formState.errors.clientPhone?.message;
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
@@ -45,9 +48,9 @@ export function PipelineNewLeadPage() {
               create.mutate(
                 {
                   clientName: values.clientName.trim(),
-                  clientPhone: values.clientPhone.trim() || null,
-                  clientEmail: values.clientEmail.trim() || null,
-                  notes: values.notes.trim() || null
+                  clientPhone: values.clientPhone,
+                  clientEmail: values.clientEmail?.trim() || null,
+                  notes: values.notes?.trim() || null
                 },
                 {
                   onSuccess: (res) => navigate(`/portal/pipeline/${res.lead.id}`)
@@ -57,21 +60,52 @@ export function PipelineNewLeadPage() {
           >
             <div className="space-y-2">
               <Label htmlFor="new-client-name">Client name</Label>
-              <Input id="new-client-name" className="min-h-11" {...form.register("clientName", { required: true })} />
+              <Input
+                id="new-client-name"
+                className="min-h-11"
+                aria-invalid={!!form.formState.errors.clientName}
+                {...form.register("clientName")}
+              />
+              {form.formState.errors.clientName ? (
+                <p className="text-xs text-destructive" role="alert">
+                  {form.formState.errors.clientName.message}
+                </p>
+              ) : null}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="new-client-phone">Phone</Label>
-              <Input id="new-client-phone" className="min-h-11" {...form.register("clientPhone")} />
-            </div>
+            <IndianMobileField
+              id="new-client-phone"
+              required
+              value={form.watch("clientPhone")}
+              onChange={(v) =>
+                form.setValue("clientPhone", v, { shouldValidate: true, shouldDirty: true })
+              }
+              onBlur={() => void form.trigger("clientPhone")}
+              error={phoneError}
+            />
             <div className="space-y-2">
               <Label htmlFor="new-client-email">Email (optional)</Label>
-              <Input id="new-client-email" type="email" className="min-h-11" {...form.register("clientEmail")} />
+              <Input
+                id="new-client-email"
+                type="email"
+                className="min-h-11"
+                autoComplete="email"
+                {...form.register("clientEmail")}
+              />
+              {form.formState.errors.clientEmail ? (
+                <p className="text-xs text-destructive" role="alert">
+                  {form.formState.errors.clientEmail.message}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-notes">Notes (optional)</Label>
               <Textarea id="new-notes" {...form.register("notes")} />
             </div>
-            <Button type="submit" className="min-h-11 w-full" disabled={create.isPending}>
+            <Button
+              type="submit"
+              className="min-h-11 w-full"
+              disabled={create.isPending}
+            >
               {create.isPending ? "Saving…" : "Add lead"}
             </Button>
           </form>
