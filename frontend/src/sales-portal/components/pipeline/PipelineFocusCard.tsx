@@ -1,12 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import {
-  getPipelineFocus,
-  type PipelineActorMode,
-  whoActsNext
-} from "../../lib/pipelineCopy";
+import { getPipelineFocus, type PipelineActorMode } from "../../lib/pipelineCopy";
 import type { PipelineStageKey, PipelineStageView } from "../../types";
+import { PortalStatusChip } from "../ui/PortalStatusChip";
+import { PortalWhyBlocked } from "../ui/PortalWhyBlocked";
 
 type Props = {
   stages: PipelineStageView[];
@@ -38,31 +36,13 @@ export function PipelineFocusCard({ stages, actorMode, onPrimaryAction, onViewSu
         focus.kind === "idle" && "border-muted"
       )}
     >
-      <CardHeader className="pb-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {focus.kind === "idle" ? "Status" : "What to do now"}
-        </p>
+      <CardHeader className="space-y-2 pb-2">
+        <PortalStatusChip kind={focus.statusChip.kind} label={focus.statusChip.label} />
         <CardTitle className="break-words text-lg md:text-xl">{focus.headline}</CardTitle>
-        {focus.stage ? (
-          <CardDescription className="break-words text-sm leading-relaxed">
-            {focus.description}
-          </CardDescription>
+        {focus.detail ? (
+          <p className="text-sm text-muted-foreground">{focus.detail}</p>
         ) : null}
-        {focus.stage && focus.kind !== "idle" ? (
-          <p className="text-xs text-muted-foreground pt-1">
-            {whoActsNext(focus.stage, actorMode)}
-          </p>
-        ) : null}
-        {focus.kind === "waiting" && actorMode === "rep" ? (
-          <p className="text-xs text-muted-foreground pt-1">
-            You cannot change this step until admin approves.
-          </p>
-        ) : null}
-        {focus.kind === "waiting" && actorMode === "admin" ? (
-          <p className="text-xs text-muted-foreground pt-1">
-            The rep submitted this step. Review and approve or decline.
-          </p>
-        ) : null}
+        <PortalWhyBlocked reasons={focus.expandReasons} />
       </CardHeader>
       {focus.primaryLabel && focus.stageKey ? (
         <CardContent className="flex flex-col gap-2 pt-0 sm:flex-row sm:flex-wrap">

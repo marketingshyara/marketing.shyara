@@ -49,7 +49,8 @@ export function RepProjectsPage() {
       </Button>
       <PortalPageHeader
         title={rep.displayName ?? rep.email}
-        description={rep.email}
+        variant="operational"
+        stat={`${projects.length} projects`}
         toolbar={
           <DataStaleToolbar
             dataUpdatedAt={qr.dataUpdatedAt}

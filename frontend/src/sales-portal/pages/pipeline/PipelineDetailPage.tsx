@@ -14,8 +14,8 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { PipelineFocusCard } from "../../components/pipeline/PipelineFocusCard";
+import { StageModalWaitingFooter } from "../../components/pipeline/StageModalWaiting";
 import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
@@ -34,7 +34,6 @@ import { toastIfStageBlocked } from "../../lib/pipelineStageGuard";
 import type { PipelineStageKey } from "../../types";
 import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
 import { formatTemplateOption } from "../../lib/templateLabel";
-import { stageNextStepHint } from "../../lib/pipelineCopy";
 import { Badge } from "@/components/ui/badge";
 import { leadStatusLabel } from "../../lib/copy";
 
@@ -104,15 +103,10 @@ export function PipelineDetailPage() {
     );
   }
 
-  const idleBuild = stages.find((s) => s.key === "build_demo")?.hint;
-
   const closeModal = () => {
     setActiveStage(null);
     setReadOnlyModal(false);
   };
-
-  const repModalHint =
-    activeStage && !readOnlyModal ? stageNextStepHint(activeStage, "rep") : undefined;
 
   const handleStageClick = (key: PipelineStageKey) => {
     if (!lead) return;
@@ -188,15 +182,6 @@ export function PipelineDetailPage() {
         onViewSubmission={handleStageClick}
       />
 
-      {idleBuild ? (
-        <Alert>
-          <AlertTitle>With technical team</AlertTitle>
-          <AlertDescription>
-            Technical team is preparing the demo link. You will be notified when it is ready.
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
       <PipelineStepsAccordion
         stages={stages}
         actorMode="rep"
@@ -216,9 +201,6 @@ export function PipelineDetailPage() {
               {lead.commission.isPaid ? "Paid" : "Pending payout"}
             </Badge>
           </div>
-          <p className="text-muted-foreground text-xs">
-            Payout is marked within 3–5 business days after admin verifies deployment.
-          </p>
           <Button variant="link" className="h-auto min-h-11 px-0 text-sm" asChild>
             <Link to="/portal/commission">View all commission</Link>
           </Button>
@@ -229,15 +211,9 @@ export function PipelineDetailPage() {
         open={activeStage === "lead_capture"}
         onOpenChange={(o) => !o && closeModal()}
         title="Lead details"
-        description={
-          readOnlyModal
-            ? "View-only while this step is waiting on admin or already complete."
-            : "Update client contact details for this lead."
-        }
-        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
-            <p className="text-sm text-muted-foreground">View only.</p>
+            <StageModalWaitingFooter />
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -278,15 +254,9 @@ export function PipelineDetailPage() {
         open={activeStage === "convert_deal"}
         onOpenChange={(o) => !o && closeModal()}
         title={readOnlyModal ? "Deal submitted" : "Convert to client"}
-        description={
-          readOnlyModal
-            ? "Waiting for admin to verify advance payment."
-            : `Minimum project total: ₹${minRupees}. Advance is ${settings ? settings.advancePaymentShareBps / 100 : 50}% by default.`
-        }
-        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
-            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+            <StageModalWaitingFooter />
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -335,6 +305,9 @@ export function PipelineDetailPage() {
           <div className="space-y-2">
             <Label htmlFor="agreed">Agreed total (₹)</Label>
             <Input id="agreed" className="min-h-11" inputMode="decimal" value={agreedRupees} onChange={(e) => setAgreedRupees(e.target.value)} />
+            <p className="text-xs text-muted-foreground">
+              Min ₹{minRupees}. Advance {settings ? settings.advancePaymentShareBps / 100 : 50}%.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="adv-note">Payment note (optional)</Label>
@@ -347,15 +320,9 @@ export function PipelineDetailPage() {
         open={activeStage === "whatsapp_group"}
         onOpenChange={(o) => !o && closeModal()}
         title="WhatsApp group"
-        description={
-          readOnlyModal
-            ? "Submitted — waiting for admin to verify."
-            : "Create the group with the client and technical team, then paste the invite link."
-        }
-        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
-            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+            <StageModalWaitingFooter />
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -376,6 +343,7 @@ export function PipelineDetailPage() {
       >
         <div className="space-y-2">
           <Label htmlFor="wa-link">Group invite link</Label>
+          <p className="text-xs text-muted-foreground">Invite link for client + technical team.</p>
           <Input
             id="wa-link"
             className="min-h-11"
@@ -392,15 +360,9 @@ export function PipelineDetailPage() {
         open={activeStage === "demo_finalized"}
         onOpenChange={(o) => !o && closeModal()}
         title="Demo approved"
-        description={
-          readOnlyModal
-            ? "Submitted — waiting for admin to verify."
-            : "Confirm the client approved the demo website."
-        }
-        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
-            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+            <StageModalWaitingFooter />
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -412,24 +374,16 @@ export function PipelineDetailPage() {
           )
         }
       >
-        <p className="text-sm text-muted-foreground">
-          After the client signs off, mark this step so accounts and due payment can proceed.
-        </p>
+        <p className="text-xs text-muted-foreground">Client signed off on the demo.</p>
       </StageModalShell>
 
       <StageModalShell
         open={activeStage === "accounts_ready"}
         onOpenChange={(o) => !o && closeModal()}
         title="Accounts ready"
-        description={
-          readOnlyModal
-            ? "Submitted — waiting for admin to verify."
-            : "Confirm GitHub and free static hosting accounts are set up for the client."
-        }
-        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
-            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+            <StageModalWaitingFooter />
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -441,24 +395,16 @@ export function PipelineDetailPage() {
           )
         }
       >
-        <p className="text-sm text-muted-foreground">
-          Rep marks when accounts exist; admin verifies before due payment.
-        </p>
+        <p className="text-xs text-muted-foreground">GitHub + static hosting for the client.</p>
       </StageModalShell>
 
       <StageModalShell
         open={activeStage === "final_payment"}
         onOpenChange={(o) => !o && closeModal()}
         title="Due payment"
-        description={
-          readOnlyModal
-            ? "Submitted — waiting for admin to verify payment."
-            : "Record the due payment amount so admin can verify it."
-        }
-        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
-            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+            <StageModalWaitingFooter />
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -484,15 +430,9 @@ export function PipelineDetailPage() {
         open={activeStage === "deployment_submit"}
         onOpenChange={(o) => !o && closeModal()}
         title="Live deployment"
-        description={
-          readOnlyModal
-            ? "Submitted — waiting for admin to verify deployment."
-            : "Paste the live site URL after deployment. Admin will verify before commission."
-        }
-        nextStepHint={repModalHint}
         footer={
           readOnlyModal ? (
-            <p className="text-sm text-muted-foreground">Submitted — waiting for admin.</p>
+            <StageModalWaitingFooter />
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -520,8 +460,8 @@ export function PipelineDetailPage() {
         }
       >
         {!lead.project?.id ? (
-          <p className="text-sm text-amber-700 dark:text-amber-400">
-            Project is created after admin verifies the advance payment. Refresh if you just got approval.
+          <p className="mb-2 text-xs text-amber-700 dark:text-amber-400">
+            Available after admin verifies advance payment.
           </p>
         ) : null}
         <div className="space-y-2">

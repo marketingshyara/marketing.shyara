@@ -113,18 +113,15 @@ export function PortalLoginPage() {
         <div className="relative z-10 space-y-3">
           <p className="text-sm font-medium uppercase tracking-wide text-primary-foreground/80">Shyara</p>
           <h1 className="text-3xl font-semibold tracking-tight text-primary-foreground">Sales portal</h1>
-          <p className="max-w-sm text-sm text-primary-foreground/85">
-            Manage leads, commissions, and projects in one place.
-          </p>
         </div>
-        <ul className="relative z-10 max-w-sm space-y-2 text-xs text-primary-foreground/80">
-          <li className="flex gap-2">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span>Sign-in traffic uses HTTPS encryption.</span>
+        <ul className="relative z-10 flex max-w-sm flex-wrap gap-4 text-xs text-primary-foreground/80">
+          <li className="flex items-center gap-1.5">
+            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+            <span>HTTPS</span>
           </li>
-          <li className="flex gap-2">
-            <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span>Your session is kept in an httpOnly cookie (not readable by page scripts).</span>
+          <li className="flex items-center gap-1.5">
+            <Lock className="h-4 w-4 shrink-0" aria-hidden />
+            <span>Secure session</span>
           </li>
         </ul>
       </div>

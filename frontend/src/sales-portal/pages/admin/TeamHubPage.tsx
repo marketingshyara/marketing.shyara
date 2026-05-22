@@ -1,12 +1,12 @@
-import { Link } from "react-router-dom";
 import { usePendingActionsCountQuery, useTeamRepsQuery } from "../../hooks/useSalesQueries";
 import { AdminRepCard } from "../../components/admin/AdminRepCard";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { PortalActionBanner } from "../../components/ui/PortalActionBanner";
+import { PortalEmptyState } from "../../components/ui/PortalEmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UsersRound } from "lucide-react";
 
 export function TeamHubPage() {
   const qr = useTeamRepsQuery(true);
@@ -27,7 +27,7 @@ export function TeamHubPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <PortalPageHeader
         title="Sales team"
-        description="Manage reps, verify payments, and track each client project."
+        variant="operational"
         toolbar={
           <DataStaleToolbar
             dataUpdatedAt={qr.dataUpdatedAt}
@@ -38,17 +38,12 @@ export function TeamHubPage() {
       />
 
       {pendingTotal > 0 ? (
-        <Alert>
-          <AlertTitle>
-            {pendingTotal} item{pendingTotal === 1 ? "" : "s"} need your approval
-          </AlertTitle>
-          <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <span>Open the reviews queue to verify payments and project steps.</span>
-            <Button className="min-h-11 shrink-0" asChild>
-              <Link to="/portal/reviews">Open reviews queue</Link>
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <PortalActionBanner
+          variant="urgent"
+          message={`${pendingTotal} item${pendingTotal === 1 ? "" : "s"} need your approval`}
+          actionLabel="Open reviews"
+          actionTo="/portal/reviews"
+        />
       ) : null}
 
       {qr.isLoading ? (
@@ -58,7 +53,11 @@ export function TeamHubPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No active sales reps yet. Add reps under Users.</p>
+        <PortalEmptyState
+          icon={UsersRound}
+          title="No sales reps yet"
+          description="Add reps under Users to get started."
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((rep) => (

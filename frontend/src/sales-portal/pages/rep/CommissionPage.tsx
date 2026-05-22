@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, IndianRupee } from "lucide-react";
 import { useCommissionsQuery } from "../../hooks/useSalesQueries";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
-import { Badge } from "@/components/ui/badge";
+import { CommissionTimeline } from "../../components/ui/CommissionTimeline";
+import { PortalEmptyState } from "../../components/ui/PortalEmptyState";
+import { PortalStatusChip } from "../../components/ui/PortalStatusChip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMinorUnits } from "../../lib/money";
-import { leadStatusLabel } from "../../lib/copy";
 
 export function CommissionPage() {
   const [page, setPage] = useState(1);
@@ -24,8 +25,8 @@ export function CommissionPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <PortalPageHeader
-        title="Your commission"
-        description="Commission is calculated after admin verifies the client site is live. Payout is marked paid within 3–5 business days after that step."
+        title="Commission"
+        variant="operational"
         toolbar={
           <DataStaleToolbar
             dataUpdatedAt={dataUpdatedAt}
@@ -35,27 +36,26 @@ export function CommissionPage() {
         }
       />
 
+      <CommissionTimeline />
+
       {isError ? (
         <QueryErrorAlert message="Could not load commission." onRetry={() => void refetch()} />
       ) : isLoading ? (
         <Skeleton className="h-40 w-full" />
       ) : (data?.items.length ?? 0) === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            No commission yet. It appears after admin verifies deployment on a completed deal.
-          </CardContent>
-        </Card>
+        <PortalEmptyState
+          icon={IndianRupee}
+          title="No commission yet"
+          description="Appears after admin verifies your client's live site."
+        />
       ) : (
         <ul className="space-y-3">
           {data!.items.map((row) => (
             <li key={row.id}>
               <Card>
                 <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-medium">{row.lead.clientName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Project status: {leadStatusLabel(row.lead.status)}
-                    </p>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{row.lead.clientName}</p>
                     <p className="text-lg font-semibold mt-1">
                       {formatMinorUnits(row.amountCents)}
                       {row.bonusCents > 0
@@ -63,9 +63,10 @@ export function CommissionPage() {
                         : ""}
                     </p>
                   </div>
-                  <Badge variant={row.isPaid ? "default" : "secondary"}>
-                    {row.isPaid ? "Paid" : "Pending payout"}
-                  </Badge>
+                  <PortalStatusChip
+                    kind={row.isPaid ? "complete" : "waiting"}
+                    label={row.isPaid ? "Paid" : "Pending payout"}
+                  />
                 </CardContent>
               </Card>
             </li>

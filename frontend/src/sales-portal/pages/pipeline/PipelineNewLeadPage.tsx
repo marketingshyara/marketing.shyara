@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { NewLeadStepper } from "../../components/ui/NewLeadStepper";
 
 type FormValues = {
   clientName: string;
@@ -27,22 +28,11 @@ export function PipelineNewLeadPage() {
       <Button variant="ghost" className="min-h-11 -ml-2" asChild>
         <Link to="/portal/pipeline">
           <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
-          Back to pipeline
+          Back
         </Link>
       </Button>
 
-      <Card className="border-dashed bg-muted/30">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">How this works</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <ol className="list-decimal list-inside space-y-1">
-            <li>Add the prospect&apos;s details below.</li>
-            <li>Convert to a client and record the advance payment on the project page.</li>
-            <li>Admin verifies the payment; then you continue with WhatsApp and demo steps.</li>
-          </ol>
-        </CardContent>
-      </Card>
+      <NewLeadStepper />
 
       <Card>
         <CardHeader>
@@ -78,11 +68,11 @@ export function PipelineNewLeadPage() {
               <Input id="new-client-email" type="email" className="min-h-11" {...form.register("clientEmail")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-notes">Notes</Label>
+              <Label htmlFor="new-notes">Notes (optional)</Label>
               <Textarea id="new-notes" {...form.register("notes")} />
             </div>
             <Button type="submit" className="min-h-11 w-full" disabled={create.isPending}>
-              Create lead
+              {create.isPending ? "Saving…" : "Add lead"}
             </Button>
           </form>
         </CardContent>

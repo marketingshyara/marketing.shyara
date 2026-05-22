@@ -1,5 +1,5 @@
 import { PipelineListSummary } from "../pipeline/PipelineListSummary";
-import { listBadgeLabel } from "../../lib/pipelineCopy";
+import { listStatusChip } from "../../lib/pipelineCopy";
 import type { TeamRepProject } from "../../types";
 
 type Props = {
@@ -13,7 +13,7 @@ export function AdminProjectCard({ repId, project }: Props) {
     currentStageTitle: project.currentStageTitle,
     pendingAdmin: project.pendingAdmin
   };
-  const { label, variant } = listBadgeLabel(summary, project.pipelineStages, "admin");
+  const statusChip = listStatusChip(summary, project.pipelineStages, "admin");
 
   return (
     <PipelineListSummary
@@ -21,8 +21,7 @@ export function AdminProjectCard({ repId, project }: Props) {
       summary={summary}
       agreedTotalCents={project.agreedTotalCents}
       href={`/portal/team/${repId}/projects/${project.id}`}
-      badgeLabel={label}
-      badgeVariant={variant}
+      statusChip={statusChip}
     />
   );
 }

@@ -1,3 +1,4 @@
+import type { PortalStatusChipKind } from "../components/ui/PortalStatusChip";
 import type {
   LeadPipelineSummary,
   PipelineStageKey,
@@ -14,7 +15,11 @@ export type PipelineFocus = {
   stage: PipelineStageView | null;
   stageKey: PipelineStageKey | null;
   headline: string;
-  description: string;
+  /** Short line under headline; omit when chip + headline are enough */
+  detail: string | null;
+  statusChip: { kind: PortalStatusChipKind; label: string };
+  /** Extra context for "Why blocked?" collapsible */
+  expandReasons: string[];
   primaryLabel: string | null;
   showViewSubmission: boolean;
 };
@@ -41,15 +46,15 @@ export function stageShortTitle(key: PipelineStageKey, fallbackTitle?: string): 
 
 export function whoActsNext(stage: PipelineStageView, actorMode: PipelineActorMode): string {
   if (stage.state === "actionable") {
-    return actorMode === "rep" ? "Your turn" : "Needs your approval";
+    return actorMode === "rep" ? "Your turn" : "Needs approval";
   }
   if (stage.state === "pending_admin") {
-    return actorMode === "rep" ? "Waiting for admin approval" : "Needs your approval";
+    return actorMode === "rep" ? "Waiting on admin" : "Needs approval";
   }
   if (stage.state === "verified") {
     return "Complete";
   }
-  return "Not started yet";
+  return "Not started";
 }
 
 function isActionableForActor(stage: PipelineStageView, actorMode: PipelineActorMode): boolean {
@@ -68,6 +73,35 @@ function isWaitingForActor(stage: PipelineStageView, actorMode: PipelineActorMod
   return false;
 }
 
+export function focusStatusKind(
+  focusKind: PipelineFocusKind,
+  stage: PipelineStageView | null,
+  actorMode: PipelineActorMode
+): { kind: PortalStatusChipKind; label: string } {
+  if (focusKind === "idle") {
+    return { kind: "complete", label: "Caught up" };
+  }
+  if (!stage) {
+    return focusKind === "action"
+      ? { kind: "action", label: "Action needed" }
+      : { kind: "waiting", label: "Waiting on admin" };
+  }
+  if (stage.state === "locked") {
+    return { kind: "locked", label: "Blocked" };
+  }
+  if (focusKind === "waiting") {
+    return actorMode === "rep"
+      ? { kind: "waiting", label: "Waiting on admin" }
+      : { kind: "action", label: "Needs approval" };
+  }
+  if (stage.key === "build_demo" && stage.hint && actorMode === "rep") {
+    return { kind: "waiting", label: "Technical team" };
+  }
+  return actorMode === "admin"
+    ? { kind: "action", label: "Needs approval" }
+    : { kind: "action", label: "Your turn" };
+}
+
 export function listBadgeLabel(
   summary: LeadPipelineSummary,
   stages: PipelineStageView[] | undefined,
@@ -75,13 +109,13 @@ export function listBadgeLabel(
 ): { label: string; variant: "default" | "secondary" | "outline" | "destructive" } {
   const buildWaiting = stages?.find((s) => s.key === "build_demo" && s.hint);
   if (buildWaiting && actorMode === "rep") {
-    return { label: "With technical team", variant: "secondary" };
+    return { label: "Technical team", variant: "secondary" };
   }
   if (summary.pendingAdmin && actorMode === "rep") {
     return { label: "Waiting on admin", variant: "secondary" };
   }
   if (summary.pendingAdmin && actorMode === "admin") {
-    return { label: "Needs your approval", variant: "destructive" };
+    return { label: "Needs approval", variant: "destructive" };
   }
   const current = stages?.find((s) => s.key === summary.currentStageKey);
   if (current && isActionableForActor(current, actorMode)) {
@@ -91,6 +125,22 @@ export function listBadgeLabel(
     return { label: "Complete", variant: "outline" };
   }
   return { label: "In progress", variant: "outline" };
+}
+
+export function listStatusChip(
+  summary: LeadPipelineSummary,
+  stages: PipelineStageView[] | undefined,
+  actorMode: PipelineActorMode
+): { kind: PortalStatusChipKind; label: string } {
+  const badge = listBadgeLabel(summary, stages, actorMode);
+  if (badge.label === "Complete") return { kind: "complete", label: badge.label };
+  if (badge.label === "Action needed" || badge.label === "Needs approval") {
+    return { kind: "action", label: badge.label };
+  }
+  if (badge.label === "Waiting on admin" || badge.label === "Technical team") {
+    return { kind: "waiting", label: badge.label };
+  }
+  return { kind: "idle", label: badge.label };
 }
 
 function primaryButtonLabel(stage: PipelineStageView, actorMode: PipelineActorMode): string {
@@ -131,32 +181,44 @@ function primaryButtonLabel(stage: PipelineStageView, actorMode: PipelineActorMo
   }
 }
 
-function focusDescription(stage: PipelineStageView, actorMode: PipelineActorMode): string {
+function focusDetail(stage: PipelineStageView, actorMode: PipelineActorMode): string | null {
   if (stage.state === "locked" && stage.blockedReason) {
     return stage.blockedReason;
   }
-  if (stage.state === "pending_admin" && actorMode === "rep") {
-    return `You submitted “${stageShortTitle(stage.key, stage.title)}”. Admin will review it soon.`;
-  }
   if (stage.key === "build_demo" && stage.hint && actorMode === "rep") {
-    return "Technical team is preparing the demo link. You will be notified when it is ready.";
-  }
-  if (actorMode === "admin" && (stage.key === "advance_verify" || stage.key === "final_verify")) {
-    return "Check the payment details and approve or decline with a provider reference.";
-  }
-  if (actorMode === "admin" && stage.key === "convert_deal") {
-    return "Review the deal details, then verify the advance payment from the payment step.";
+    return "Demo link in progress.";
   }
   if (actorMode === "admin" && stage.key === "build_demo" && stage.state === "actionable") {
-    return "Step 1: Save the staging or preview link. Step 2: Mark demo ready so the rep can continue.";
+    return "Save preview URL, then mark demo ready.";
   }
-  if (actorMode === "rep" && stage.state === "actionable") {
-    return `Complete “${stageShortTitle(stage.key, stage.title)}” to move this project forward.`;
+  if (actorMode === "admin" && (stage.key === "advance_verify" || stage.key === "final_verify")) {
+    return "Approve with provider reference.";
   }
-  if (actorMode === "admin" && stage.state === "actionable" && stage.key !== "build_demo") {
-    return `Review what the rep submitted for “${stageShortTitle(stage.key, stage.title)}”.`;
+  return null;
+}
+
+function focusExpandReasonsFixed(
+  stage: PipelineStageView,
+  actorMode: PipelineActorMode,
+  kind: PipelineFocusKind
+): string[] {
+  const reasons: string[] = [];
+  if (stage.state === "locked" && stage.blockedReason) {
+    reasons.push(stage.blockedReason);
   }
-  return whoActsNext(stage, actorMode);
+  if (stage.state === "pending_admin" && actorMode === "rep") {
+    reasons.push("Admin reviews your submission before the next step unlocks.");
+  }
+  if (kind === "waiting" && actorMode === "admin" && stage.state === "pending_admin") {
+    reasons.push("Rep submitted this step. Approve or decline to continue.");
+  }
+  if (actorMode === "admin" && stage.key === "convert_deal" && stage.state === "actionable") {
+    reasons.push("Verify advance payment on Payments after reviewing the deal.");
+  }
+  if (actorMode === "admin" && stage.key === "repo_transfer") {
+    reasons.push("Confirm repo ownership moved to the client before deployment.");
+  }
+  return reasons;
 }
 
 export function getPipelineFocus(
@@ -170,39 +232,48 @@ export function getPipelineFocus(
 
   if (waiting) {
     const viewOnly = actorMode === "rep" && waiting.state === "pending_admin";
+    const kind: PipelineFocusKind = "waiting";
     return {
-      kind: "waiting",
+      kind,
       stage: waiting,
       stageKey: waiting.key,
       headline: viewOnly ? "Waiting for admin" : stageShortTitle(waiting.key, waiting.title),
-      description: focusDescription(waiting, actorMode),
-      primaryLabel: viewOnly ? "View what you submitted" : primaryButtonLabel(waiting, actorMode),
+      detail: focusDetail(waiting, actorMode),
+      statusChip: focusStatusKind(kind, waiting, actorMode),
+      expandReasons: focusExpandReasonsFixed(waiting, actorMode, kind),
+      primaryLabel: viewOnly ? "View submission" : primaryButtonLabel(waiting, actorMode),
       showViewSubmission: viewOnly
     };
   }
 
   const actionable = stages.find((s) => isActionableForActor(s, actorMode));
   if (actionable) {
+    const kind: PipelineFocusKind = "action";
     return {
-      kind: "action",
+      kind,
       stage: actionable,
       stageKey: actionable.key,
       headline: stageShortTitle(actionable.key, actionable.title),
-      description: focusDescription(actionable, actorMode),
+      detail: focusDetail(actionable, actorMode),
+      statusChip: focusStatusKind(kind, actionable, actorMode),
+      expandReasons: focusExpandReasonsFixed(actionable, actorMode, kind),
       primaryLabel: primaryButtonLabel(actionable, actorMode),
       showViewSubmission: false
     };
   }
 
   const lastVerified = [...stages].reverse().find((s) => s.state === "verified");
+  const kind: PipelineFocusKind = "idle";
   return {
-    kind: "idle",
+    kind,
     stage: lastVerified ?? null,
     stageKey: lastVerified?.key ?? null,
-    headline: "You are caught up",
-    description: lastVerified
-      ? `Latest completed step: ${stageShortTitle(lastVerified.key, lastVerified.title)}.`
-      : "No steps are waiting on you right now.",
+    headline: "Caught up",
+    detail: lastVerified
+      ? `Last: ${stageShortTitle(lastVerified.key, lastVerified.title)}`
+      : null,
+    statusChip: focusStatusKind(kind, lastVerified ?? null, actorMode),
+    expandReasons: [],
     primaryLabel: lastVerified ? "View last step" : null,
     showViewSubmission: false
   };
@@ -221,57 +292,35 @@ export function stageWasAdminVerified(key: PipelineStageKey): boolean {
   return key !== "lead_capture" && key !== "convert_deal" && key !== "demo_finalized";
 }
 
+/** @deprecated Use listStatusChip; kept for gradual migration */
 export function listWaitingSubline(
-  summary: LeadPipelineSummary,
-  actorMode: PipelineActorMode
+  _summary: LeadPipelineSummary,
+  _actorMode: PipelineActorMode
 ): string | null {
-  if (actorMode === "rep" && summary.pendingAdmin) {
-    return "Admin will review soon.";
-  }
   return null;
 }
 
 const NEXT_STEP_HINTS: Partial<
   Record<PipelineStageKey, Partial<Record<PipelineActorMode, string>>>
 > = {
-  lead_capture: {
-    rep: "Next: convert to a client and record the advance payment."
-  },
-  convert_deal: {
-    rep: "Next: wait for admin to verify the advance payment."
-  },
-  whatsapp_group: {
-    rep: "Next: admin verifies the group, then the technical team shares a demo link."
-  },
+  lead_capture: { rep: "Convert client + advance" },
+  convert_deal: { rep: "Admin verifies advance" },
+  whatsapp_group: { rep: "Admin verifies → demo build" },
   demo_finalized: {
-    rep: "Next: admin verifies, then you mark accounts ready.",
-    admin: "Next: rep can mark accounts ready after you verify."
+    rep: "Admin verifies → accounts",
+    admin: "Rep marks accounts ready"
   },
   accounts_ready: {
-    rep: "Next: admin verifies, then you record the due payment.",
-    admin: "Next: rep records due payment; you verify it on Payments or Reviews."
+    rep: "Admin verifies → due payment",
+    admin: "Rep records due payment"
   },
-  final_payment: {
-    rep: "Next: admin verifies the due payment, then repo transfer and deployment."
-  },
-  deployment_submit: {
-    rep: "Next: admin verifies the live site; commission is calculated after that."
-  },
-  build_demo: {
-    admin: "Next: mark demo ready so the rep can show the site to the client."
-  },
-  repo_transfer: {
-    admin: "Next: rep submits the live URL for you to verify."
-  },
-  deployment_verify: {
-    admin: "Next: mark commission paid when payout is complete."
-  },
-  advance_verify: {
-    admin: "Next: rep adds the WhatsApp group link."
-  },
-  final_verify: {
-    admin: "Next: verify repo transfer, then rep deploys the live URL."
-  }
+  final_payment: { rep: "Admin verifies → deploy" },
+  deployment_submit: { rep: "Admin verifies → commission" },
+  build_demo: { admin: "Mark demo ready" },
+  repo_transfer: { admin: "Rep submits live URL" },
+  deployment_verify: { admin: "Mark commission paid" },
+  advance_verify: { admin: "Rep adds WhatsApp link" },
+  final_verify: { admin: "Verify repo → deploy" }
 };
 
 export function stageNextStepHint(

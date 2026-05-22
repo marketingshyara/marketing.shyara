@@ -1,17 +1,16 @@
 import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+import { ChevronRight } from "lucide-react";
 import { formatMinorUnits } from "../../lib/money";
 import { stageShortTitle } from "../../lib/pipelineCopy";
 import type { LeadPipelineSummary } from "../../types";
+import { PortalStatusChip, type PortalStatusChipKind } from "../ui/PortalStatusChip";
 
 type Props = {
   clientName: string;
   summary: LeadPipelineSummary;
   agreedTotalCents: number | null;
   href: string;
-  badgeLabel: string;
-  badgeVariant: "default" | "secondary" | "outline" | "destructive";
-  waitingSubline?: string | null;
+  statusChip: { kind: PortalStatusChipKind; label: string };
 };
 
 export function PipelineListSummary({
@@ -19,40 +18,29 @@ export function PipelineListSummary({
   summary,
   agreedTotalCents,
   href,
-  badgeLabel,
-  badgeVariant,
-  waitingSubline
+  statusChip
 }: Props) {
   const stepLine = stageShortTitle(summary.currentStageKey, summary.currentStageTitle);
 
   return (
     <Link
       to={href}
-      className="flex min-h-11 w-full min-w-0 flex-col gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/40 active:bg-muted/60 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+      className="flex min-h-11 w-full min-w-0 items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/40 active:bg-muted/60"
+      aria-label={`Open project for ${clientName}`}
     >
-      <div className="min-w-0 flex-1 space-y-1.5">
+      <div className="min-w-0 flex-1 space-y-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="min-w-0 truncate font-medium text-primary">{clientName}</span>
-          <Badge variant={badgeVariant} className="max-w-full shrink-0 truncate">
-            {badgeLabel}
-          </Badge>
+          <PortalStatusChip kind={statusChip.kind} label={statusChip.label} />
         </div>
-        <p className="break-words text-sm text-muted-foreground">
-          Current step: <span className="font-medium text-foreground">{stepLine}</span>
-          {waitingSubline ? (
-            <>
-              <br />
-              <span>{waitingSubline}</span>
-            </>
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{stepLine}</span>
+          {agreedTotalCents != null ? (
+            <span className="text-muted-foreground"> · {formatMinorUnits(agreedTotalCents)}</span>
           ) : null}
         </p>
-        {agreedTotalCents != null ? (
-          <p className="text-xs text-muted-foreground">{formatMinorUnits(agreedTotalCents)}</p>
-        ) : null}
       </div>
-      <span className="flex min-h-11 shrink-0 items-center text-sm font-medium text-primary">
-        Open →
-      </span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
     </Link>
   );
 }

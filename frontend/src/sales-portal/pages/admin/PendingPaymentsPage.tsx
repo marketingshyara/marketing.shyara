@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Wallet } from "lucide-react";
 import {
   errToast,
   useLeadQuery,
   usePendingPaymentsQuery,
+  usePendingActionsCountQuery,
   useVerifyPaymentMutation
 } from "../../hooks/useSalesQueries";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
+import { AdminQueueNav } from "../../components/admin/AdminQueueNav";
 import { PaymentVerifyDialog } from "../../components/pipeline/PaymentVerifyDialog";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
-import { Badge } from "@/components/ui/badge";
+import { PortalEmptyState } from "../../components/ui/PortalEmptyState";
+import { PortalStatusChip } from "../../components/ui/PortalStatusChip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -48,6 +51,7 @@ export function PendingPaymentsPage() {
     kind: kind === "all" ? undefined : kind
   });
 
+  const pendingCount = usePendingActionsCountQuery(true);
   const leadQr = useLeadQuery(verifyTarget?.leadId, !!verifyTarget?.leadId);
   const payment =
     verifyTarget && leadQr.data?.lead.payments
@@ -62,14 +66,8 @@ export function PendingPaymentsPage() {
     <div className="mx-auto max-w-6xl space-y-4">
       <PortalPageHeader
         title="Payments"
-        description={
-          <>
-            Advance and due payments only. For demo, deployment, repo, and other steps, use Reviews.
-            <Button variant="link" className="mt-1 h-auto min-h-11 px-0 text-sm" asChild>
-              <Link to="/portal/reviews">Open reviews queue</Link>
-            </Button>
-          </>
-        }
+        variant="operational"
+        stat={data ? `${data.total} pending` : undefined}
         toolbar={
           <DataStaleToolbar
             dataUpdatedAt={dataUpdatedAt}
@@ -78,6 +76,8 @@ export function PendingPaymentsPage() {
           />
         }
       />
+
+      <AdminQueueNav reviewsBadge={pendingCount.data?.total} />
 
       <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
         <SelectTrigger className="min-h-11 w-full sm:w-[200px]" aria-label="Payment type">
@@ -100,17 +100,22 @@ export function PendingPaymentsPage() {
             <li key={row.id}>
               <Card>
                 <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0 space-y-1">
-                    <p className="font-medium">{row.lead.clientName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {paymentKindLabel(row.kind)} · {formatMinorUnits(row.amountCents)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Marked by {row.markedBy.displayName ?? row.markedBy.email}
-                    </p>
+                  <div className="flex min-w-0 flex-1 gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted/50">
+                      <Wallet className="h-5 w-5 text-muted-foreground" aria-hidden />
+                    </div>
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate font-medium">{row.lead.clientName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {paymentKindLabel(row.kind)} · {formatMinorUnits(row.amountCents)}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {row.markedBy.displayName ?? row.markedBy.email}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
-                    <Badge variant="secondary">Pending</Badge>
+                    <PortalStatusChip kind="waiting" label="Pending" />
                     <Button
                       type="button"
                       className="min-h-11"
@@ -122,14 +127,14 @@ export function PendingPaymentsPage() {
                         })
                       }
                     >
-                      Review payment
+                      Verify
                     </Button>
                     {row.lead.assignedToUserId ? (
                       <Button variant="outline" className="min-h-11" asChild>
                         <Link
                           to={`/portal/team/${row.lead.assignedToUserId}/projects/${row.leadId}?stage=${row.kind === "ADVANCE" ? "advance_verify" : "final_verify"}`}
                         >
-                          Open project
+                          Open
                         </Link>
                       </Button>
                     ) : null}
@@ -139,7 +144,11 @@ export function PendingPaymentsPage() {
             </li>
           ))}
           {(data?.items.length ?? 0) === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-8">No pending payments.</p>
+            <PortalEmptyState
+              icon={Wallet}
+              title="No pending payments"
+              description="Advance and due payments appear here."
+            />
           ) : null}
         </ul>
       )}

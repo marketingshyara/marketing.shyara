@@ -13,10 +13,12 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
+  /** Optional; prefer field-level helpers when possible */
   description?: string;
-  nextStepHint?: string;
+  /** Shown below title (e.g. status chip) */
+  headerExtra?: ReactNode;
   children: ReactNode;
-  footer: ReactNode;
+  footer?: ReactNode;
   className?: string;
 };
 
@@ -28,7 +30,7 @@ export function StageModalShell({
   onOpenChange,
   title,
   description,
-  nextStepHint,
+  headerExtra,
   children,
   footer,
   className
@@ -42,8 +44,9 @@ export function StageModalShell({
           className
         )}
       >
-        <DialogHeader className="shrink-0 space-y-1 border-b px-4 py-4 text-left sm:px-6">
+        <DialogHeader className="shrink-0 space-y-2 border-b px-4 py-4 text-left sm:px-6">
           <DialogTitle className="text-lg leading-snug">{title}</DialogTitle>
+          {headerExtra}
           {description ? (
             <DialogDescription className="text-sm text-muted-foreground">
               {description}
@@ -53,16 +56,13 @@ export function StageModalShell({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6">
           {children}
         </div>
-        <DialogFooter className="shrink-0 flex-col gap-2 border-t px-4 py-4 sm:px-6">
-          {nextStepHint ? (
-            <p className="w-full text-left text-xs text-muted-foreground sm:order-first">
-              After you save: {nextStepHint}
-            </p>
-          ) : null}
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end [&_button]:min-h-11 [&_button]:w-full sm:[&_button]:w-auto">
-            {footer}
-          </div>
-        </DialogFooter>
+        {footer ? (
+          <DialogFooter className="shrink-0 flex-col gap-2 border-t px-4 py-4 sm:px-6">
+            <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end [&_button]:min-h-11 [&_button]:w-full sm:[&_button]:w-auto">
+              {footer}
+            </div>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

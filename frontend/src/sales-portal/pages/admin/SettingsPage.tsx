@@ -27,6 +27,12 @@ import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { leadStatusLabel } from "../../lib/copy";
 import { SettingsExportsCard } from "../../components/admin/SettingsExportsCard";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
+import { ChevronDown, AlertTriangle } from "lucide-react";
 
 const LEAD_STATUSES: LeadStatus[] = [
   "NEW",
@@ -89,7 +95,8 @@ export function SettingsPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PortalPageHeader
         title="Portal settings"
-        description="Configure lead flow, commissions, and admin safeguards for this portal."
+        variant="config"
+        description="Lead flow, commissions, and safeguards."
         toolbar={
           <DataStaleToolbar
             dataUpdatedAt={dataUpdatedAt}
@@ -128,29 +135,44 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="settings-min-total">Minimum agreed total (paise, 799900 = ₹7999)</Label>
+              <Label htmlFor="settings-min-total">Minimum agreed total (₹)</Label>
               <Input
                 id="settings-min-total"
                 type="number"
                 className="min-h-11"
-                {...form.register("minAgreedTotalCents", { valueAsNumber: true })}
+                value={Math.round(Number(form.watch("minAgreedTotalCents") ?? 0) / 100)}
+                onChange={(e) => {
+                  const rupees = Number.parseInt(e.target.value, 10);
+                  form.setValue(
+                    "minAgreedTotalCents",
+                    Number.isFinite(rupees) ? rupees * 100 : 0,
+                    { shouldDirty: true }
+                  );
+                }}
               />
+              <p className="text-xs text-muted-foreground">Stored as paise in the database.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="settings-advance-share">
-                Advance payment share (basis points, 10000 = 100%)
-              </Label>
+              <Label htmlFor="settings-advance-share">Advance payment share (%)</Label>
               <Input
                 id="settings-advance-share"
                 type="number"
                 className="min-h-11"
-                {...form.register("advancePaymentShareBps", { valueAsNumber: true })}
+                min={0}
+                max={100}
+                value={Math.round(Number(form.watch("advancePaymentShareBps") ?? 5000) / 100)}
+                onChange={(e) => {
+                  const pct = Number.parseInt(e.target.value, 10);
+                  form.setValue(
+                    "advancePaymentShareBps",
+                    Number.isFinite(pct) ? pct * 100 : 5000,
+                    { shouldDirty: true }
+                  );
+                }}
               />
               <p className="text-xs text-muted-foreground">
-                Create Client: advance {bpsToPercentLabel(Number(form.watch("advancePaymentShareBps") ?? 5000))}{" "}
-                / final{" "}
-                {bpsToPercentLabel(10000 - Number(form.watch("advancePaymentShareBps") ?? 5000))} of agreed
-                project total.
+                Advance {bpsToPercentLabel(Number(form.watch("advancePaymentShareBps") ?? 5000))} / final{" "}
+                {bpsToPercentLabel(10000 - Number(form.watch("advancePaymentShareBps") ?? 5000))}.
               </p>
             </div>
           </CardContent>
@@ -164,15 +186,25 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="settings-commission-rate">Commission rate (basis points, 10000 = 100%)</Label>
+              <Label htmlFor="settings-commission-rate">Commission rate (%)</Label>
               <Input
                 id="settings-commission-rate"
                 type="number"
                 className="min-h-11"
-                {...form.register("commissionRateBps", { valueAsNumber: true })}
+                min={0}
+                max={100}
+                value={Math.round(Number(form.watch("commissionRateBps") ?? 0) / 100)}
+                onChange={(e) => {
+                  const pct = Number.parseInt(e.target.value, 10);
+                  form.setValue(
+                    "commissionRateBps",
+                    Number.isFinite(pct) ? pct * 100 : 0,
+                    { shouldDirty: true }
+                  );
+                }}
               />
               <p className="text-xs text-muted-foreground">
-                Current: {bpsToPercentLabel(Number(form.watch("commissionRateBps") ?? 0))}
+                {bpsToPercentLabel(Number(form.watch("commissionRateBps") ?? 0))} of commission basis.
               </p>
             </div>
             <div className="space-y-2">
@@ -351,15 +383,24 @@ export function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="system" className="space-y-6 mt-0">
-        <Card>
-          <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-base">Manual transitions (legacy)</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Emergency API-only status overrides. Normal deals follow the pipeline steps on each
-                project; reps do not use these rules.
+        <Collapsible defaultOpen={false}>
+          <Card className="border-amber-500/40">
+            <CardHeader className="pb-2">
+              <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden />
+                  <CardTitle className="text-base">Advanced / emergency controls</CardTitle>
+                </div>
+                <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />
+              </CollapsibleTrigger>
+              <p className="text-xs text-muted-foreground">
+                Manual status overrides — normal deals use pipeline steps.
               </p>
-            </div>
+            </CardHeader>
+            <CollapsibleContent>
+        <Card className="border-0 shadow-none">
+          <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-0">
+            <CardTitle className="text-sm font-medium">Manual transitions</CardTitle>
             <Button
               type="button"
               variant="outline"
@@ -445,6 +486,9 @@ export function SettingsPage() {
             ))}
           </CardContent>
         </Card>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         <Card>
           <CardHeader>
@@ -513,10 +557,8 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="settings-payment-tolerance">Payment vs quote tolerance</Label>
-              <p className="text-xs text-muted-foreground">
-                Basis points (100 bps = 1%). Leave empty to disable tolerance checks on payment amounts.
-              </p>
+              <Label htmlFor="settings-payment-tolerance">Payment vs quote tolerance (%)</Label>
+              <p className="text-xs text-muted-foreground">Leave empty to disable. Stored as basis points.</p>
               <Input
                 id="settings-payment-tolerance"
                 className="min-h-11"

@@ -1,9 +1,15 @@
-import { ExternalLink } from "lucide-react";
+import { BookOpen, ExternalLink, FileText, Video } from "lucide-react";
 import { usePortalSettingsQuery } from "../../hooks/useSalesQueries";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
 
 export function ResourcesPage() {
@@ -26,21 +32,19 @@ export function ResourcesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <PortalPageHeader
-        title="Sales resources"
-        description="Templates, tutorials, and talking points for your pitch."
-      />
+    <div className="mx-auto max-w-2xl space-y-4">
+      <PortalPageHeader title="Resources" variant="operational" />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+          <FileText className="h-8 w-8 text-muted-foreground" aria-hidden />
           <CardTitle className="text-lg">Website templates</CardTitle>
         </CardHeader>
         <CardContent>
           <Button asChild className="min-h-11 w-full sm:w-auto">
             <a href={settings.templatesCatalogUrl} target="_blank" rel="noreferrer">
               <ExternalLink className="mr-2 h-4 w-4" aria-hidden />
-              Open sample gallery
+              Open gallery
             </a>
           </Button>
         </CardContent>
@@ -48,8 +52,9 @@ export function ResourcesPage() {
 
       {settings.tutorialLinks.length > 0 ? (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Tutorial videos</CardTitle>
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+            <Video className="h-8 w-8 text-muted-foreground" aria-hidden />
+            <CardTitle className="text-lg">Tutorials</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {settings.tutorialLinks.map((link) => (
@@ -66,19 +71,25 @@ export function ResourcesPage() {
 
       {settings.painPointsByCategory.length > 0 ? (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Customer pain points</CardTitle>
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+            <BookOpen className="h-8 w-8 text-muted-foreground" aria-hidden />
+            <CardTitle className="text-lg">Pain points</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2">
             {settings.painPointsByCategory.map((group) => (
-              <div key={group.categoryId}>
-                <h3 className="font-medium">{group.title}</h3>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                  {group.bullets.map((b, i) => (
-                    <li key={i}>{b}</li>
-                  ))}
-                </ul>
-              </div>
+              <Collapsible key={group.categoryId}>
+                <CollapsibleTrigger className="flex min-h-11 w-full items-center justify-between rounded-md border px-3 py-2 text-sm font-medium hover:bg-muted/50">
+                  {group.title}
+                  <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <ul className="mt-2 list-disc space-y-1 pl-8 pr-2 text-sm text-muted-foreground">
+                    {group.bullets.map((b, i) => (
+                      <li key={i}>{b}</li>
+                    ))}
+                  </ul>
+                </CollapsibleContent>
+              </Collapsible>
             ))}
           </CardContent>
         </Card>

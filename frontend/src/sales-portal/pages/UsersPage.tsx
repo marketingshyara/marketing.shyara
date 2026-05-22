@@ -97,7 +97,8 @@ export function UsersPage() {
     <div className="mx-auto max-w-6xl space-y-4">
       <PortalPageHeader
         title="Users"
-        description="Manage portal accounts."
+        variant="config"
+        description="Portal accounts and roles."
         toolbar={
           <div className="flex flex-col gap-2 sm:items-end">
             {!isLoading && (

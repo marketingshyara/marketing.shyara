@@ -6,7 +6,6 @@ import { AdminVerifyModals } from "../../components/pipeline/AdminVerifyModals";
 import { PaymentVerifyDialog } from "../../components/pipeline/PaymentVerifyDialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { PipelineFocusCard } from "../../components/pipeline/PipelineFocusCard";
 import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
@@ -330,11 +329,10 @@ export function AdminProjectPage() {
     );
   }
 
-  const buildDemoStage = stages.find((s) => s.key === "build_demo");
-  const repWaitingForPreview =
-    buildDemoStage?.state === "actionable" &&
-    !lead.project?.previewUrl &&
-    lead.whatsappVerifiedAt != null;
+  const repName =
+    repsQr.data?.items.find((r) => r.id === repId)?.displayName ??
+    repsQr.data?.items.find((r) => r.id === repId)?.email ??
+    "Rep";
   const rejectable = activeStage ? STAGE_REJECTABLE[activeStage] : undefined;
 
   const verifiedAdvance = lead.payments?.find(
@@ -352,7 +350,7 @@ export function AdminProjectPage() {
         </Link>
         <span className="mx-2">/</span>
         <Link to={`/portal/team/${repId}`} className="hover:underline">
-          Rep
+          {repName}
         </Link>
         <span className="mx-2">/</span>
         <span className="text-foreground">{lead.clientName}</span>
@@ -385,15 +383,6 @@ export function AdminProjectPage() {
         actorMode="admin"
         onPrimaryAction={handleStageClick}
       />
-
-      {repWaitingForPreview ? (
-        <Alert>
-          <AlertTitle>Rep waiting for demo link</AlertTitle>
-          <AlertDescription>
-            Save the preview URL and mark demo ready so the rep can show the site to the client.
-          </AlertDescription>
-        </Alert>
-      ) : null}
 
       <PipelineStepsAccordion
         stages={stages}

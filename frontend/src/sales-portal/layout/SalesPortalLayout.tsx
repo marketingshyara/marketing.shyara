@@ -99,7 +99,12 @@ export function SalesPortalLayout() {
   const pendingTotal = pendingCount.data?.total ?? 0;
 
   const primaryMobileNav = isAdmin
-    ? ADMIN_NAV.filter((i) => i.to === "/portal/team" || i.to === "/portal/reviews")
+    ? ADMIN_NAV.filter(
+        (i) =>
+          i.to === "/portal/team" ||
+          i.to === "/portal/reviews" ||
+          i.to === "/portal/payments"
+      )
     : REP_NAV;
 
   const handleLogout = () => {

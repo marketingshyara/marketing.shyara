@@ -12,8 +12,8 @@ import {
   estimatedCommissionForLead
 } from "../../lib/commissionEstimate";
 import { formatTemplateOption } from "../../lib/templateLabel";
-import { stageNextStepHint } from "../../lib/pipelineCopy";
 import { tryNormalizeHttpUrl } from "../../lib/httpUrl";
+import { PortalMetaGrid } from "../ui/PortalMetaGrid";
 
 function ModalDisabledHints({ reasons }: { reasons: string[] }) {
   if (reasons.length === 0) return null;
@@ -123,7 +123,6 @@ export function AdminVerifyModals({
     ? formatTemplateOption(lead.websiteTemplate)
     : lead.websiteTemplateId ?? "—";
 
-  const adminModalHint = activeStage ? stageNextStepHint(activeStage, "admin") : undefined;
   const advanceOk = hasVerifiedAdvance(lead);
   const previewOnServer = Boolean(lead.project?.previewUrl);
   const previewDraftValid = tryNormalizeHttpUrl(previewUrl.trim()) != null;
@@ -208,39 +207,27 @@ export function AdminVerifyModals({
         open={activeStage === "convert_deal"}
         onOpenChange={(o) => !o && onClose()}
         title="Deal submitted"
-        description="Review template and agreed total before verifying advance payment."
       >
-        <dl className="grid gap-2 text-sm">
-          <div>
-            <dt className="text-muted-foreground">Template</dt>
-            <dd>{templateLabel}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Agreed total</dt>
-            <dd>{lead.agreedTotalCents != null ? formatMinorUnits(lead.agreedTotalCents) : "—"}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Advance</dt>
-            <dd>
-              {lead.advanceAmountCents != null ? formatMinorUnits(lead.advanceAmountCents) : "—"}
-            </dd>
-          </div>
-        </dl>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Open advance payment verify from the progress step or Reviews queue.
-        </p>
+        <PortalMetaGrid
+          items={[
+            { label: "Template", value: templateLabel },
+            {
+              label: "Agreed total",
+              value: lead.agreedTotalCents != null ? formatMinorUnits(lead.agreedTotalCents) : "—"
+            },
+            {
+              label: "Advance",
+              value: lead.advanceAmountCents != null ? formatMinorUnits(lead.advanceAmountCents) : "—"
+            }
+          ]}
+        />
+        <p className="mt-3 text-xs text-muted-foreground">Verify advance on Reviews or Payments.</p>
       </StageModalShell>
 
       <StageModalShell
         open={activeStage === "whatsapp_group"}
         onOpenChange={(o) => !o && onClose()}
         title="Verify WhatsApp group"
-        description={
-          lead.whatsappGroupLink
-            ? `Rep submitted: ${lead.whatsappGroupLink}`
-            : "Rep has not saved a group link yet."
-        }
-        nextStepHint={adminModalHint}
         footer={
           <>
             <VerifyFooter
@@ -258,8 +245,20 @@ export function AdminVerifyModals({
           </>
         }
       >
+        <PortalMetaGrid
+          items={[
+            {
+              label: "Group link",
+              value: lead.whatsappGroupLink ? (
+                <span className="break-all">{lead.whatsappGroupLink}</span>
+              ) : (
+                "—"
+              )
+            }
+          ]}
+        />
         {verify.onDecline ? (
-          <div className="space-y-2">
+          <div className="mt-3 space-y-2">
             <Label htmlFor="decline-note-wa">Decline note (optional)</Label>
             <Textarea
               id="decline-note-wa"
@@ -274,12 +273,6 @@ export function AdminVerifyModals({
         open={activeStage === "demo_finalized"}
         onOpenChange={(o) => !o && onClose()}
         title="Verify demo approval"
-        description={
-          lead.demoFinalizedAt
-            ? `Rep marked client approval on ${new Date(lead.demoFinalizedAt).toLocaleString()}.`
-            : "Rep has not marked demo approval yet."
-        }
-        nextStepHint={adminModalHint}
         footer={
           <>
             <VerifyFooter
@@ -293,12 +286,20 @@ export function AdminVerifyModals({
           </>
         }
       >
-        <dl className="grid gap-2 text-sm">
-          <div>
-            <dt className="text-muted-foreground">Preview URL</dt>
-            <dd className="break-all">{lead.project?.previewUrl ?? "—"}</dd>
-          </div>
-        </dl>
+        <PortalMetaGrid
+          items={[
+            {
+              label: "Client approved",
+              value: lead.demoFinalizedAt
+                ? new Date(lead.demoFinalizedAt).toLocaleString()
+                : "Not yet"
+            },
+            {
+              label: "Preview URL",
+              value: <span className="break-all">{lead.project?.previewUrl ?? "—"}</span>
+            }
+          ]}
+        />
         {verify.onDecline ? (
           <div className="mt-3 space-y-2">
             <Label htmlFor="decline-note-demo">Decline note (optional)</Label>
@@ -315,8 +316,6 @@ export function AdminVerifyModals({
         open={activeStage === "build_demo"}
         onOpenChange={(o) => !o && onClose()}
         title="Demo preview link"
-        description="Step 1: Save the staging or preview URL. Step 2: Mark demo ready so the rep can continue."
-        nextStepHint={adminModalHint}
         footer={
           <div className="flex w-full flex-col gap-2">
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
@@ -348,20 +347,21 @@ export function AdminVerifyModals({
         }
       >
         {!hasVerifiedAdvance(lead) ? (
-          <p className="mb-3 text-sm text-amber-700 dark:text-amber-400">
-            Verify the advance payment first — a project record is created when advance is approved.
+          <p className="mb-3 text-xs text-amber-700 dark:text-amber-400">
+            Verify advance payment first.
           </p>
         ) : null}
         {lead.project?.previewUrl ? (
-          <dl className="mb-3 grid gap-1 text-sm">
-            <dt className="text-muted-foreground">Saved on server</dt>
-            <dd className="break-all font-medium">{lead.project.previewUrl}</dd>
-          </dl>
-        ) : (
-          <p className="mb-3 text-sm text-muted-foreground">
-            No preview URL saved yet. The rep cannot proceed until you save and mark demo ready.
-          </p>
-        )}
+          <PortalMetaGrid
+            className="mb-3"
+            items={[
+              {
+                label: "Saved URL",
+                value: <span className="break-all">{lead.project.previewUrl}</span>
+              }
+            ]}
+          />
+        ) : null}
         <div className="space-y-2">
           <Label htmlFor="admin-preview">Preview URL</Label>
           <Input
@@ -393,12 +393,6 @@ export function AdminVerifyModals({
         open={activeStage === "accounts_ready"}
         onOpenChange={(o) => !o && onClose()}
         title="Verify accounts ready"
-        description={
-          lead.accountsReadyAt
-            ? `Rep marked on ${new Date(lead.accountsReadyAt).toLocaleString()}.`
-            : "Rep has not marked accounts ready."
-        }
-        nextStepHint={adminModalHint}
         footer={
           <>
             <VerifyFooter
@@ -422,43 +416,50 @@ export function AdminVerifyModals({
             />
           </div>
         ) : null}
+        <PortalMetaGrid
+          items={[
+            {
+              label: "Rep marked",
+              value: lead.accountsReadyAt
+                ? new Date(lead.accountsReadyAt).toLocaleString()
+                : "Not yet"
+            }
+          ]}
+        />
       </StageModalShell>
 
       <StageModalShell
         open={activeStage === "deployment_submit"}
         onOpenChange={(o) => !o && onClose()}
         title="Deployment submitted"
-        description="Rep submitted the live URL. Open deployment verify when you are ready to approve."
         footer={
           <Button type="button" className="min-h-11 w-full sm:w-auto" onClick={onClose}>
             Close
           </Button>
         }
       >
-        <dl className="grid gap-2 text-sm">
-          <div>
-            <dt className="text-muted-foreground">Live URL</dt>
-            <dd className="break-all">{lead.project?.deployedUrl ?? "—"}</dd>
-          </div>
-          {lead.project?.deploymentSubmittedAt ? (
-            <div>
-              <dt className="text-muted-foreground">Submitted</dt>
-              <dd>{new Date(lead.project.deploymentSubmittedAt).toLocaleString()}</dd>
-            </div>
-          ) : null}
-        </dl>
+        <PortalMetaGrid
+          items={[
+            {
+              label: "Live URL",
+              value: <span className="break-all">{lead.project?.deployedUrl ?? "—"}</span>
+            },
+            ...(lead.project?.deploymentSubmittedAt
+              ? [
+                  {
+                    label: "Submitted",
+                    value: new Date(lead.project.deploymentSubmittedAt).toLocaleString()
+                  }
+                ]
+              : [])
+          ]}
+        />
       </StageModalShell>
 
       <StageModalShell
         open={activeStage === "deployment_verify"}
         onOpenChange={(o) => !o && onClose()}
         title="Verify deployment"
-        description={
-          lead.project?.deployedUrl
-            ? `Live URL: ${lead.project.deployedUrl}`
-            : "Rep has not submitted a live URL yet."
-        }
-        nextStepHint={adminModalHint}
         footer={
           <>
             <VerifyFooter
@@ -482,14 +483,20 @@ export function AdminVerifyModals({
             />
           </div>
         ) : null}
+        <PortalMetaGrid
+          items={[
+            {
+              label: "Live URL",
+              value: <span className="break-all">{lead.project?.deployedUrl ?? "—"}</span>
+            }
+          ]}
+        />
       </StageModalShell>
 
       <StageModalShell
         open={activeStage === "repo_transfer"}
         onOpenChange={(o) => !o && onClose()}
         title="Verify repository transfer"
-        description="Confirm repository ownership moved to the client after due payment is verified and before the rep submits the live URL."
-        nextStepHint={adminModalHint}
         footer={
           <>
             <VerifyFooter
@@ -501,12 +508,10 @@ export function AdminVerifyModals({
           </>
         }
       >
-        <p className="text-sm text-muted-foreground">
-          Confirm repository ownership moved to the client after due payment is verified.
-        </p>
+        <p className="text-xs text-muted-foreground">Repo ownership moved to client.</p>
         {!finalOk ? (
-          <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
-            Verify the due payment in Reviews or the progress step first.
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+            Verify due payment first.
           </p>
         ) : null}
       </StageModalShell>
@@ -515,12 +520,6 @@ export function AdminVerifyModals({
         open={activeStage === "commission"}
         onOpenChange={(o) => !o && onClose()}
         title="Commission payout"
-        description={
-          lead.commission?.isPaid
-            ? "Commission has been marked paid."
-            : "Adjust the payout amount if needed, then mark commission paid after deployment is verified."
-        }
-        nextStepHint={adminModalHint}
         footer={
           lead.commission && !lead.commission.isPaid ? (
             <>
@@ -572,22 +571,15 @@ export function AdminVerifyModals({
                 : ""}
             </p>
             {portalSettings && !lead.commission.isPaid ? (
-              <dl className="grid gap-1 rounded-md border bg-muted/30 p-3 text-xs">
-                <div>
-                  <dt className="text-muted-foreground">Basis</dt>
-                  <dd>{commissionBasisLabel(portalSettings.commissionBasis)}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Rate</dt>
-                  <dd>{commissionRateLabel(portalSettings)}</dd>
-                </div>
-                {estimatedCents != null ? (
-                  <div>
-                    <dt className="text-muted-foreground">Calculated estimate</dt>
-                    <dd>{formatMinorUnits(estimatedCents)}</dd>
-                  </div>
-                ) : null}
-              </dl>
+              <PortalMetaGrid
+                items={[
+                  { label: "Basis", value: commissionBasisLabel(portalSettings.commissionBasis) },
+                  { label: "Rate", value: commissionRateLabel(portalSettings) },
+                  ...(estimatedCents != null
+                    ? [{ label: "Estimate", value: formatMinorUnits(estimatedCents) }]
+                    : [])
+                ]}
+              />
             ) : null}
             {onPatchCommission && !lead.commission.isPaid ? (
               <div className="space-y-2">

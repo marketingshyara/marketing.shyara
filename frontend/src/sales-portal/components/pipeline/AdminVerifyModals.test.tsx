@@ -174,7 +174,7 @@ describe("AdminVerifyModals build_demo", () => {
 
     expect(screen.getByRole("button", { name: "1. Save preview URL" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "2. Mark demo ready" })).toBeDisabled();
-    expect(screen.getAllByText(/Verify the advance payment/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Verify advance payment first/i).length).toBeGreaterThan(0);
   });
 });
 
@@ -198,7 +198,7 @@ describe("AdminVerifyModals later stages", () => {
     );
 
     expect(screen.getByRole("button", { name: "Verify repo transfer" })).toBeDisabled();
-    expect(screen.getByText(/due \(final\) payment/i)).toBeInTheDocument();
+    expect(screen.getByText(/due payment first/i)).toBeInTheDocument();
   });
 
   it("disables deployment verify until rep submitted live URL", () => {
@@ -358,7 +358,7 @@ describe("AdminVerifyModals commission", () => {
       />
     );
 
-    expect(screen.getByText(/Calculated estimate/i)).toBeInTheDocument();
+    expect(screen.getByText(/Estimate/i)).toBeInTheDocument();
     expect(screen.getByText(/Agreed project total/i)).toBeInTheDocument();
     expect(screen.getByText(/^20%$/)).toBeInTheDocument();
   });

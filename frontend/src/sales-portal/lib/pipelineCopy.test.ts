@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getPipelineFocus,
+  listStatusChip,
   listWaitingSubline,
   stageNextStepHint,
   stageShortTitle
@@ -34,6 +35,7 @@ describe("getPipelineFocus", () => {
     expect(focus.kind).toBe("waiting");
     expect(focus.stageKey).toBe("convert_deal");
     expect(focus.showViewSubmission).toBe(true);
+    expect(focus.statusChip.kind).toBe("waiting");
   });
 
   it("picks admin pending approval before rep-only actionable", () => {
@@ -54,6 +56,15 @@ describe("getPipelineFocus", () => {
     expect(focus.stageKey).toBe("demo_finalized");
     expect(focus.primaryLabel).toMatch(/verify demo approved/i);
   });
+
+  it("returns caught up when no actionable or waiting stages", () => {
+    const focus = getPipelineFocus(
+      [stage("convert_deal", "locked", { blockedReason: "Complete lead details first." })],
+      "rep"
+    );
+    expect(focus.kind).toBe("idle");
+    expect(focus.headline).toMatch(/caught up/i);
+  });
 });
 
 describe("stageShortTitle", () => {
@@ -62,22 +73,25 @@ describe("stageShortTitle", () => {
   });
 });
 
+describe("listStatusChip", () => {
+  it("maps pending admin for rep to waiting chip", () => {
+    const chip = listStatusChip({ pendingAdmin: true } as LeadPipelineSummary, undefined, "rep");
+    expect(chip.kind).toBe("waiting");
+  });
+});
+
 describe("listWaitingSubline", () => {
   const pendingSummary = { pendingAdmin: true } as LeadPipelineSummary;
 
-  it("shows admin-waiting copy for rep when pending admin", () => {
-    expect(listWaitingSubline(pendingSummary, "rep")).toMatch(/admin will review/i);
-  });
-
-  it("returns null when not waiting on admin", () => {
+  it("returns null (deprecated)", () => {
+    expect(listWaitingSubline(pendingSummary, "rep")).toBeNull();
     expect(listWaitingSubline({ pendingAdmin: false } as LeadPipelineSummary, "rep")).toBeNull();
-    expect(listWaitingSubline(pendingSummary, "admin")).toBeNull();
   });
 });
 
 describe("stageNextStepHint", () => {
   it("returns rep hint after convert", () => {
-    expect(stageNextStepHint("convert_deal", "rep")).toMatch(/advance payment/i);
+    expect(stageNextStepHint("convert_deal", "rep")).toMatch(/advance/i);
   });
 
   it("returns admin hint after advance verify", () => {

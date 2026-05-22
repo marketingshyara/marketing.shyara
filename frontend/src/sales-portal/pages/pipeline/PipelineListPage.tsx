@@ -29,10 +29,8 @@ function tabLabel(v: ViewTab): string {
 
 function emptyMessage(tab: ViewTab): string {
   if (tab === "leads") return "No prospects yet.";
-  if (tab === "clients") {
-    return "No active clients yet. Converted clients appear here after admin approves advance.";
-  }
-  return "No settled clients yet. Projects move here after commission is marked paid.";
+  if (tab === "clients") return "No active clients yet.";
+  return "No settled projects yet.";
 }
 
 export function PipelineListPage() {

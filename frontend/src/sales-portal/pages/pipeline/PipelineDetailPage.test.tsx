@@ -144,6 +144,6 @@ describe("PipelineDetailPage", () => {
     )).not.toThrow();
 
     expect(screen.getByRole("heading", { level: 1, name: "Acme Corp" })).toBeTruthy();
-    expect(screen.getByText(/what to do now/i)).toBeTruthy();
+    expect(screen.getByRole("status")).toBeTruthy();
   });
 });
