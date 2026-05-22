@@ -149,9 +149,14 @@ function enrichLockedReasons(
   );
 }
 
-function stageShowsDeclineFeedback(stage: PipelineStageView, isAdmin: boolean): boolean {
+function stageShowsDeclineFeedback(
+  stage: PipelineStageView,
+  isAdmin: boolean,
+  options?: { paymentDeclineOnVerifyStage?: boolean }
+): boolean {
   if (stage.state === "actionable") return true;
   if (isAdmin && stage.state === "pending_admin") return true;
+  if (isAdmin && options?.paymentDeclineOnVerifyStage) return true;
   return false;
 }
 
@@ -166,11 +171,16 @@ function attachDeclineNotes(
   const advancePending = hasPendingPayment(lead, PaymentKind.ADVANCE);
   const finalPending = hasPendingPayment(lead, PaymentKind.FINAL);
 
-  return stages.map((stage) => {
-    if (!stageShowsDeclineFeedback(stage, isAdmin)) {
-      return stage;
-    }
+  const advancePaymentDeclined =
+    advancePayNote !== undefined &&
+    !advancePending &&
+    !hasVerifiedPayment(lead, PaymentKind.ADVANCE);
+  const finalPaymentDeclined =
+    finalPayNote !== undefined &&
+    !finalPending &&
+    !hasVerifiedPayment(lead, PaymentKind.FINAL);
 
+  return stages.map((stage) => {
     let declineNote: string | null | undefined;
 
     const declineKey = pipelineStageToDeclineKey(stage.key);
@@ -180,22 +190,26 @@ function attachDeclineNotes(
 
     if (
       (stage.key === "convert_deal" || stage.key === "advance_verify") &&
-      advancePayNote !== undefined &&
-      !advancePending &&
-      !hasVerifiedPayment(lead, PaymentKind.ADVANCE)
+      advancePaymentDeclined
     ) {
       declineNote = advancePayNote;
     }
     if (
       (stage.key === "final_payment" || stage.key === "final_verify") &&
-      finalPayNote !== undefined &&
-      !finalPending &&
-      !hasVerifiedPayment(lead, PaymentKind.FINAL)
+      finalPaymentDeclined
     ) {
       declineNote = finalPayNote;
     }
 
     if (declineNote === undefined) {
+      return stage;
+    }
+
+    const paymentDeclineOnVerifyStage =
+      (stage.key === "advance_verify" && advancePaymentDeclined) ||
+      (stage.key === "final_verify" && finalPaymentDeclined);
+
+    if (!stageShowsDeclineFeedback(stage, isAdmin, { paymentDeclineOnVerifyStage })) {
       return stage;
     }
     return { ...stage, declineNote };

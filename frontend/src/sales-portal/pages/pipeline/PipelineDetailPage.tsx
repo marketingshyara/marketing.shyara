@@ -186,7 +186,7 @@ export function PipelineDetailPage() {
       {declineFeedback ? (
         <DeclineFeedbackBanner
           stageTitle={declineFeedback.title}
-          declineNote={declineFeedback.declineNote}
+          declineNote={declineFeedback.declineNote ?? null}
         />
       ) : null}
 
@@ -313,12 +313,12 @@ export function PipelineDetailPage() {
             </a>
           </Button>
         ) : null}
-        {declineNoteForStage(stages, "convert_deal") !== undefined ? (
-          <DeclineFeedbackInline
-            declineNote={declineNoteForStage(stages, "convert_deal")}
-            className="mb-3"
-          />
-        ) : null}
+        {(() => {
+          const note = declineNoteForStage(stages, "convert_deal");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         <div className="space-y-3">
           <div className="space-y-2">
             <Label>Template</Label>
@@ -374,12 +374,12 @@ export function PipelineDetailPage() {
           )
         }
       >
-        {declineNoteForStage(stages, "whatsapp_group") !== undefined ? (
-          <DeclineFeedbackInline
-            declineNote={declineNoteForStage(stages, "whatsapp_group")}
-            className="mb-3"
-          />
-        ) : null}
+        {(() => {
+          const note = declineNoteForStage(stages, "whatsapp_group");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         <div className="space-y-2">
           <Label htmlFor="wa-link">Group invite link</Label>
           <p className="text-xs text-muted-foreground">Invite link for client + technical team.</p>
@@ -413,12 +413,12 @@ export function PipelineDetailPage() {
           )
         }
       >
-        {declineNoteForStage(stages, "demo_finalized") !== undefined ? (
-          <DeclineFeedbackInline
-            declineNote={declineNoteForStage(stages, "demo_finalized")}
-            className="mb-3"
-          />
-        ) : null}
+        {(() => {
+          const note = declineNoteForStage(stages, "demo_finalized");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         <p className="text-xs text-muted-foreground">Client signed off on the demo.</p>
       </StageModalShell>
 
@@ -440,12 +440,12 @@ export function PipelineDetailPage() {
           )
         }
       >
-        {declineNoteForStage(stages, "accounts_ready") !== undefined ? (
-          <DeclineFeedbackInline
-            declineNote={declineNoteForStage(stages, "accounts_ready")}
-            className="mb-3"
-          />
-        ) : null}
+        {(() => {
+          const note = declineNoteForStage(stages, "accounts_ready");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         <p className="text-xs text-muted-foreground">GitHub + static hosting for the client.</p>
       </StageModalShell>
 
@@ -471,12 +471,12 @@ export function PipelineDetailPage() {
           )
         }
       >
-        {declineNoteForStage(stages, "final_payment") !== undefined ? (
-          <DeclineFeedbackInline
-            declineNote={declineNoteForStage(stages, "final_payment")}
-            className="mb-3"
-          />
-        ) : null}
+        {(() => {
+          const note = declineNoteForStage(stages, "final_payment");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         <div className="space-y-2">
           <Label htmlFor="due">Amount (₹)</Label>
           <Input id="due" className="min-h-11" inputMode="decimal" value={dueRupees} onChange={(e) => setDueRupees(e.target.value)} />
@@ -516,12 +516,12 @@ export function PipelineDetailPage() {
           )
         }
       >
-        {declineNoteForStage(stages, "deployment_submit") !== undefined ? (
-          <DeclineFeedbackInline
-            declineNote={declineNoteForStage(stages, "deployment_submit")}
-            className="mb-3"
-          />
-        ) : null}
+        {(() => {
+          const note = declineNoteForStage(stages, "deployment_submit");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         {!lead.project?.id ? (
           <p className="mb-2 text-xs text-amber-700 dark:text-amber-400">
             Available after admin verifies advance payment.

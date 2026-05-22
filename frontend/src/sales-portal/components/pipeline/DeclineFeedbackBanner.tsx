@@ -3,7 +3,7 @@ import { declineFeedbackMessage } from "../../lib/declineFeedback";
 
 type Props = {
   stageTitle: string;
-  declineNote: string | null | undefined;
+  declineNote: string | null;
   className?: string;
 };
 
@@ -30,7 +30,7 @@ export function DeclineFeedbackInline({
   declineNote,
   className
 }: {
-  declineNote: string | null | undefined;
+  declineNote: string | null;
   className?: string;
 }) {
   return (

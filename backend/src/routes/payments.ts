@@ -18,7 +18,28 @@ import {
 } from "../services/settings.js";
 import { verifyPaymentBodySchema, pendingPaymentsQuerySchema } from "../validators/schemas.js";
 import { notifyActiveAdmins, notifyRepOfAdminDecision } from "../services/notifications.js";
-import { PortalNotificationKind } from "@prisma/client";
+import { PortalNotificationKind, UserRole } from "@prisma/client";
+import { getPipelineStages } from "../services/pipeline.js";
+
+const paymentLeadDetailInclude = {
+  payments: { orderBy: { markedAt: "desc" as const } },
+  commission: true,
+  project: true,
+  websiteTemplate: true
+} satisfies Prisma.LeadInclude;
+
+async function paymentVerifyLeadDetail(
+  tx: Prisma.TransactionClient,
+  leadId: string,
+  settings: Awaited<ReturnType<typeof getPortalSettings>>
+) {
+  const lead = await tx.lead.findUniqueOrThrow({
+    where: { id: leadId },
+    include: paymentLeadDetailInclude
+  });
+  const pipelineStages = getPipelineStages(lead, settings, UserRole.ADMIN);
+  return { lead, pipelineStages };
+}
 
 export async function registerPaymentRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -172,7 +193,8 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
             message: declineMessage,
             excludeUserId: admin.id
           });
-          return { payment: updatedPayment, lead: payment.lead };
+          const detail = await paymentVerifyLeadDetail(tx, payment.leadId, settings);
+          return { payment: updatedPayment, ...detail };
         }
 
         if (payment.kind === PaymentKind.ADVANCE) {
@@ -230,7 +252,8 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
             stageKey: "advance_verify",
             message: `${lead.clientName}: advance payment verified.`
           });
-          return { payment: updatedPayment, lead };
+          const detailAdv = await paymentVerifyLeadDetail(tx, payment.leadId, settings);
+          return { payment: updatedPayment, ...detailAdv };
         }
 
         // FINAL
@@ -271,7 +294,8 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
           stageKey: "final_verify",
           message: `${lead.clientName}: due payment verified.`
         });
-        return { payment: updatedPayment, lead };
+        const detailFin = await paymentVerifyLeadDetail(tx, payment.leadId, settings);
+        return { payment: updatedPayment, ...detailFin };
       });
 
       return reply.send(result);

@@ -98,4 +98,42 @@ describe("applyLeadDetailToCache", () => {
     expect(cached?.lead.commission?.amountCents).toBe(12_000);
     expect(cached?.lead.commission?.isPaid).toBe(true);
   });
+
+  it("merges payment updates without wiping pipelineStages", () => {
+    const qc = new QueryClient();
+    const existing: LeadDetailResponse = {
+      lead: { ...baseLead, payments: [] },
+      pipelineStages: [
+        {
+          key: "lead_capture",
+          title: "Lead",
+          repActor: true,
+          adminActor: false,
+          state: "verified"
+        }
+      ]
+    };
+    qc.setQueryData(qk.lead("lead-1"), existing);
+
+    applyLeadDetailToCache(qc, "lead-1", {
+      lead: baseLead,
+      payment: {
+        id: "pay-1",
+        leadId: "lead-1",
+        kind: "ADVANCE",
+        amountCents: 10_000,
+        verificationStatus: "REJECTED",
+        adminNote: "Mismatch",
+        repNote: null,
+        markedByUserId: "rep-1",
+        verifiedByUserId: "admin-1",
+        verifiedAt: "2026-01-02T00:00:00.000Z",
+        markedAt: "2026-01-01T00:00:00.000Z"
+      }
+    });
+
+    const cached = qc.getQueryData<LeadDetailResponse>(qk.lead("lead-1"));
+    expect(cached?.pipelineStages).toHaveLength(1);
+    expect(cached?.lead.payments?.[0]?.adminNote).toBe("Mismatch");
+  });
 });

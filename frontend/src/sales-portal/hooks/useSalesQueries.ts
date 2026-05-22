@@ -371,8 +371,12 @@ export function useVerifyPaymentMutation(leadId: string, repId?: string | null) 
   return useMutation({
     mutationFn: ({ paymentId, body }: { paymentId: string; body: VerifyPaymentRequestBody }) =>
       salesApi.verifyPayment(paymentId, body),
-    onSuccess: (data) => {
-      applyLeadDetailToCache(qc, leadId, data);
+    onSuccess: (data, variables) => {
+      applyLeadDetailToCache(qc, leadId, {
+        lead: data.lead,
+        pipelineStages: data.pipelineStages,
+        payment: data.payment
+      });
       invalidateLeadAndRep(qc, {
         leadId,
         repId: repId ?? data.lead.assignedToUserId
@@ -382,7 +386,9 @@ export function useVerifyPaymentMutation(leadId: string, repId?: string | null) 
       invalidateAdminQueues(qc);
       invalidateQueryPrefixes(qc, ["activity-logs", "projects"]);
       void qc.invalidateQueries({ queryKey: qk.notificationsUnreadCount });
-      toast.success("Verification saved");
+      toast.success(
+        variables.body.decision === "REJECTED" ? "Payment declined" : "Payment verified"
+      );
     },
     onError: (e) => errToast(e, qc)
   });

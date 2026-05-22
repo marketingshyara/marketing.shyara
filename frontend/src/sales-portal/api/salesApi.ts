@@ -4,6 +4,7 @@ import type {
   Commission,
   Lead,
   LeadDetailResponse,
+  LeadPayment,
   LeadPaymentWithRelations,
   Paginated,
   PendingActionItem,
@@ -114,7 +115,11 @@ export const salesApi = {
   ) => apiJson<{ payment: unknown }>("POST", `/leads/${leadId}/payments`, body),
 
   verifyPayment: (paymentId: string, body: VerifyPaymentRequestBody) =>
-    apiJson<{ payment: unknown; lead: Lead }>("POST", `/payments/${paymentId}/verify`, body),
+    apiJson<LeadDetailResponse & { payment: LeadPayment }>(
+      "POST",
+      `/payments/${paymentId}/verify`,
+      body
+    ),
 
   pendingPaymentsCount: () => apiJson<{ total: number }>("GET", "/payments/pending/count"),
 

@@ -392,7 +392,7 @@ export function AdminProjectPage() {
       {declineFeedback ? (
         <DeclineFeedbackBanner
           stageTitle={declineFeedback.title}
-          declineNote={declineFeedback.declineNote}
+          declineNote={declineFeedback.declineNote ?? null}
         />
       ) : null}
 

@@ -252,9 +252,12 @@ export function AdminVerifyModals({
           </>
         }
       >
-        {stageDecline("whatsapp_group") !== undefined ? (
-          <DeclineFeedbackInline declineNote={stageDecline("whatsapp_group")} className="mb-3" />
-        ) : null}
+        {(() => {
+          const note = stageDecline("whatsapp_group");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         <PortalMetaGrid
           items={[
             {
@@ -296,9 +299,12 @@ export function AdminVerifyModals({
           </>
         }
       >
-        {stageDecline("demo_finalized") !== undefined ? (
-          <DeclineFeedbackInline declineNote={stageDecline("demo_finalized")} className="mb-3" />
-        ) : null}
+        {(() => {
+          const note = stageDecline("demo_finalized");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         <PortalMetaGrid
           items={[
             {
@@ -419,9 +425,12 @@ export function AdminVerifyModals({
           </>
         }
       >
-        {stageDecline("accounts_ready") !== undefined ? (
-          <DeclineFeedbackInline declineNote={stageDecline("accounts_ready")} className="mb-3" />
-        ) : null}
+        {(() => {
+          const note = stageDecline("accounts_ready");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         <PortalMetaGrid
           items={[
             {
@@ -454,9 +463,12 @@ export function AdminVerifyModals({
           </Button>
         }
       >
-        {stageDecline("deployment_submit") !== undefined ? (
-          <DeclineFeedbackInline declineNote={stageDecline("deployment_submit")} className="mb-3" />
-        ) : null}
+        {(() => {
+          const note = stageDecline("deployment_submit");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         <PortalMetaGrid
           items={[
             {
@@ -492,9 +504,12 @@ export function AdminVerifyModals({
           </>
         }
       >
-        {stageDecline("deployment_verify") !== undefined ? (
-          <DeclineFeedbackInline declineNote={stageDecline("deployment_verify")} className="mb-3" />
-        ) : null}
+        {(() => {
+          const note = stageDecline("deployment_verify");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
         {verify.onDecline ? (
           <div className="space-y-2">
             <Label htmlFor="decline-note-dep">Decline note (optional)</Label>

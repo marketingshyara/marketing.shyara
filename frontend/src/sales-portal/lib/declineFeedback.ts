@@ -3,8 +3,8 @@ import type { PipelineStageKey, PipelineStageView } from "../types";
 export const DECLINE_GENERIC_MESSAGE =
   "Admin declined this step. Resubmit when ready.";
 
-export function declineFeedbackMessage(note: string | null | undefined): string {
-  if (note === undefined) return DECLINE_GENERIC_MESSAGE;
+/** `note` is null when admin declined without a written reason. */
+export function declineFeedbackMessage(note: string | null): string {
   const trimmed = note?.trim();
   return trimmed ? trimmed : DECLINE_GENERIC_MESSAGE;
 }
