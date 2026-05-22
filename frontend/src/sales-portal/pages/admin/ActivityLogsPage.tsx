@@ -16,7 +16,31 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { activityActionLabel } from "../../lib/copy";
 import type { ActivityLog } from "../../types";
 
+function declineSummaryFromAfter(after: unknown): string | null {
+  if (!after || typeof after !== "object") return null;
+  const a = after as Record<string, unknown>;
+  if (typeof a.stageRejected === "string") {
+    const note =
+      typeof a.adminNote === "string" && a.adminNote.trim()
+        ? a.adminNote.trim()
+        : null;
+    return note
+      ? `Declined ${a.stageRejected}: ${note}`
+      : `Declined ${a.stageRejected} (no note)`;
+  }
+  if (a.decision === "REJECTED") {
+    const note =
+      typeof a.adminNote === "string" && a.adminNote.trim()
+        ? a.adminNote.trim()
+        : null;
+    return note ? `Payment declined: ${note}` : "Payment declined (no note)";
+  }
+  return null;
+}
+
 function ActivityLogRow({ row }: { row: ActivityLog }) {
+  const declineSummary = declineSummaryFromAfter(row.after);
+
   return (
     <tr className="border-b last:border-0">
       <td className="px-4 py-3 whitespace-nowrap text-sm">
@@ -25,6 +49,9 @@ function ActivityLogRow({ row }: { row: ActivityLog }) {
       <td className="px-4 py-3 text-sm font-medium">{activityActionLabel(row.action)}</td>
       <td className="px-4 py-3 text-sm">
         <span>{row.entityType}</span>
+        {declineSummary ? (
+          <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">{declineSummary}</p>
+        ) : null}
         <Collapsible>
           <CollapsibleTrigger className="ml-2 text-xs text-muted-foreground underline-offset-2 hover:underline">
             Details

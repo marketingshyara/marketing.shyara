@@ -13,6 +13,7 @@ import {
   repSubmitDeploymentBodySchema
 } from "../validators/schemas.js";
 import { notifyActiveAdmins } from "../services/notifications.js";
+import { stageDeclineNotesAfterClear } from "../services/stageDeclineNotes.js";
 import { PortalNotificationKind } from "@prisma/client";
 
 export async function registerProjectRoutes(app: FastifyInstance): Promise<void> {
@@ -213,6 +214,16 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
       if (user.role === UserRole.SALES_REP && project.deploymentSubmittedAt) {
         const lead = await app.prisma.lead.findUnique({ where: { id: project.leadId } });
         if (lead) {
+          await app.prisma.lead.updateMany({
+            where: { id: project.leadId },
+            data: {
+              stageDeclineNotes: stageDeclineNotesAfterClear(
+                lead,
+                "deployment_verify",
+                "deployment_submit"
+              )
+            }
+          });
           await notifyActiveAdmins(app.prisma, {
             leadId: project.leadId,
             kind: PortalNotificationKind.REP_SUBMITTED,

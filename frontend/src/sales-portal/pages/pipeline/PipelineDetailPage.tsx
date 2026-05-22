@@ -14,7 +14,10 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DeclineFeedbackBanner } from "../../components/pipeline/DeclineFeedbackBanner";
+import { DeclineFeedbackInline } from "../../components/pipeline/DeclineFeedbackBanner";
 import { PipelineFocusCard } from "../../components/pipeline/PipelineFocusCard";
+import { declineNoteForStage, findDeclineFeedbackStage } from "../../lib/declineFeedback";
 import { StageModalWaitingFooter } from "../../components/pipeline/StageModalWaiting";
 import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
@@ -81,6 +84,7 @@ export function PipelineDetailPage() {
   const loading = leadQr.isLoading || (settingsQr.isLoading && !settingsQr.isError);
   const lead = leadQr.data?.lead;
   const stages = leadQr.data?.pipelineStages ?? [];
+  const declineFeedback = findDeclineFeedbackStage(stages);
   const settings = settingsQr.data?.settings;
 
   if (loading) {
@@ -176,6 +180,13 @@ export function PipelineDetailPage() {
         <QueryErrorAlert
           message="Could not load portal settings. Using default minimums."
           onRetry={() => void settingsQr.refetch()}
+        />
+      ) : null}
+
+      {declineFeedback ? (
+        <DeclineFeedbackBanner
+          stageTitle={declineFeedback.title}
+          declineNote={declineFeedback.declineNote}
         />
       ) : null}
 
@@ -302,6 +313,12 @@ export function PipelineDetailPage() {
             </a>
           </Button>
         ) : null}
+        {declineNoteForStage(stages, "convert_deal") !== undefined ? (
+          <DeclineFeedbackInline
+            declineNote={declineNoteForStage(stages, "convert_deal")}
+            className="mb-3"
+          />
+        ) : null}
         <div className="space-y-3">
           <div className="space-y-2">
             <Label>Template</Label>
@@ -357,6 +374,12 @@ export function PipelineDetailPage() {
           )
         }
       >
+        {declineNoteForStage(stages, "whatsapp_group") !== undefined ? (
+          <DeclineFeedbackInline
+            declineNote={declineNoteForStage(stages, "whatsapp_group")}
+            className="mb-3"
+          />
+        ) : null}
         <div className="space-y-2">
           <Label htmlFor="wa-link">Group invite link</Label>
           <p className="text-xs text-muted-foreground">Invite link for client + technical team.</p>
@@ -390,6 +413,12 @@ export function PipelineDetailPage() {
           )
         }
       >
+        {declineNoteForStage(stages, "demo_finalized") !== undefined ? (
+          <DeclineFeedbackInline
+            declineNote={declineNoteForStage(stages, "demo_finalized")}
+            className="mb-3"
+          />
+        ) : null}
         <p className="text-xs text-muted-foreground">Client signed off on the demo.</p>
       </StageModalShell>
 
@@ -411,6 +440,12 @@ export function PipelineDetailPage() {
           )
         }
       >
+        {declineNoteForStage(stages, "accounts_ready") !== undefined ? (
+          <DeclineFeedbackInline
+            declineNote={declineNoteForStage(stages, "accounts_ready")}
+            className="mb-3"
+          />
+        ) : null}
         <p className="text-xs text-muted-foreground">GitHub + static hosting for the client.</p>
       </StageModalShell>
 
@@ -436,6 +471,12 @@ export function PipelineDetailPage() {
           )
         }
       >
+        {declineNoteForStage(stages, "final_payment") !== undefined ? (
+          <DeclineFeedbackInline
+            declineNote={declineNoteForStage(stages, "final_payment")}
+            className="mb-3"
+          />
+        ) : null}
         <div className="space-y-2">
           <Label htmlFor="due">Amount (₹)</Label>
           <Input id="due" className="min-h-11" inputMode="decimal" value={dueRupees} onChange={(e) => setDueRupees(e.target.value)} />
@@ -475,6 +516,12 @@ export function PipelineDetailPage() {
           )
         }
       >
+        {declineNoteForStage(stages, "deployment_submit") !== undefined ? (
+          <DeclineFeedbackInline
+            declineNote={declineNoteForStage(stages, "deployment_submit")}
+            className="mb-3"
+          />
+        ) : null}
         {!lead.project?.id ? (
           <p className="mb-2 text-xs text-amber-700 dark:text-amber-400">
             Available after admin verifies advance payment.

@@ -9,6 +9,12 @@ import {
 } from "@prisma/client";
 import type { PortalSettingsValues } from "../validators/schemas.js";
 import { getRequiredLeadStatusForPaymentKind } from "./settings.js";
+import {
+  declineNoteForPipelineEntry,
+  latestRejectedPaymentAdminNote,
+  parseStageDeclineNotes,
+  pipelineStageToDeclineKey
+} from "./stageDeclineNotes.js";
 
 export type PipelineStageKey =
   | "lead_capture"
@@ -36,6 +42,8 @@ export type PipelineStageView = {
   hint?: string;
   /** Shown when state is locked — why the step cannot be acted on yet. */
   blockedReason?: string;
+  /** Admin decline feedback when this step needs resubmit; null = declined with no written note. */
+  declineNote?: string | null;
 };
 
 type LeadWithRelations = Lead & {
@@ -139,6 +147,59 @@ function enrichLockedReasons(
       ? { ...s, blockedReason: defaultLockedReason(s.key, ctx) }
       : s
   );
+}
+
+function stageShowsDeclineFeedback(stage: PipelineStageView, isAdmin: boolean): boolean {
+  if (stage.state === "actionable") return true;
+  if (isAdmin && stage.state === "pending_admin") return true;
+  return false;
+}
+
+function attachDeclineNotes(
+  stages: PipelineStageView[],
+  lead: LeadWithRelations,
+  isAdmin: boolean
+): PipelineStageView[] {
+  const declineMap = parseStageDeclineNotes(lead);
+  const advancePayNote = latestRejectedPaymentAdminNote(lead, "ADVANCE");
+  const finalPayNote = latestRejectedPaymentAdminNote(lead, "FINAL");
+  const advancePending = hasPendingPayment(lead, PaymentKind.ADVANCE);
+  const finalPending = hasPendingPayment(lead, PaymentKind.FINAL);
+
+  return stages.map((stage) => {
+    if (!stageShowsDeclineFeedback(stage, isAdmin)) {
+      return stage;
+    }
+
+    let declineNote: string | null | undefined;
+
+    const declineKey = pipelineStageToDeclineKey(stage.key);
+    if (declineKey) {
+      declineNote = declineNoteForPipelineEntry(declineMap[declineKey]);
+    }
+
+    if (
+      (stage.key === "convert_deal" || stage.key === "advance_verify") &&
+      advancePayNote !== undefined &&
+      !advancePending &&
+      !hasVerifiedPayment(lead, PaymentKind.ADVANCE)
+    ) {
+      declineNote = advancePayNote;
+    }
+    if (
+      (stage.key === "final_payment" || stage.key === "final_verify") &&
+      finalPayNote !== undefined &&
+      !finalPending &&
+      !hasVerifiedPayment(lead, PaymentKind.FINAL)
+    ) {
+      declineNote = finalPayNote;
+    }
+
+    if (declineNote === undefined) {
+      return stage;
+    }
+    return { ...stage, declineNote };
+  });
 }
 
 export function getPipelineStages(
@@ -378,7 +439,8 @@ export function getPipelineStages(
     }
   ];
 
-  return enrichLockedReasons(stages, {
+  const withDecline = attachDeclineNotes(stages, lead, isAdmin);
+  return enrichLockedReasons(withDecline, {
     converted,
     advanceVerified,
     advancePending,

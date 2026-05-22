@@ -14,7 +14,14 @@ import { getCommissionRepUserId } from "../services/commissionRep.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings } from "../services/settings.js";
 import { pipelineStageKeySchema, rejectStageBodySchema } from "../validators/schemas.js";
-import { notifyRepOfAdminDecision } from "../services/notifications.js";
+import {
+  notifyActiveAdmins,
+  notifyRepOfAdminDecision
+} from "../services/notifications.js";
+import {
+  clearStageDeclineNotesForVerify,
+  persistStageDeclineNote
+} from "../services/stageDeclineNotes.js";
 import { PortalNotificationKind, UserRole } from "@prisma/client";
 import { promoteLeadToDeployedIfEligible } from "../services/commissionPayout.js";
 import { getPipelineStages } from "../services/pipeline.js";
@@ -214,6 +221,8 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
             throw new HttpError(400, "INVALID_STAGE", "Unknown stage.");
         }
 
+        await clearStageDeclineNotesForVerify(tx, id, lead, key);
+
         const updated = await tx.lead.findUniqueOrThrow({
           where: { id },
           include: {
@@ -324,6 +333,8 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
             throw new HttpError(400, "INVALID_STAGE", "Unknown stage.");
         }
 
+        await persistStageDeclineNote(tx, id, lead, key, body.adminNote ?? null);
+
         const updated = await tx.lead.findUniqueOrThrow({
           where: { id },
           include: {
@@ -346,13 +357,21 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
         });
 
         const repId = updated.assignedToUserId ?? updated.createdByUserId;
-        const note = body.adminNote ? ` Note: ${body.adminNote}` : "";
+        const note = body.adminNote?.trim() ? ` Note: ${body.adminNote.trim()}` : "";
+        const declineMessage = `${updated.clientName}: ${key} declined by admin.${note}`;
         await notifyRepOfAdminDecision(tx, {
           leadId: id,
           repUserId: repId,
           kind: PortalNotificationKind.ADMIN_DECLINED,
           stageKey: key,
-          message: `${updated.clientName}: ${key} declined by admin.${note}`
+          message: declineMessage
+        });
+        await notifyActiveAdmins(tx, {
+          leadId: id,
+          kind: PortalNotificationKind.ADMIN_DECLINED,
+          stageKey: key,
+          message: declineMessage,
+          excludeUserId: admin.id
         });
 
         const pipelineStages = getPipelineStages(updated, settings, UserRole.ADMIN);

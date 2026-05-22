@@ -1,3 +1,4 @@
+import { declineFeedbackMessage } from "./declineFeedback";
 import type { PortalStatusChipKind } from "../components/ui/PortalStatusChip";
 import type {
   LeadPipelineSummary,
@@ -182,6 +183,9 @@ function primaryButtonLabel(stage: PipelineStageView, actorMode: PipelineActorMo
 }
 
 function focusDetail(stage: PipelineStageView, actorMode: PipelineActorMode): string | null {
+  if (stage.declineNote !== undefined) {
+    return declineFeedbackMessage(stage.declineNote);
+  }
   if (stage.state === "locked" && stage.blockedReason) {
     return stage.blockedReason;
   }
@@ -217,6 +221,9 @@ function focusExpandReasonsFixed(
   }
   if (actorMode === "admin" && stage.key === "repo_transfer") {
     reasons.push("Confirm repo ownership moved to the client before deployment.");
+  }
+  if (stage.declineNote !== undefined) {
+    reasons.push(declineFeedbackMessage(stage.declineNote));
   }
   return reasons;
 }

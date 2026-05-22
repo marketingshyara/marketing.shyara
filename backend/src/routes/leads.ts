@@ -21,6 +21,8 @@ import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings, getRequiredLeadStatusForPaymentKind } from "../services/settings.js";
 import { getPipelineStages, summarizePipelineStages } from "../services/pipeline.js";
 import { notifyActiveAdmins } from "../services/notifications.js";
+import { stageDeclineNotesAfterClear } from "../services/stageDeclineNotes.js";
+import type { StageDeclineNoteKey } from "../services/stageDeclineNotes.js";
 import { PortalNotificationKind } from "@prisma/client";
 import {
   convertLeadBodySchema,
@@ -487,6 +489,20 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           ...(body.markAccountsReady === true ? { accountsReadyAt: new Date() } : {}),
           ...(assignedToUserId !== undefined ? { assignedToUserId } : {})
         };
+
+        const declineClearKeys: StageDeclineNoteKey[] = [];
+        if (body.whatsappGroupLink) {
+          declineClearKeys.push("whatsapp_group");
+        }
+        if (body.markDemoFinalized === true) {
+          declineClearKeys.push("demo_finalized");
+        }
+        if (body.markAccountsReady === true) {
+          declineClearKeys.push("accounts_ready");
+        }
+        if (declineClearKeys.length > 0) {
+          data.stageDeclineNotes = stageDeclineNotesAfterClear(lead, ...declineClearKeys);
+        }
 
         if (body.previewUrl !== undefined && user.role === UserRole.ADMIN) {
           let project = await tx.project.findUnique({ where: { leadId: id } });

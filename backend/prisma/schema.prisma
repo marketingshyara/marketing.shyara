@@ -110,6 +110,8 @@ model Lead {
   accountsReadyAt      DateTime?
   accountsReadyVerifiedAt DateTime?
   repoTransferVerifiedAt  DateTime?
+  /** Per-stage admin decline context keyed by pipeline stage (e.g. accounts_ready). */
+  stageDeclineNotes    Json?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 

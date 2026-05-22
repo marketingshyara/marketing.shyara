@@ -98,6 +98,7 @@ describe("AdminVerifyModals build_demo", () => {
     const onMarkDemoReady = vi.fn();
     render(
       <AdminVerifyModals
+        pipelineStages={[]}
         lead={leadWithAdvance()}
         activeStage="build_demo"
         onClose={vi.fn()}
@@ -122,6 +123,7 @@ describe("AdminVerifyModals build_demo", () => {
     const onMarkDemoReady = vi.fn();
     render(
       <AdminVerifyModals
+        pipelineStages={[]}
         lead={leadWithAdvance({
           project: {
             id: "p1",
@@ -157,6 +159,7 @@ describe("AdminVerifyModals build_demo", () => {
   it("disables save and mark when advance is not verified", () => {
     render(
       <AdminVerifyModals
+        pipelineStages={[]}
         lead={leadWithAdvance({ payments: [] })}
         activeStage="build_demo"
         onClose={vi.fn()}
@@ -182,6 +185,7 @@ describe("AdminVerifyModals later stages", () => {
   it("disables repo transfer verify until final payment is verified", () => {
     render(
       <AdminVerifyModals
+        pipelineStages={[]}
         lead={leadWithAdvance()}
         activeStage="repo_transfer"
         onClose={vi.fn()}
@@ -204,6 +208,7 @@ describe("AdminVerifyModals later stages", () => {
   it("disables deployment verify until rep submitted live URL", () => {
     render(
       <AdminVerifyModals
+        pipelineStages={[]}
         lead={leadWithAdvance({
           project: {
             id: "p1",
@@ -273,6 +278,7 @@ describe("AdminVerifyModals commission", () => {
   it("enables Mark commission paid when deployment is verified and status is FINAL_PAID", () => {
     render(
       <AdminVerifyModals
+        pipelineStages={[]}
         lead={leadWithCommission()}
         activeStage="commission"
         onClose={vi.fn()}
@@ -295,6 +301,7 @@ describe("AdminVerifyModals commission", () => {
   it("shows an empty payout field when parent passes empty string (no modal refill)", () => {
     render(
       <AdminVerifyModals
+        pipelineStages={[]}
         lead={leadWithCommission()}
         activeStage="commission"
         onClose={vi.fn()}
@@ -319,6 +326,7 @@ describe("AdminVerifyModals commission", () => {
     const onVerify = vi.fn();
     render(
       <AdminVerifyModals
+        pipelineStages={[]}
         lead={leadWithCommission()}
         activeStage="commission"
         onClose={vi.fn()}
@@ -342,6 +350,7 @@ describe("AdminVerifyModals commission", () => {
   it("shows calculated estimate from portal settings", () => {
     render(
       <AdminVerifyModals
+        pipelineStages={[]}
         lead={leadWithCommission()}
         activeStage="commission"
         onClose={vi.fn()}

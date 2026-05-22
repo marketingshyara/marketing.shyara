@@ -14,6 +14,9 @@ import {
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { tryNormalizeHttpUrl } from "../../lib/httpUrl";
 import { PortalMetaGrid } from "../ui/PortalMetaGrid";
+import { DeclineFeedbackInline } from "./DeclineFeedbackBanner";
+import { declineNoteForStage } from "../../lib/declineFeedback";
+import type { PipelineStageView } from "../../types";
 
 function ModalDisabledHints({ reasons }: { reasons: string[] }) {
   if (reasons.length === 0) return null;
@@ -52,6 +55,7 @@ type VerifyHandlers = {
 
 type Props = {
   lead: Lead;
+  pipelineStages: PipelineStageView[];
   activeStage: PipelineStageKey | null;
   onClose: () => void;
   previewUrl: string;
@@ -104,6 +108,7 @@ function VerifyFooter({
 
 export function AdminVerifyModals({
   lead,
+  pipelineStages,
   activeStage,
   onClose,
   previewUrl,
@@ -122,6 +127,8 @@ export function AdminVerifyModals({
   const templateLabel = lead.websiteTemplate
     ? formatTemplateOption(lead.websiteTemplate)
     : lead.websiteTemplateId ?? "—";
+
+  const stageDecline = (key: PipelineStageKey) => declineNoteForStage(pipelineStages, key);
 
   const advanceOk = hasVerifiedAdvance(lead);
   const previewOnServer = Boolean(lead.project?.previewUrl);
@@ -245,6 +252,9 @@ export function AdminVerifyModals({
           </>
         }
       >
+        {stageDecline("whatsapp_group") !== undefined ? (
+          <DeclineFeedbackInline declineNote={stageDecline("whatsapp_group")} className="mb-3" />
+        ) : null}
         <PortalMetaGrid
           items={[
             {
@@ -286,6 +296,9 @@ export function AdminVerifyModals({
           </>
         }
       >
+        {stageDecline("demo_finalized") !== undefined ? (
+          <DeclineFeedbackInline declineNote={stageDecline("demo_finalized")} className="mb-3" />
+        ) : null}
         <PortalMetaGrid
           items={[
             {
@@ -406,15 +419,8 @@ export function AdminVerifyModals({
           </>
         }
       >
-        {verify.onDecline ? (
-          <div className="space-y-2">
-            <Label htmlFor="decline-note-acct">Decline note (optional)</Label>
-            <Textarea
-              id="decline-note-acct"
-              value={verify.declineNote}
-              onChange={(e) => verify.onDeclineNoteChange(e.target.value)}
-            />
-          </div>
+        {stageDecline("accounts_ready") !== undefined ? (
+          <DeclineFeedbackInline declineNote={stageDecline("accounts_ready")} className="mb-3" />
         ) : null}
         <PortalMetaGrid
           items={[
@@ -426,6 +432,16 @@ export function AdminVerifyModals({
             }
           ]}
         />
+        {verify.onDecline ? (
+          <div className="mt-3 space-y-2">
+            <Label htmlFor="decline-note-acct">Decline note (optional)</Label>
+            <Textarea
+              id="decline-note-acct"
+              value={verify.declineNote}
+              onChange={(e) => verify.onDeclineNoteChange(e.target.value)}
+            />
+          </div>
+        ) : null}
       </StageModalShell>
 
       <StageModalShell
@@ -438,6 +454,9 @@ export function AdminVerifyModals({
           </Button>
         }
       >
+        {stageDecline("deployment_submit") !== undefined ? (
+          <DeclineFeedbackInline declineNote={stageDecline("deployment_submit")} className="mb-3" />
+        ) : null}
         <PortalMetaGrid
           items={[
             {
@@ -473,6 +492,9 @@ export function AdminVerifyModals({
           </>
         }
       >
+        {stageDecline("deployment_verify") !== undefined ? (
+          <DeclineFeedbackInline declineNote={stageDecline("deployment_verify")} className="mb-3" />
+        ) : null}
         {verify.onDecline ? (
           <div className="space-y-2">
             <Label htmlFor="decline-note-dep">Decline note (optional)</Label>

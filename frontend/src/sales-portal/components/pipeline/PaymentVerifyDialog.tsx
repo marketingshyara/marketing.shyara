@@ -42,52 +42,69 @@ export function PaymentVerifyDialog({
 
   if (!payment) return null;
 
+  const isRejected = payment.verificationStatus === "REJECTED";
+  const isPaymentPending = payment.verificationStatus === "PENDING";
+
   return (
     <StageModalShell
       open={open}
       onOpenChange={onOpenChange}
-      title={`Verify ${paymentKindLabel(payment.kind)} payment`}
+      title={
+        isRejected
+          ? `${paymentKindLabel(payment.kind)} payment declined`
+          : `Verify ${paymentKindLabel(payment.kind)} payment`
+      }
       description={`Amount: ${formatMinorUnits(payment.amountCents)}`}
       footer={
-        <>
+        isRejected ? (
           <Button
             type="button"
-            variant="destructive"
             className="min-h-11 w-full sm:w-auto"
-            disabled={isPending}
-            onClick={() => {
-              if (!note.trim()) {
-                toast.error("Add a short note explaining why you declined.");
-                return;
+            onClick={() => onOpenChange(false)}
+          >
+            Close
+          </Button>
+        ) : (
+          <>
+            <Button
+              type="button"
+              variant="destructive"
+              className="min-h-11 w-full sm:w-auto"
+              disabled={isPending || !isPaymentPending}
+              onClick={() => {
+                if (!note.trim()) {
+                  toast.error("Add a short note explaining why you declined.");
+                  return;
+                }
+                onVerify(payment.id, {
+                  decision: "REJECTED",
+                  adminNote: note.trim()
+                });
+              }}
+            >
+              Decline
+            </Button>
+            <Button
+              type="button"
+              className="min-h-11 w-full sm:w-auto"
+              disabled={isPending || !isPaymentPending || !ref.trim()}
+              onClick={() =>
+                onVerify(payment.id, {
+                  decision: "VERIFIED",
+                  externalReference: ref.trim(),
+                  adminNote: note || null
+                })
               }
-              onVerify(payment.id, {
-                decision: "REJECTED",
-                adminNote: note.trim()
-              });
-            }}
-          >
-            Decline
-          </Button>
-          <Button
-            type="button"
-            className="min-h-11 w-full sm:w-auto"
-            disabled={isPending || !ref.trim()}
-            onClick={() =>
-              onVerify(payment.id, {
-                decision: "VERIFIED",
-                externalReference: ref.trim(),
-                adminNote: note || null
-              })
-            }
-          >
-            Approve payment
-          </Button>
-          {!ref.trim() ? (
-            <p className="w-full text-left text-xs text-muted-foreground">
-              Enter the Razorpay reference to enable Approve.
-            </p>
-          ) : null}
-        </>
+            >
+              Approve payment
+            </Button>
+            {!ref.trim() ? (
+              <p className="w-full text-left text-xs text-muted-foreground">
+                Enter the Razorpay reference to enable Approve.
+              </p>
+            ) : null}
+          </>
+        )
       }
     >
       <div className="space-y-3">
@@ -121,26 +138,48 @@ export function PaymentVerifyDialog({
                 <dd className="font-mono text-xs">{payment.externalReference}</dd>
               </div>
             ) : null}
+            {isRejected && payment.adminNote ? (
+              <div>
+                <dt className="text-muted-foreground">Decline reason</dt>
+                <dd>{payment.adminNote}</dd>
+              </div>
+            ) : null}
+            {isRejected && payment.verifiedAt ? (
+              <div>
+                <dt className="text-muted-foreground">Declined at</dt>
+                <dd>{new Date(payment.verifiedAt).toLocaleString()}</dd>
+              </div>
+            ) : null}
           </dl>
         ) : null}
-        <div className="space-y-2">
-          <Label htmlFor="pay-ref">Razorpay reference (required to approve)</Label>
-          <Input
-            id="pay-ref"
-            className="min-h-11"
-            value={ref}
-            onChange={(e) => setRef(e.target.value)}
-            placeholder="Razorpay payment id"
-            aria-describedby="pay-ref-hint"
-          />
-          <p id="pay-ref-hint" className="text-xs text-muted-foreground">
-            Paste the payment ID from your Razorpay dashboard.
+        {isRejected ? (
+          <p className="text-sm text-muted-foreground" role="status">
+            {payment.adminNote?.trim()
+              ? "This payment was declined with the reason above. The rep can record a new payment."
+              : "This payment was declined. The rep can record a new payment."}
           </p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="pay-note">Admin note (required if declining)</Label>
-          <Textarea id="pay-note" value={note} onChange={(e) => setNote(e.target.value)} />
-        </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="pay-ref">Razorpay reference (required to approve)</Label>
+              <Input
+                id="pay-ref"
+                className="min-h-11"
+                value={ref}
+                onChange={(e) => setRef(e.target.value)}
+                placeholder="Razorpay payment id"
+                aria-describedby="pay-ref-hint"
+              />
+              <p id="pay-ref-hint" className="text-xs text-muted-foreground">
+                Paste the payment ID from your Razorpay dashboard.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pay-note">Admin note (required if declining)</Label>
+              <Textarea id="pay-note" value={note} onChange={(e) => setNote(e.target.value)} />
+            </div>
+          </>
+        )}
       </div>
     </StageModalShell>
   );

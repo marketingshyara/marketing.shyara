@@ -6,7 +6,9 @@ import { AdminVerifyModals } from "../../components/pipeline/AdminVerifyModals";
 import { PaymentVerifyDialog } from "../../components/pipeline/PaymentVerifyDialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DeclineFeedbackBanner } from "../../components/pipeline/DeclineFeedbackBanner";
 import { PipelineFocusCard } from "../../components/pipeline/PipelineFocusCard";
+import { findDeclineFeedbackStage } from "../../lib/declineFeedback";
 import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
@@ -342,6 +344,7 @@ export function AdminProjectPage() {
     repsQr.data?.items.find((r) => r.id === repId)?.email ??
     "Rep";
   const rejectable = activeStage ? STAGE_REJECTABLE[activeStage] : undefined;
+  const declineFeedback = findDeclineFeedbackStage(stages);
 
   const verifiedAdvance = lead.payments?.find(
     (p) => p.kind === "ADVANCE" && p.verificationStatus === "VERIFIED"
@@ -385,6 +388,13 @@ export function AdminProjectPage() {
           {lead.agreedTotalCents != null ? ` · ${formatMinorUnits(lead.agreedTotalCents)}` : ""}
         </p>
       </div>
+
+      {declineFeedback ? (
+        <DeclineFeedbackBanner
+          stageTitle={declineFeedback.title}
+          declineNote={declineFeedback.declineNote}
+        />
+      ) : null}
 
       <PipelineFocusCard
         stages={stages}
@@ -456,6 +466,7 @@ export function AdminProjectPage() {
 
       <AdminVerifyModals
         lead={lead}
+        pipelineStages={stages}
         activeStage={activeStage}
         onClose={closeModal}
         previewUrl={previewUrl}

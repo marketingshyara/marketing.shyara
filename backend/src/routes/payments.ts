@@ -17,7 +17,7 @@ import {
   getRequiredLeadStatusForVerify
 } from "../services/settings.js";
 import { verifyPaymentBodySchema, pendingPaymentsQuerySchema } from "../validators/schemas.js";
-import { notifyRepOfAdminDecision } from "../services/notifications.js";
+import { notifyActiveAdmins, notifyRepOfAdminDecision } from "../services/notifications.js";
 import { PortalNotificationKind } from "@prisma/client";
 
 export async function registerPaymentRoutes(app: FastifyInstance): Promise<void> {
@@ -146,16 +146,31 @@ export async function registerPaymentRoutes(app: FastifyInstance): Promise<void>
             action: ActivityAction.PAYMENT_VERIFIED,
             entityType: "LeadPayment",
             entityId: paymentId,
-            after: { decision: body.decision, leadStatus: payment.lead.status },
+            after: {
+              decision: body.decision,
+              leadStatus: payment.lead.status,
+              adminNote: body.adminNote ?? null
+            },
             request
           });
           const repId = payment.lead.assignedToUserId ?? payment.lead.createdByUserId;
+          const payNote = body.adminNote?.trim() ? ` Note: ${body.adminNote.trim()}` : "";
+          const declineMessage = `${payment.lead.clientName}: ${payment.kind} payment declined.${payNote}`;
+          const stageKey =
+            payment.kind === PaymentKind.ADVANCE ? "advance_verify" : "final_verify";
           await notifyRepOfAdminDecision(tx, {
             leadId: payment.leadId,
             repUserId: repId,
             kind: PortalNotificationKind.ADMIN_DECLINED,
-            stageKey: payment.kind === PaymentKind.ADVANCE ? "advance_verify" : "final_verify",
-            message: `${payment.lead.clientName}: ${payment.kind} payment declined.`
+            stageKey,
+            message: declineMessage
+          });
+          await notifyActiveAdmins(tx, {
+            leadId: payment.leadId,
+            kind: PortalNotificationKind.ADMIN_DECLINED,
+            stageKey,
+            message: declineMessage,
+            excludeUserId: admin.id
           });
           return { payment: updatedPayment, lead: payment.lead };
         }

@@ -107,6 +107,10 @@ export interface Lead {
   accountsReadyAt: string | null;
   accountsReadyVerifiedAt: string | null;
   repoTransferVerifiedAt: string | null;
+  stageDeclineNotes?: Record<
+    string,
+    { adminNote: string | null; declinedAt: string }
+  > | null;
   createdAt: string;
   updatedAt: string;
   payments?: LeadPayment[];
@@ -250,6 +254,8 @@ export interface PipelineStageView {
   state: StageUiState;
   hint?: string;
   blockedReason?: string;
+  /** Present when step was declined and needs resubmit; null = no written note. */
+  declineNote?: string | null;
 }
 
 export type PipelineStageVerifyKey =

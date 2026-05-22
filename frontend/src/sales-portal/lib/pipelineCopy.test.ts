@@ -38,6 +38,15 @@ describe("getPipelineFocus", () => {
     expect(focus.statusChip.kind).toBe("waiting");
   });
 
+  it("surfaces decline note on actionable focus detail", () => {
+    const focus = getPipelineFocus(
+      [stage("accounts_ready", "actionable", { declineNote: "Use client GitHub org" })],
+      "rep"
+    );
+    expect(focus.kind).toBe("action");
+    expect(focus.detail).toBe("Use client GitHub org");
+  });
+
   it("picks admin pending approval before rep-only actionable", () => {
     const focus = getPipelineFocus(
       [
