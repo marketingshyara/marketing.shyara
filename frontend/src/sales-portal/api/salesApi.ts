@@ -191,10 +191,13 @@ export const salesApi = {
   },
 
   patchCommission: (id: string, body: { amountCents: number }) =>
-    apiJson<{ commission: Commission }>("PATCH", `/commissions/${id}`, body),
+    apiJson<LeadDetailResponse & { commission: Commission }>("PATCH", `/commissions/${id}`, body),
 
   markCommissionPaid: (id: string) =>
-    apiJson<{ commission: Commission; lead: Lead }>("POST", `/commissions/${id}/mark-paid`),
+    apiJson<LeadDetailResponse & { commission: Commission }>(
+      "POST",
+      `/commissions/${id}/mark-paid`
+    ),
 
   projects: (params: { page?: number; pageSize?: number }) => {
     const q = new URLSearchParams();

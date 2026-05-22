@@ -436,6 +436,14 @@ Team → rep → project (`/portal/team/:repId/projects/:leadId`). Optional deep
 | Deployment verify | Verify / Decline | Verify | Rep submitted live URL |
 | Commission | Save amount (₹) + Mark paid | Both | Deployment verified; valid amount |
 
+**commission (payout)** — detailed:
+
+1. After **Verify deployment**, open Commission — see basis, rate %, calculated estimate, and editable ₹ (prefilled from saved amount).
+2. Clear the field and retype — value must **not** snap back until you save or reopen the modal.
+3. **Save amount** — toast “Commission amount saved”; summary updates.
+4. **Mark commission paid** — works when deployment is verified even if lead status was still `FINAL_PAID` (server promotes to `DEPLOYED`); success toast; pipeline shows commission verified; rep **Commission** page shows Paid.
+5. From **Reviews** COMMISSION row (`?stage=commission` deep link) — same flow as project page.
+
 **build_demo (preview URL)** — detailed:
 
 1. Open modal — header, two-step helper, “No preview URL saved yet” when empty.

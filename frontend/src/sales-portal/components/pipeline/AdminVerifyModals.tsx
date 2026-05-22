@@ -3,8 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Lead, PipelineStageKey } from "../../types";
+import type { Lead, LeadStatus, PipelineStageKey } from "../../types";
 import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
+import { useAdminSettingsQuery } from "../../hooks/useSalesQueries";
+import {
+  commissionBasisLabel,
+  commissionRateLabel,
+  estimatedCommissionForLead
+} from "../../lib/commissionEstimate";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { stageNextStepHint } from "../../lib/pipelineCopy";
 import { tryNormalizeHttpUrl } from "../../lib/httpUrl";
@@ -151,6 +157,9 @@ export function AdminVerifyModals({
     deployDisabledReasons.push("Rep must submit the live URL before you can verify deployment.");
   if (deployVerified) deployDisabledReasons.push("Deployment is already verified.");
 
+  const settingsQr = useAdminSettingsQuery(activeStage === "commission");
+  const portalSettings = settingsQr.data?.settings;
+
   const commissionCents = parseRupeeInputToCents(commissionEditRupees);
   const commissionSaveValid =
     commissionCents != null && commissionCents > 0 && lead.commission != null;
@@ -158,6 +167,40 @@ export function AdminVerifyModals({
     lead.commission != null &&
     commissionCents != null &&
     commissionCents === lead.commission.amountCents;
+
+  const commissionStatusOk = (s: LeadStatus) => s === "DEPLOYED" || s === "FINAL_PAID";
+  const canMarkCommissionPaid =
+    Boolean(
+      lead.commission &&
+        !lead.commission.isPaid &&
+        deployVerified &&
+        commissionStatusOk(lead.status)
+    );
+
+  const commissionMarkDisabledReasons: string[] = [];
+  if (!lead.commission) {
+    commissionMarkDisabledReasons.push("Verify deployment first — commission is created after the site is live.");
+  } else if (lead.commission.isPaid) {
+    commissionMarkDisabledReasons.push("Commission is already marked paid.");
+  } else if (!deployVerified) {
+    commissionMarkDisabledReasons.push("Verify deployment first — commission is due after the site is live.");
+  } else if (!commissionStatusOk(lead.status)) {
+    commissionMarkDisabledReasons.push("Complete due payment verification before marking commission paid.");
+  }
+
+  const commissionSaveDisabledReasons: string[] = [];
+  if (lead.commission && !lead.commission.isPaid && onPatchCommission) {
+    if (!commissionEditRupees.trim()) {
+      commissionSaveDisabledReasons.push("Enter a commission amount in rupees to save.");
+    } else if (commissionUnchanged) {
+      commissionSaveDisabledReasons.push("Amount unchanged — edit the value before saving.");
+    } else if (!commissionSaveValid) {
+      commissionSaveDisabledReasons.push("Enter a valid positive amount in rupees.");
+    }
+  }
+
+  const estimatedCents =
+    portalSettings != null ? estimatedCommissionForLead(lead, portalSettings) : null;
 
   return (
     <>
@@ -499,25 +542,19 @@ export function AdminVerifyModals({
               <Button
                 type="button"
                 className="min-h-11 w-full sm:w-auto"
-                disabled={verify.isPending || !lead.project?.deploymentVerifiedAt}
+                disabled={verify.isPending || !canMarkCommissionPaid}
                 onClick={verify.onVerify}
               >
                 Mark commission paid
               </Button>
               <ModalDisabledHints
                 reasons={[
-                  ...(!commissionSaveValid || commissionUnchanged
-                    ? [
-                        !commissionEditRupees.trim()
-                          ? "Enter a commission amount in rupees to save."
-                          : commissionUnchanged
-                            ? "Amount unchanged — edit the value before saving."
-                            : "Enter a valid positive amount in rupees."
-                      ]
+                  ...(patchCommissionPending ||
+                  !commissionSaveValid ||
+                  commissionUnchanged
+                    ? commissionSaveDisabledReasons
                     : []),
-                  ...(!lead.project?.deploymentVerifiedAt
-                    ? ["Verify deployment first — commission is due after the site is live."]
-                    : [])
+                  ...(!canMarkCommissionPaid ? commissionMarkDisabledReasons : [])
                 ]}
               />
             </>
@@ -529,14 +566,32 @@ export function AdminVerifyModals({
         {lead.commission ? (
           <div className="space-y-3 text-sm">
             <p>
-              Amount: {formatMinorUnits(lead.commission.amountCents)}
+              Saved amount: {formatMinorUnits(lead.commission.amountCents)}
               {lead.commission.bonusCents > 0
                 ? ` + ${formatMinorUnits(lead.commission.bonusCents)} bonus`
                 : ""}
             </p>
+            {portalSettings && !lead.commission.isPaid ? (
+              <dl className="grid gap-1 rounded-md border bg-muted/30 p-3 text-xs">
+                <div>
+                  <dt className="text-muted-foreground">Basis</dt>
+                  <dd>{commissionBasisLabel(portalSettings.commissionBasis)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Rate</dt>
+                  <dd>{commissionRateLabel(portalSettings)}</dd>
+                </div>
+                {estimatedCents != null ? (
+                  <div>
+                    <dt className="text-muted-foreground">Calculated estimate</dt>
+                    <dd>{formatMinorUnits(estimatedCents)}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            ) : null}
             {onPatchCommission && !lead.commission.isPaid ? (
               <div className="space-y-2">
-                <Label htmlFor="comm-edit">Edit amount (₹)</Label>
+                <Label htmlFor="comm-edit">Payout amount (₹)</Label>
                 <Input
                   id="comm-edit"
                   className="min-h-11"
@@ -544,6 +599,9 @@ export function AdminVerifyModals({
                   value={commissionEditRupees}
                   onChange={(e) => onCommissionEditRupeesChange(e.target.value)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  You may adjust slightly before saving.
+                </p>
               </div>
             ) : null}
           </div>

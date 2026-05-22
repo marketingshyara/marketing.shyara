@@ -16,6 +16,7 @@ import { getPortalSettings } from "../services/settings.js";
 import { pipelineStageKeySchema, rejectStageBodySchema } from "../validators/schemas.js";
 import { notifyRepOfAdminDecision } from "../services/notifications.js";
 import { PortalNotificationKind, UserRole } from "@prisma/client";
+import { promoteLeadToDeployedIfEligible } from "../services/commissionPayout.js";
 import { getPipelineStages } from "../services/pipeline.js";
 
 function hasVerifiedPayment(
@@ -177,12 +178,6 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
             if (projClaim.count === 0) {
               throw new HttpError(409, "CONCURRENT_MODIFICATION", "Project was modified concurrently.");
             }
-            if (lead.status === LeadStatus.FINAL_PAID) {
-              await tx.lead.updateMany({
-                where: { id, status: LeadStatus.FINAL_PAID },
-                data: { status: LeadStatus.DEPLOYED }
-              });
-            }
             const freshLead = await tx.lead.findUniqueOrThrow({
               where: { id },
               include: { payments: true }
@@ -209,6 +204,9 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
               where: { leadId: id },
               create: { leadId: id, repUserId: repId, amountCents, bonusCents: 0 },
               update: { repUserId: repId, amountCents }
+            });
+            await promoteLeadToDeployedIfEligible(tx, id, {
+              deploymentVerifiedAt: now
             });
             break;
           }

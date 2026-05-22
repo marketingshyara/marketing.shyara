@@ -2,7 +2,41 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AdminVerifyModals } from "./AdminVerifyModals";
-import type { Lead } from "../../types";
+import type { Lead, PortalSettingsValues } from "../../types";
+
+const adminSettingsStub: PortalSettingsValues = {
+  minAgreedTotalCents: 0,
+  advancePaymentShareBps: 5000,
+  commissionRateBps: 2000,
+  commissionBasis: "AGREED_TOTAL",
+  commissionRounding: "round",
+  manualTransitions: [],
+  advancePaymentRequiredLeadStatus: "NEW",
+  finalPaymentRequiredLeadStatus: "BUILDING",
+  advanceVerifyRequiredLeadStatus: "NEW",
+  finalVerifyRequiredLeadStatus: "BUILDING",
+  terminalNoMutationStatuses: ["COMMISSION_PAID"],
+  enforcePaymentQuoteToleranceBps: null,
+  exportMaxRows: 5000,
+  performanceBonusAmountCents: 0,
+  performanceBonusAfterCompletedSales: 3,
+  templatesCatalogUrl: "https://example.com/templates",
+  tutorialLinks: [],
+  painPointsByCategory: []
+};
+
+vi.mock("../../hooks/useSalesQueries", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../hooks/useSalesQueries")>();
+  return {
+    ...actual,
+    useAdminSettingsQuery: vi.fn((enabled: boolean) => ({
+      data: enabled ? { settings: adminSettingsStub } : undefined,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn()
+    }))
+  };
+});
 
 const verifyStub = {
   onVerify: vi.fn(),
@@ -200,5 +234,107 @@ describe("AdminVerifyModals later stages", () => {
 
     expect(screen.getByRole("button", { name: "Verify deployment" })).toBeDisabled();
     expect(screen.getByText(/submit the live URL/i)).toBeInTheDocument();
+  });
+});
+
+describe("AdminVerifyModals commission", () => {
+  function leadWithCommission(overrides: Partial<Lead> = {}): Lead {
+    return leadWithAdvance({
+      status: "FINAL_PAID",
+      agreedTotalCents: 50_000,
+      commission: {
+        id: "comm-1",
+        leadId: "lead-1",
+        repUserId: "rep-1",
+        amountCents: 10_000,
+        bonusCents: 0,
+        isPaid: false,
+        paidAt: null,
+        paidByAdminId: null,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z"
+      },
+      project: {
+        id: "p1",
+        leadId: "lead-1",
+        title: "Site",
+        metadata: null,
+        previewUrl: "https://demo.test",
+        deployedUrl: "https://live.test",
+        deploymentSubmittedAt: "2026-02-01T00:00:00.000Z",
+        deploymentVerifiedAt: "2026-02-02T00:00:00.000Z",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-02-02T00:00:00.000Z"
+      },
+      ...overrides
+    });
+  }
+
+  it("enables Mark commission paid when deployment is verified and status is FINAL_PAID", () => {
+    render(
+      <AdminVerifyModals
+        lead={leadWithCommission()}
+        activeStage="commission"
+        onClose={vi.fn()}
+        previewUrl=""
+        onPreviewUrlChange={vi.fn()}
+        verify={verifyStub}
+        onSavePreview={vi.fn()}
+        savePreviewPending={false}
+        onMarkDemoReady={vi.fn()}
+        markDemoPending={false}
+        commissionEditRupees="100"
+        onCommissionEditRupeesChange={vi.fn()}
+        onPatchCommission={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Mark commission paid" })).not.toBeDisabled();
+  });
+
+  it("shows an empty payout field when parent passes empty string (no modal refill)", () => {
+    render(
+      <AdminVerifyModals
+        lead={leadWithCommission()}
+        activeStage="commission"
+        onClose={vi.fn()}
+        previewUrl=""
+        onPreviewUrlChange={vi.fn()}
+        verify={verifyStub}
+        onSavePreview={vi.fn()}
+        savePreviewPending={false}
+        onMarkDemoReady={vi.fn()}
+        markDemoPending={false}
+        commissionEditRupees=""
+        onCommissionEditRupeesChange={vi.fn()}
+        onPatchCommission={vi.fn()}
+      />
+    );
+
+    expect(screen.getByLabelText(/Payout amount/i)).toHaveValue("");
+  });
+
+  it("shows calculated estimate from portal settings", () => {
+    render(
+      <AdminVerifyModals
+        lead={leadWithCommission()}
+        activeStage="commission"
+        onClose={vi.fn()}
+        previewUrl=""
+        onPreviewUrlChange={vi.fn()}
+        verify={verifyStub}
+        onSavePreview={vi.fn()}
+        savePreviewPending={false}
+        onMarkDemoReady={vi.fn()}
+        markDemoPending={false}
+        commissionEditRupees="100"
+        onCommissionEditRupeesChange={vi.fn()}
+        onPatchCommission={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/Calculated estimate/i)).toBeInTheDocument();
+    expect(screen.getByText(/Agreed project total/i)).toBeInTheDocument();
+    expect(screen.getByText(/^20%$/)).toBeInTheDocument();
   });
 });

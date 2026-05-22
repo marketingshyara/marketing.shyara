@@ -32,7 +32,7 @@ import {
 } from "../../hooks/useSalesQueries";
 import { prepareHttpUrlForMutation, tryNormalizeHttpUrl } from "../../lib/httpUrl";
 import type { LeadPayment, PipelineStageKey, PipelineStageVerifyKey, PipelineStageView } from "../../types";
-import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
+import { centsToRupeeInputString, formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
 import { leadStatusLabel } from "../../lib/copy";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { toastIfStageBlocked } from "../../lib/pipelineStageGuard";
@@ -78,7 +78,7 @@ export function AdminProjectPage() {
   const verifyPay = useVerifyPaymentMutation(leadId ?? "", repId);
   const verifyStage = useVerifyLeadStageMutation(leadId ?? "", repId);
   const rejectStage = useRejectLeadStageMutation(leadId ?? "", repId);
-  const markCommissionPaid = useMarkCommissionPaidMutation(repId);
+  const markCommissionPaid = useMarkCommissionPaidMutation(leadId ?? "", repId);
   const patchCommission = usePatchCommissionMutation(leadId ?? "", repId);
   const patch = usePatchLeadMutation(leadId ?? "", repId);
 
@@ -105,12 +105,6 @@ export function AdminProjectPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- open once when deep-linked
   }, [searchParams.get("stage"), lead?.id]);
-
-  useEffect(() => {
-    if (lead?.commission && commissionEditRupees === "") {
-      setCommissionEditRupees(String(lead.commission.amountCents / 100));
-    }
-  }, [lead?.commission?.amountCents, commissionEditRupees]);
 
   useEffect(() => {
     setPreviewUrl(lead?.project?.previewUrl ?? "");
@@ -164,7 +158,14 @@ export function AdminProjectPage() {
     }
     const stage = stages.find((s) => s.key === key);
     if (!stage) return;
-    if (key === "commission" || isAdminActionable(stage)) {
+    if (key === "commission") {
+      if (lead.commission) {
+        setCommissionEditRupees(centsToRupeeInputString(lead.commission.amountCents));
+      }
+      setActiveStage(key);
+      return;
+    }
+    if (isAdminActionable(stage)) {
       setActiveStage(key);
     }
   };
@@ -485,8 +486,10 @@ export function AdminProjectPage() {
           patchCommission.mutate(
             { id: lead.commission.id, amountCents: cents },
             {
-              onSuccess: () => {
-                void leadQr.refetch();
+              onSuccess: (data) => {
+                if (data.commission) {
+                  setCommissionEditRupees(centsToRupeeInputString(data.commission.amountCents));
+                }
               },
               onError: (e) => errToast(e, qc)
             }

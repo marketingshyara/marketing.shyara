@@ -76,6 +76,10 @@ export function errToast(e: unknown, qc?: QueryClient) {
       toast.error(e.message || "This step was already completed. Refresh and check the pipeline.");
       return;
     }
+    if (e.code === "ALREADY_PAID") {
+      toast.error(e.message || "Commission is already marked paid.");
+      return;
+    }
     toast.error(e.message);
   } else if (e instanceof Error && e.message) {
     toast.error(e.message);
@@ -399,23 +403,29 @@ export function usePatchCommissionMutation(leadId: string, repId?: string | null
   return useMutation({
     mutationFn: ({ id, amountCents }: { id: string; amountCents: number }) =>
       salesApi.patchCommission(id, { amountCents }),
-    onSuccess: () => {
-      invalidateLeadAndRep(qc, { leadId, repId: repId ?? undefined });
+    onSuccess: (data, _vars, _ctx, context) => {
+      applyLeadDetailToCache(qc, leadId, data);
+      invalidateLeadAndRep(qc, {
+        leadId,
+        repId: repId ?? data.lead.assignedToUserId
+      });
       qc.invalidateQueries({ queryKey: ["commissions"] });
       invalidateQueryPrefixes(qc, ["leads", "activity-logs"]);
-      toast.success("Commission updated");
+      const meta = context?.meta as { skipSuccessToast?: boolean } | undefined;
+      if (!meta?.skipSuccessToast) toast.success("Commission amount saved.");
     },
     onError: (e) => errToast(e, qc)
   });
 }
 
-export function useMarkCommissionPaidMutation(repId?: string | null) {
+export function useMarkCommissionPaidMutation(leadId: string, repId?: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: salesApi.markCommissionPaid,
     onSuccess: (data, _vars, _ctx, context) => {
+      applyLeadDetailToCache(qc, leadId, data);
       invalidateLeadAndRep(qc, {
-        leadId: data.lead.id,
+        leadId,
         repId: repId ?? data.lead.assignedToUserId
       });
       qc.invalidateQueries({ queryKey: ["commissions"] });

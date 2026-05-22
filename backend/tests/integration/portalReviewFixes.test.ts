@@ -513,7 +513,17 @@ d("portal review fixes - integration", () => {
         status: LeadStatus.FINAL_PAID,
         agreedTotalCents: 5,
         advanceAmountCents: 2,
-        finalQuoteCents: 3
+        finalQuoteCents: 3,
+        payments: {
+          create: {
+            kind: PaymentKind.FINAL,
+            amountCents: 3,
+            verificationStatus: PaymentVerificationStatus.VERIFIED,
+            markedByUserId: repId,
+            verifiedByUserId: adminId,
+            verifiedAt: new Date()
+          }
+        }
       }
     });
     const project = await prisma.project.create({
@@ -532,9 +542,14 @@ d("portal review fixes - integration", () => {
       payload: {}
     });
     expect(res.statusCode).toBe(200);
+    const body = res.json() as { lead: { status: string }; pipelineStages: unknown[] };
     const commission = await prisma.commission.findUnique({ where: { leadId: lead.id } });
     // 5 * 3000 = 15000 / 10000 = 1.5 -> 2 (even).
     expect(commission?.amountCents).toBe(2);
+    const refreshed = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    expect(refreshed.status).toBe(LeadStatus.DEPLOYED);
+    expect(body.lead.status).toBe(LeadStatus.DEPLOYED);
+    expect(Array.isArray(body.pipelineStages)).toBe(true);
 
     await prisma.commission.delete({ where: { leadId: lead.id } });
     await prisma.project.delete({ where: { id: project.id } });
@@ -545,6 +560,67 @@ d("portal review fixes - integration", () => {
       data: { values: defaults as object }
     });
     invalidatePortalSettingsCache();
+    await app.close();
+  });
+
+  it("mark commission paid heals FINAL_PAID to DEPLOYED and returns pipelineStages", async () => {
+    const lead = await prisma.lead.create({
+      data: {
+        createdByUserId: adminId,
+        assignedToUserId: repId,
+        clientName: "Heal Commission Lead",
+        status: LeadStatus.FINAL_PAID,
+        agreedTotalCents: 10_000,
+        advanceAmountCents: 5_000,
+        finalQuoteCents: 5_000,
+        payments: {
+          create: {
+            kind: PaymentKind.FINAL,
+            amountCents: 5_000,
+            verificationStatus: PaymentVerificationStatus.VERIFIED,
+            markedByUserId: repId,
+            verifiedByUserId: adminId,
+            verifiedAt: new Date()
+          }
+        }
+      }
+    });
+    const project = await prisma.project.create({
+      data: {
+        leadId: lead.id,
+        title: "Heal project",
+        deployedUrl: "https://example.com/live",
+        deploymentSubmittedAt: new Date(),
+        deploymentVerifiedAt: new Date()
+      }
+    });
+    const commission = await prisma.commission.create({
+      data: { leadId: lead.id, repUserId: repId, amountCents: 2_000, bonusCents: 0 }
+    });
+
+    const { app, cookieHeader } = await loginAs(adminEmail, "AdminPass123!");
+    const res = await inject(app, {
+      method: "POST",
+      url: `/api/commissions/${commission.id}/mark-paid`,
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: {}
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as {
+      commission: { isPaid: boolean };
+      lead: { status: string };
+      pipelineStages: { key: string }[];
+    };
+    expect(body.commission.isPaid).toBe(true);
+    expect(body.lead.status).toBe(LeadStatus.COMMISSION_PAID);
+    expect(body.pipelineStages.length).toBeGreaterThan(0);
+
+    const refreshed = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+    expect(refreshed.status).toBe(LeadStatus.COMMISSION_PAID);
+
+    await prisma.commission.delete({ where: { id: commission.id } });
+    await prisma.project.delete({ where: { id: project.id } });
+    await prisma.lead.delete({ where: { id: lead.id } });
     await app.close();
   });
 

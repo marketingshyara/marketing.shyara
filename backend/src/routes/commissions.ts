@@ -6,6 +6,10 @@ import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings } from "../services/settings.js";
+import {
+  loadLeadDetailForAdmin,
+  promoteLeadToDeployedIfEligible
+} from "../services/commissionPayout.js";
 import { commissionsListQuerySchema, patchCommissionBodySchema } from "../validators/schemas.js";
 
 export async function registerCommissionRoutes(app: FastifyInstance): Promise<void> {
@@ -60,7 +64,7 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
       const result = await app.prisma.$transaction(async (tx) => {
         const existing = await tx.commission.findUnique({
           where: { id },
-          include: { lead: true }
+          include: { lead: { include: { project: true } } }
         });
         if (!existing) {
           throw new HttpError(404, "NOT_FOUND", "Commission not found.");
@@ -72,7 +76,6 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
           throw new HttpError(400, "LEAD_TERMINAL", "Lead is already commission-paid.");
         }
 
-        // Atomic edit: only update if still unpaid.
         const claim = await tx.commission.updateMany({
           where: { id, isPaid: false },
           data: { amountCents: body.amountCents }
@@ -94,10 +97,11 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
           request
         });
 
-        return updated;
+        const detail = await loadLeadDetailForAdmin(tx, existing.leadId);
+        return { commission: updated, ...detail };
       });
 
-      return reply.send({ commission: result });
+      return reply.send(result);
     }
   );
 
@@ -111,68 +115,71 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
 
       const outcome = await app.prisma.$transaction(
         async (tx) => {
-        const commission = await tx.commission.findUnique({
-          where: { id },
-          include: { lead: true }
-        });
-        if (!commission) {
-          throw new HttpError(404, "NOT_FOUND", "Commission not found.");
-        }
-        if (commission.isPaid) {
-          throw new HttpError(400, "ALREADY_PAID", "Commission is already marked paid.");
-        }
-
-        const settings = await getPortalSettings(tx);
-        const paidCount = await tx.commission.count({
-          where: { repUserId: commission.repUserId, isPaid: true }
-        });
-        const bonusCents =
-          paidCount >= settings.performanceBonusAfterCompletedSales
-            ? settings.performanceBonusAmountCents
-            : 0;
-
-        // Atomic: only mark paid if still unpaid. Concurrent callers see count=0 and bail.
-        const commClaim = await tx.commission.updateMany({
-          where: { id, isPaid: false },
-          data: {
-            isPaid: true,
-            paidAt: new Date(),
-            paidByAdminId: admin.id,
-            bonusCents
+          const commission = await tx.commission.findUnique({
+            where: { id },
+            include: { lead: { include: { project: true } } }
+          });
+          if (!commission) {
+            throw new HttpError(404, "NOT_FOUND", "Commission not found.");
           }
-        });
-        if (commClaim.count === 0) {
-          throw new HttpError(400, "ALREADY_PAID", "Commission is already marked paid.");
-        }
+          if (commission.isPaid) {
+            throw new HttpError(400, "ALREADY_PAID", "Commission is already marked paid.");
+          }
 
-        // Atomic transition: only flip DEPLOYED -> COMMISSION_PAID.
-        const leadClaim = await tx.lead.updateMany({
-          where: { id: commission.leadId, status: LeadStatus.DEPLOYED },
-          data: { status: LeadStatus.COMMISSION_PAID }
-        });
-        if (leadClaim.count === 0) {
-          throw new HttpError(
-            400,
-            "INVALID_STATE",
-            "Lead must be DEPLOYED before commission can be marked paid."
-          );
-        }
+          const project = commission.lead.project;
+          await promoteLeadToDeployedIfEligible(tx, commission.leadId, {
+            deploymentVerifiedAt: project?.deploymentVerifiedAt
+          });
 
-        const updatedCommission = await tx.commission.findUniqueOrThrow({ where: { id } });
-        const updatedLead = await tx.lead.findUniqueOrThrow({ where: { id: commission.leadId } });
+          const settings = await getPortalSettings(tx);
+          const paidCount = await tx.commission.count({
+            where: { repUserId: commission.repUserId, isPaid: true }
+          });
+          const bonusCents =
+            paidCount >= settings.performanceBonusAfterCompletedSales
+              ? settings.performanceBonusAmountCents
+              : 0;
 
-        await logActivity({
-          prisma: app.prisma,
-          tx,
-          userId: admin.id,
-          action: ActivityAction.COMMISSION_PAID,
-          entityType: "Commission",
-          entityId: id,
-          after: { isPaid: true, leadStatus: updatedLead.status },
-          request
-        });
+          const commClaim = await tx.commission.updateMany({
+            where: { id, isPaid: false },
+            data: {
+              isPaid: true,
+              paidAt: new Date(),
+              paidByAdminId: admin.id,
+              bonusCents
+            }
+          });
+          if (commClaim.count === 0) {
+            throw new HttpError(400, "ALREADY_PAID", "Commission is already marked paid.");
+          }
 
-        return { commission: updatedCommission, lead: updatedLead };
+          const leadClaim = await tx.lead.updateMany({
+            where: { id: commission.leadId, status: LeadStatus.DEPLOYED },
+            data: { status: LeadStatus.COMMISSION_PAID }
+          });
+          if (leadClaim.count === 0) {
+            throw new HttpError(
+              400,
+              "INVALID_STATE",
+              "Verify deployment and due payment before marking commission paid."
+            );
+          }
+
+          const updatedCommission = await tx.commission.findUniqueOrThrow({ where: { id } });
+
+          await logActivity({
+            prisma: app.prisma,
+            tx,
+            userId: admin.id,
+            action: ActivityAction.COMMISSION_PAID,
+            entityType: "Commission",
+            entityId: id,
+            after: { isPaid: true, leadStatus: LeadStatus.COMMISSION_PAID },
+            request
+          });
+
+          const detail = await loadLeadDetailForAdmin(tx, commission.leadId);
+          return { commission: updatedCommission, ...detail };
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
       );
