@@ -38,6 +38,7 @@ export function PortalNotificationsBell({ user }: Props) {
   const isAdmin = user.role === "ADMIN";
   const total = unread.data?.total ?? 0;
   const markingId = markRead.isPending ? markRead.variables : undefined;
+  const items = list.data?.items ?? [];
 
   const projectLink = (leadId: string, repId?: string | null) => {
     if (isAdmin && repId) {
@@ -98,13 +99,15 @@ export function PortalNotificationsBell({ user }: Props) {
           aria-label="Unread notifications"
           aria-busy={list.isFetching}
         >
-          {list.isLoading ? (
+          {list.isError ? (
+            <p className="px-3 py-4 text-sm text-destructive">Could not load notifications.</p>
+          ) : list.isLoading && items.length === 0 ? (
             <p className="px-3 py-4 text-sm text-muted-foreground">Loading…</p>
-          ) : list.data?.items.length === 0 ? (
+          ) : items.length === 0 ? (
             <p className="px-3 py-4 text-sm text-muted-foreground">No unread notifications.</p>
           ) : (
             <ul className="divide-y">
-              {list.data.items.map((n) => (
+              {items.map((n) => (
                 <li key={n.id} role="listitem" className="px-3 py-3">
                   <p className="break-words text-sm leading-snug">{n.message}</p>
                   {n.stageKey ? (
