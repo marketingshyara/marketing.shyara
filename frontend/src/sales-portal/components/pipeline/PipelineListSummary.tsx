@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { formatMinorUnits } from "../../lib/money";
@@ -11,6 +12,7 @@ type Props = {
   agreedTotalCents: number | null;
   href: string;
   statusChip: { kind: PortalStatusChipKind; label: string };
+  trailingAction?: ReactNode;
 };
 
 export function PipelineListSummary({
@@ -18,14 +20,16 @@ export function PipelineListSummary({
   summary,
   agreedTotalCents,
   href,
-  statusChip
+  statusChip,
+  trailingAction
 }: Props) {
   const stepLine = stageShortTitle(summary.currentStageKey, summary.currentStageTitle);
 
   return (
+    <div className="flex min-w-0 items-stretch gap-0 rounded-lg border touch-manipulation">
     <Link
       to={href}
-      className="flex min-h-11 w-full min-w-0 items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/40 active:bg-muted/60"
+      className="flex min-h-11 min-w-0 flex-1 items-center gap-3 p-4 transition-colors hover:bg-muted/40 active:bg-muted/60"
       aria-label={`Open project for ${clientName}`}
     >
       <div className="min-w-0 flex-1 space-y-2">
@@ -42,5 +46,9 @@ export function PipelineListSummary({
       </div>
       <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
     </Link>
+    {trailingAction ? (
+      <div className="flex shrink-0 items-center border-l px-1">{trailingAction}</div>
+    ) : null}
+    </div>
   );
 }

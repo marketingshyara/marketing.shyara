@@ -88,6 +88,8 @@ export const salesApi = {
   createLead: (body: Record<string, unknown>) =>
     apiJson<{ lead: Lead }>("POST", "/leads", body),
 
+  deleteLead: (id: string) => apiJson<{ ok: boolean }>("DELETE", `/leads/${id}`),
+
   convertLead: (
     id: string,
     body: {

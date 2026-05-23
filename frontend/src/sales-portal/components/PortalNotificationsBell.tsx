@@ -1,12 +1,12 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
@@ -19,17 +19,25 @@ import type { SessionUser } from "../types";
 import { defaultPortalHome } from "../lib/portalPaths";
 import { stageShortTitle } from "../lib/pipelineCopy";
 import type { PipelineStageKey } from "../types";
+import { cn } from "@/lib/utils";
 
 type Props = {
   user: SessionUser;
 };
 
 export function PortalNotificationsBell({ user }: Props) {
-  const unread = useNotificationsUnreadCountQuery(true);
-  const list = useNotificationsQuery({ page: 1, pageSize: 15, unreadOnly: true, enabled: true });
-  const markRead = useMarkNotificationReadMutation();
+  const [open, setOpen] = useState(false);
+  const unread = useNotificationsUnreadCountQuery(user.id, true);
+  const list = useNotificationsQuery(user.id, {
+    page: 1,
+    pageSize: 15,
+    unreadOnly: true,
+    enabled: open
+  });
+  const markRead = useMarkNotificationReadMutation(user.id);
   const isAdmin = user.role === "ADMIN";
   const total = unread.data?.total ?? 0;
+  const markingId = markRead.isPending ? markRead.variables : undefined;
 
   const projectLink = (leadId: string, repId?: string | null) => {
     if (isAdmin && repId) {
@@ -42,14 +50,16 @@ export function PortalNotificationsBell({ user }: Props) {
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="relative min-h-11 min-w-11"
+          className="relative min-h-11 min-w-11 touch-manipulation"
           aria-label={`Notifications${total > 0 ? `, ${total} unread` : ""}`}
+          aria-expanded={open}
+          aria-haspopup="dialog"
         >
           <Bell className="h-5 w-5" aria-hidden />
           {total > 0 ? (
@@ -62,50 +72,89 @@ export function PortalNotificationsBell({ user }: Props) {
           ) : null}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 max-h-[min(24rem,70vh)] overflow-y-auto">
-        <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {list.isLoading ? (
-          <p className="px-2 py-3 text-sm text-muted-foreground">Loading…</p>
-        ) : list.data?.items.length === 0 ? (
-          <p className="px-2 py-3 text-sm text-muted-foreground">No unread notifications.</p>
-        ) : (
-          list.data?.items.map((n) => (
-            <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 py-2">
-              <span className="text-sm leading-snug">{n.message}</span>
-              {n.stageKey ? (
-                <span className="text-xs text-muted-foreground">
-                  Step: {stageShortTitle(n.stageKey as PipelineStageKey)}
-                </span>
-              ) : null}
-              <span className="text-xs text-muted-foreground">
-                {new Date(n.createdAt).toLocaleString()}
-              </span>
-              <div className="flex gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="link"
-                  className="h-auto p-0 text-xs"
-                  asChild
-                  onClick={() => markRead.mutate(n.id)}
-                >
-                  <Link to={projectLink(n.leadId, isAdmin ? n.repId : user.id)}>Open</Link>
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="h-auto px-1 text-xs"
-                  onClick={() => markRead.mutate(n.id)}
-                >
-                  Mark read
-                </Button>
-              </div>
-            </DropdownMenuItem>
-          ))
-        )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to={defaultPortalHome(user.role)} className="w-full cursor-pointer">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        className="flex w-[min(calc(100vw-1.5rem),20rem)] max-h-[min(24rem,70dvh)] flex-col overflow-hidden p-0 touch-manipulation sm:w-80"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2.5">
+          <p className="text-sm font-semibold leading-snug">Notifications</p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="min-h-11 min-w-11 shrink-0"
+            aria-label="Close notifications"
+            onClick={() => setOpen(false)}
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </Button>
+        </div>
+
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+          role="list"
+          aria-label="Unread notifications"
+          aria-busy={list.isFetching}
+        >
+          {list.isLoading ? (
+            <p className="px-3 py-4 text-sm text-muted-foreground">Loading…</p>
+          ) : list.data?.items.length === 0 ? (
+            <p className="px-3 py-4 text-sm text-muted-foreground">No unread notifications.</p>
+          ) : (
+            <ul className="divide-y">
+              {list.data.items.map((n) => (
+                <li key={n.id} role="listitem" className="px-3 py-3">
+                  <p className="break-words text-sm leading-snug">{n.message}</p>
+                  {n.stageKey ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Step: {stageShortTitle(n.stageKey as PipelineStageKey)}
+                    </p>
+                  ) : null}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {new Date(n.createdAt).toLocaleString()}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-h-11 flex-1 sm:flex-none"
+                      asChild
+                      onClick={() => setOpen(false)}
+                    >
+                      <Link to={projectLink(n.leadId, isAdmin ? n.repId : user.id)}>Open</Link>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className={cn("min-h-11 flex-1 sm:flex-none")}
+                      disabled={markingId === n.id}
+                      aria-busy={markingId === n.id}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        markRead.mutate(n.id);
+                      }}
+                    >
+                      {markingId === n.id ? "Marking…" : "Mark read"}
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <DropdownMenuSeparator className="m-0" />
+        <DropdownMenuItem asChild className="min-h-11 rounded-none">
+          <Link
+            to={defaultPortalHome(user.role)}
+            className="w-full cursor-pointer"
+            onClick={() => setOpen(false)}
+          >
             Go to home
           </Link>
         </DropdownMenuItem>

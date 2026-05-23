@@ -17,6 +17,10 @@ export function requireRepOrAdmin(request: FastifyRequest): void {
 
 export function requireSalesRep(request: FastifyRequest): void {
   if (request.currentUser?.role !== UserRole.SALES_REP) {
-    throw new HttpError(403, "FORBIDDEN", "Sales rep access required.");
+    throw new HttpError(
+      403,
+      "NOT_SALES_REP",
+      "This action is only for sales rep accounts."
+    );
   }
 }

@@ -74,7 +74,7 @@ d("integration: auth and RBAC", () => {
 
     expect(create.statusCode).toBe(403);
     const body = JSON.parse(create.body);
-    expect(body.error.code).toBe("FORBIDDEN");
+    expect(body.error.code).toBe("NOT_SALES_REP");
     await app.close();
   });
 

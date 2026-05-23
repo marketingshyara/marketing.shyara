@@ -21,6 +21,7 @@ import {
   wasPatchFieldSent
 } from "../services/leadMutations.js";
 import {
+  assertLeadDeletable,
   assertLeadMutable,
   assertMarkedPaymentAmountMatchesLead
 } from "../services/leadGuards.js";
@@ -263,6 +264,48 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       const settings = await getPortalSettings(app.prisma);
       const pipelineStages = getPipelineStages(lead, settings, user.role);
       return reply.send({ lead, pipelineStages });
+    }
+  );
+
+  app.delete(
+    "/api/leads/:id",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      const user = request.currentUser!;
+      const { id } = request.params as { id: string };
+
+      const lead = await app.prisma.lead.findUnique({
+        where: { id },
+        include: {
+          payments: true,
+          project: true
+        }
+      });
+      if (!lead) {
+        throw new HttpError(404, "NOT_FOUND", "Lead not found.");
+      }
+      assertLeadAccess(lead, user);
+      assertLeadDeletable(lead);
+
+      await app.prisma.$transaction(async (tx) => {
+        await tx.lead.delete({ where: { id } });
+        await logActivity({
+          prisma: app.prisma,
+          tx,
+          userId: user.id,
+          action: ActivityAction.DELETE,
+          entityType: "Lead",
+          entityId: id,
+          before: {
+            clientName: lead.clientName,
+            status: lead.status,
+            assignedToUserId: lead.assignedToUserId
+          },
+          request
+        });
+      });
+
+      return reply.send({ ok: true });
     }
   );
 

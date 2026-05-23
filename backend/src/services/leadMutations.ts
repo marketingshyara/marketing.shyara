@@ -4,9 +4,14 @@ import { HttpError } from "../errors/httpError.js";
 import type { patchLeadBodySchema } from "../validators/schemas.js";
 import type { z } from "zod";
 
+/** Rep-only mutations (create lead, convert, mark payment). */
 export function assertSalesRepActor(user: User): void {
-  if (user.role === UserRole.ADMIN) {
-    throw new HttpError(403, "FORBIDDEN", "Sales rep access required.");
+  if (user.role !== UserRole.SALES_REP) {
+    throw new HttpError(
+      403,
+      "NOT_SALES_REP",
+      "This action is only for sales rep accounts."
+    );
   }
 }
 

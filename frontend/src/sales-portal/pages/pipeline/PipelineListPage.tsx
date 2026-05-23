@@ -10,7 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
+import { DeleteProspectButton } from "../../components/pipeline/DeleteProspectButton";
 import { PipelineListSummary } from "../../components/pipeline/PipelineListSummary";
+import { canDeleteProspect } from "../../lib/leadDelete";
 import { listStatusChip } from "../../lib/pipelineCopy";
 import { cn } from "@/lib/utils";
 
@@ -169,6 +171,7 @@ export function PipelineListPage() {
                 pendingAdmin: false
               };
               const statusChip = listStatusChip(summary, undefined, "rep");
+              const deletable = tab === "leads" && canDeleteProspect(lead);
               return (
                 <PipelineListSummary
                   key={lead.id}
@@ -177,6 +180,15 @@ export function PipelineListPage() {
                   agreedTotalCents={lead.agreedTotalCents}
                   href={`/portal/pipeline/${lead.id}`}
                   statusChip={statusChip}
+                  trailingAction={
+                    deletable ? (
+                      <DeleteProspectButton
+                        leadId={lead.id}
+                        clientName={lead.clientName}
+                        onDeleted={() => void refetch()}
+                      />
+                    ) : null
+                  }
                 />
               );
             })

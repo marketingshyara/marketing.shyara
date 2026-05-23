@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { LeadPayment, PaymentShareMethodConfig } from "../../types";
 import { formatMinorUnits } from "../../lib/money";
 import { paymentKindLabel } from "../../lib/copy";
+import { paymentReferenceFieldCopy } from "../../lib/paymentShareMethods";
 import type { VerifyPaymentRequestBody } from "../../api/salesApi";
 import { PaymentSubmissionReviewSection } from "./PaymentSubmissionReviewSection";
 import type { PaymentSubmissionLead } from "./paymentSubmissionMetaItems";
@@ -65,6 +66,7 @@ export function PaymentVerifyDialog({
   const isRejected = payment.verificationStatus === "REJECTED";
   const isPaymentPending = payment.verificationStatus === "PENDING";
   const amountLabel = payment.kind === "ADVANCE" ? "Advance" : "Due";
+  const refCopy = paymentReferenceFieldCopy(payment.repNote);
 
   return (
     <StageModalShell
@@ -121,7 +123,7 @@ export function PaymentVerifyDialog({
             </Button>
             {!ref.trim() ? (
               <p className="w-full break-words text-left text-xs text-muted-foreground">
-                Enter the Razorpay reference to enable Approve.
+                {refCopy.approveHint}
               </p>
             ) : null}
           </>
@@ -147,17 +149,17 @@ export function PaymentVerifyDialog({
         ) : (
           <>
             <div className="space-y-2">
-              <Label htmlFor="pay-ref">Razorpay reference (required to approve)</Label>
+              <Label htmlFor="pay-ref">{refCopy.label}</Label>
               <Input
                 id="pay-ref"
                 className="min-h-11"
                 value={ref}
                 onChange={(e) => setRef(e.target.value)}
-                placeholder="Razorpay payment id"
+                placeholder={refCopy.placeholder}
                 aria-describedby="pay-ref-hint"
               />
               <p id="pay-ref-hint" className="text-xs text-muted-foreground">
-                Paste the payment ID from your Razorpay dashboard.
+                {refCopy.hint}
               </p>
             </div>
             <div className="space-y-2">

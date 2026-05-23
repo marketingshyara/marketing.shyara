@@ -96,6 +96,10 @@ describe("PaymentVerifyDialog", () => {
 
     expect(screen.getByText(/Due payment · ₹3,999.50/i)).toBeInTheDocument();
 
+    expect(screen.getByLabelText(/Payment reference \(required to approve\)/i)).toBeInTheDocument();
+
+    expect(screen.queryByLabelText(/Razorpay reference/i)).not.toBeInTheDocument();
+
   });
 
 

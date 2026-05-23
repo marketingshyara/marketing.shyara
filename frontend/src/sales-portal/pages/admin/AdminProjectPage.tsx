@@ -35,6 +35,7 @@ import { prepareHttpUrlForMutation, tryNormalizeHttpUrl } from "../../lib/httpUr
 import { prepareGithubRepoUrlForMutation } from "../../lib/githubRepoUrl";
 import type { LeadPayment, PipelineStageKey, PipelineStageVerifyKey, PipelineStageView } from "../../types";
 import { formatMinorUnits } from "../../lib/money";
+import { paymentReferenceFieldCopy } from "../../lib/paymentShareMethods";
 import { leadStatusLabel } from "../../lib/copy";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { toastIfStageBlocked } from "../../lib/pipelineStageGuard";
@@ -478,13 +479,13 @@ export function AdminProjectPage() {
           <p className="font-medium">Verified payments</p>
           {verifiedAdvance?.externalReference ? (
             <p>
-              Advance Razorpay reference:{" "}
+              Advance {paymentReferenceFieldCopy(verifiedAdvance.repNote).verifiedLabel}:{" "}
               <span className="font-mono text-xs">{verifiedAdvance.externalReference}</span>
             </p>
           ) : null}
           {verifiedFinal?.externalReference ? (
             <p>
-              Due Razorpay reference:{" "}
+              Due {paymentReferenceFieldCopy(verifiedFinal.repNote).verifiedLabel}:{" "}
               <span className="font-mono text-xs">{verifiedFinal.externalReference}</span>
             </p>
           ) : null}

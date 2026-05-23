@@ -14,7 +14,7 @@ describe("admin rep mutation guards", () => {
       assertSalesRepActor(admin as never);
     } catch (e) {
       expect((e as HttpError).statusCode).toBe(403);
-      expect((e as HttpError).code).toBe("FORBIDDEN");
+      expect((e as HttpError).code).toBe("NOT_SALES_REP");
     }
   });
 

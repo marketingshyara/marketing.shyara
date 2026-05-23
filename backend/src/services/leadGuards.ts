@@ -1,5 +1,5 @@
 import type { Lead } from "@prisma/client";
-import { PaymentKind } from "@prisma/client";
+import { LeadStatus, PaymentKind, PaymentVerificationStatus } from "@prisma/client";
 import { HttpError } from "../errors/httpError.js";
 import type { PortalSettingsValues } from "../validators/schemas.js";
 
@@ -41,6 +41,41 @@ export function assertMarkedPaymentAmountMatchesLead(
       400,
       "PAYMENT_AMOUNT_MISMATCH",
       `${label} amount must match the agreed deal.`
+    );
+  }
+}
+
+type LeadDeleteCheck = Pick<Lead, "convertedAt" | "status"> & {
+  payments: { verificationStatus: PaymentVerificationStatus }[];
+  project: { id: string } | null;
+};
+
+/** Unconverted prospects with no verified payments and no project may be deleted. */
+export function assertLeadDeletable(lead: LeadDeleteCheck): void {
+  if (lead.convertedAt != null) {
+    throw new HttpError(
+      400,
+      "LEAD_ALREADY_CONVERTED",
+      "Converted clients cannot be deleted."
+    );
+  }
+  if (lead.status === LeadStatus.COMMISSION_PAID) {
+    throw new HttpError(400, "LEAD_TERMINAL", "This lead is complete and cannot be deleted.");
+  }
+  if (
+    lead.payments.some((p) => p.verificationStatus === PaymentVerificationStatus.VERIFIED)
+  ) {
+    throw new HttpError(
+      400,
+      "LEAD_HAS_VERIFIED_PAYMENT",
+      "Cannot delete a prospect after a payment has been verified."
+    );
+  }
+  if (lead.project != null) {
+    throw new HttpError(
+      400,
+      "LEAD_HAS_PROJECT",
+      "Cannot delete a prospect that already has a project."
     );
   }
 }

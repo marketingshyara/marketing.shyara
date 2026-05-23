@@ -97,3 +97,33 @@ export function isPaymentMethodConfigured(config: PaymentShareMethodConfig): boo
   const qrUrl = config.qrImageUrl?.trim() || "";
   return shareValue.length > 0 || qrUrl.length > 0;
 }
+
+function isRazorpayPaymentMethod(repNote: string | null | undefined): boolean {
+  return Boolean(repNote && isPaymentShareMethodKey(repNote) && repNote.startsWith("razorpay_"));
+}
+
+/** Admin verify / read-only labels for externalReference, keyed off how the rep marked payment. */
+export function paymentReferenceFieldCopy(repNote: string | null | undefined): {
+  label: string;
+  placeholder: string;
+  hint: string;
+  verifiedLabel: string;
+  approveHint: string;
+} {
+  if (isRazorpayPaymentMethod(repNote)) {
+    return {
+      label: "Razorpay reference (required to approve)",
+      placeholder: "Razorpay payment id",
+      hint: "Paste the payment ID from your Razorpay dashboard.",
+      verifiedLabel: "Razorpay reference",
+      approveHint: "Enter the Razorpay reference to enable Approve."
+    };
+  }
+  return {
+    label: "Payment reference (required to approve)",
+    placeholder: "Transaction or receipt reference",
+    hint: "Paste the UPI, bank, or receipt reference from your records.",
+    verifiedLabel: "Payment reference",
+    approveHint: "Enter the payment reference to enable Approve."
+  };
+}

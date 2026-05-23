@@ -13,8 +13,9 @@ export const qk = {
   pendingPaymentsCount: ["pending-payments-count"] as const,
   pendingActions: (params: Record<string, unknown>) => ["pending-actions", params] as const,
   pendingActionsCount: ["pending-actions-count"] as const,
-  notifications: (params: Record<string, unknown>) => ["notifications", params] as const,
-  notificationsUnreadCount: ["notifications-unread-count"] as const,
+  notifications: (userId: string, params: Record<string, unknown>) =>
+    ["notifications", userId, params] as const,
+  notificationsUnreadCount: (userId: string) => ["notifications-unread-count", userId] as const,
   websiteTemplates: ["website-templates"] as const,
   teamReps: ["team-reps"] as const,
   teamRep: (userId: string) => ["team-rep", userId] as const

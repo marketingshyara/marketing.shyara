@@ -92,6 +92,32 @@ export function errToast(e: unknown, qc?: QueryClient) {
       toast.error(e.message || "Commission is already marked paid.");
       return;
     }
+    if (e.code === "NOT_SALES_REP") {
+      const session = qc?.getQueryData<{ user: SessionUser | null }>(qk.session);
+      if (session?.user?.role === "ADMIN") {
+        toast.error(
+          "Your account is an administrator. Sign in as a sales rep to use the pipeline, or ask an admin to set your role to Sales rep."
+        );
+      } else {
+        toast.error(
+          e.message ||
+            "This action is only for sales rep accounts. Ask an admin to verify your role."
+        );
+      }
+      return;
+    }
+    if (e.code === "LEAD_ALREADY_CONVERTED") {
+      toast.error(e.message || "Converted clients cannot be deleted.");
+      return;
+    }
+    if (e.code === "LEAD_HAS_VERIFIED_PAYMENT") {
+      toast.error(e.message || "Cannot delete after a payment has been verified.");
+      return;
+    }
+    if (e.code === "LEAD_HAS_PROJECT") {
+      toast.error(e.message || "Cannot delete a prospect that already has a project.");
+      return;
+    }
     toast.error(e.message);
   } else if (e instanceof Error && e.message) {
     toast.error(e.message);
@@ -123,7 +149,13 @@ export function useLoginMutation() {
   return useMutation({
     mutationFn: salesApi.login,
     meta: { skipAuthRedirect: true },
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.session })
+    onSuccess: async () => {
+      await qc.cancelQueries({ queryKey: ["notifications"] });
+      await qc.cancelQueries({ queryKey: ["notifications-unread-count"] });
+      qc.removeQueries({ queryKey: ["notifications"] });
+      qc.removeQueries({ queryKey: ["notifications-unread-count"] });
+      void qc.invalidateQueries({ queryKey: qk.session });
+    }
   });
 }
 
@@ -250,6 +282,21 @@ export function useLeadQuery(id: string | undefined, enabled = true) {
   });
 }
 
+export function useDeleteLeadMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: salesApi.deleteLead,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      void qc.invalidateQueries({ queryKey: ["team-reps"] });
+      void qc.invalidateQueries({ queryKey: ["team-rep"] });
+      invalidateQueryPrefixes(qc, ["commissions", "activity-logs"]);
+      toast.success("Prospect deleted");
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
 export function useCreateLeadMutation() {
   const qc = useQueryClient();
   return useMutation({
@@ -278,7 +325,7 @@ export function usePatchLeadMutation(leadId: string, repId?: string | null) {
       qc.invalidateQueries({ queryKey: ["leads"] });
       invalidateAdminQueues(qc);
       invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "projects"]);
-      void qc.invalidateQueries({ queryKey: qk.notificationsUnreadCount });
+      void qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
       const meta = context?.meta as { skipSuccessToast?: boolean } | undefined;
       if (!meta?.skipSuccessToast) toast.success("Saved");
     },
@@ -329,7 +376,7 @@ export function useVerifyLeadStageMutation(leadId: string, repId?: string | null
       qc.invalidateQueries({ queryKey: ["leads"] });
       invalidateAdminQueues(qc);
       invalidateQueryPrefixes(qc, ["commissions", "activity-logs"]);
-      void qc.invalidateQueries({ queryKey: qk.notificationsUnreadCount });
+      void qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
       const meta = context?.meta as { skipSuccessToast?: boolean } | undefined;
       if (!meta?.skipSuccessToast) toast.success("Stage verified");
     },
@@ -355,7 +402,7 @@ export function useRejectLeadStageMutation(leadId: string, repId?: string | null
       });
       qc.invalidateQueries({ queryKey: ["leads"] });
       invalidateAdminQueues(qc);
-      void qc.invalidateQueries({ queryKey: qk.notificationsUnreadCount });
+      void qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
       toast.success("Declined — rep can resubmit");
     },
     onError: (e) => errToast(e, qc)
@@ -400,7 +447,7 @@ export function useVerifyPaymentMutation(leadId: string, repId?: string | null) 
       qc.invalidateQueries({ queryKey: ["commissions"] });
       invalidateAdminQueues(qc);
       invalidateQueryPrefixes(qc, ["activity-logs", "projects"]);
-      void qc.invalidateQueries({ queryKey: qk.notificationsUnreadCount });
+      void qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
       toast.success(
         variables.body.decision === "REJECTED" ? "Payment declined" : "Payment verified"
       );
@@ -584,36 +631,41 @@ export function usePendingActionsQuery(params: {
   });
 }
 
-export function useNotificationsUnreadCountQuery(enabled: boolean) {
+export function useNotificationsUnreadCountQuery(userId: string | undefined, enabled: boolean) {
   return useQuery({
-    queryKey: qk.notificationsUnreadCount,
+    queryKey: qk.notificationsUnreadCount(userId ?? ""),
     queryFn: () => salesApi.notificationsUnreadCount(),
-    enabled,
-    refetchInterval: enabled ? 60_000 : false
+    enabled: enabled && Boolean(userId),
+    refetchInterval: enabled && userId ? 60_000 : false
   });
 }
 
-export function useNotificationsQuery(params: {
-  page: number;
-  pageSize: number;
-  unreadOnly?: boolean;
-  enabled?: boolean;
-}) {
+export function useNotificationsQuery(
+  userId: string | undefined,
+  params: {
+    page: number;
+    pageSize: number;
+    unreadOnly?: boolean;
+    enabled?: boolean;
+  }
+) {
   const { enabled = true, ...rest } = params;
   return useQuery({
-    queryKey: qk.notifications(rest),
+    queryKey: qk.notifications(userId ?? "", rest),
     queryFn: () => salesApi.notifications(rest),
-    enabled
+    enabled: enabled && Boolean(userId)
   });
 }
 
-export function useMarkNotificationReadMutation() {
+export function useMarkNotificationReadMutation(userId: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: salesApi.markNotificationRead,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.notificationsUnreadCount });
-      void qc.invalidateQueries({ queryKey: ["notifications"] });
+      if (userId) {
+        void qc.invalidateQueries({ queryKey: qk.notificationsUnreadCount(userId) });
+        void qc.invalidateQueries({ queryKey: ["notifications", userId] });
+      }
     },
     onError: (e) => errToast(e, qc)
   });

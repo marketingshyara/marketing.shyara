@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { DealAmountField } from "../../components/pipeline/DealAmountField";
 import { PaymentMethodField } from "../../components/pipeline/PaymentMethodField";
@@ -33,7 +33,9 @@ import {
   pendingPaymentForKind
 } from "../../components/pipeline/paymentSubmissionMetaItems";
 import { PaymentSubmissionReviewSection } from "../../components/pipeline/PaymentSubmissionReviewSection";
+import { DeleteProspectButton } from "../../components/pipeline/DeleteProspectButton";
 import { RepDemoPreviewLink } from "../../components/pipeline/RepDemoPreviewLink";
+import { canDeleteProspect } from "../../lib/leadDelete";
 import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
@@ -68,6 +70,7 @@ import { isValidIndianMobile, normalizeIndianMobileInput } from "../../lib/india
 
 export function PipelineDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const leadQr = useLeadQuery(id);
   const settingsQr = usePortalSettingsQuery();
   const tplQr = useWebsiteTemplatesQuery(true);
@@ -257,11 +260,21 @@ export function PipelineDetailPage() {
         />
       </div>
 
-      <div>
-        <h1 className="text-xl font-semibold md:text-2xl">{lead.clientName}</h1>
-        <p className="text-sm text-muted-foreground">
-          {lead.convertedAt ? "Client" : "Lead"} · {leadStatusLabel(lead.status)}
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold md:text-2xl">{lead.clientName}</h1>
+          <p className="text-sm text-muted-foreground">
+            {lead.convertedAt ? "Client" : "Lead"} · {leadStatusLabel(lead.status)}
+          </p>
+        </div>
+        {canDeleteProspect(lead) ? (
+          <DeleteProspectButton
+            leadId={lead.id}
+            clientName={lead.clientName}
+            variant="destructive"
+            onDeleted={() => navigate("/portal/pipeline", { replace: true })}
+          />
+        ) : null}
       </div>
 
       {settingsQr.isError ? (

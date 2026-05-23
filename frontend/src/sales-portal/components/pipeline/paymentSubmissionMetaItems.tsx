@@ -4,6 +4,7 @@ import type { PortalMetaItem } from "../ui/PortalMetaGrid";
 import { formatMinorUnits } from "../../lib/money";
 import {
   isPaymentShareMethodKey,
+  paymentReferenceFieldCopy,
   paymentShareMethodLabel,
   resolvePaymentShareConfig
 } from "../../lib/paymentShareMethods";
@@ -155,7 +156,7 @@ export function paymentSubmissionMetaItems(
 
   if (payment.verificationStatus === "VERIFIED" && payment.externalReference) {
     items.push({
-      label: "Razorpay reference",
+      label: paymentReferenceFieldCopy(payment.repNote).verifiedLabel,
       value: (
         <span className="break-all font-mono text-xs tabular-nums">
           {payment.externalReference}

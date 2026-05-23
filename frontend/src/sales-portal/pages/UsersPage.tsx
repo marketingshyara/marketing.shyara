@@ -388,7 +388,16 @@ export function UsersPage() {
           {editing && (
             <form
               className="space-y-4"
-              onSubmit={editForm.handleSubmit((v) =>
+              onSubmit={editForm.handleSubmit((v) => {
+                if (
+                  editing.role === "SALES_REP" &&
+                  v.role === "ADMIN" &&
+                  !window.confirm(
+                    "Changing this user to Administrator removes their sales rep pipeline access (add prospect, convert, payments). Continue?"
+                  )
+                ) {
+                  return;
+                }
                 patchUser.mutate(
                   {
                     id: editing.id,
@@ -399,8 +408,8 @@ export function UsersPage() {
                     }
                   },
                   { onSuccess: () => setEditOpen(false) }
-                )
-              )}
+                );
+              })}
             >
               <div className="space-y-2">
                 <Label htmlFor="edit-user-display-name">Display name</Label>

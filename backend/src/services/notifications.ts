@@ -1,6 +1,40 @@
-import { PortalNotificationKind, UserRole, type Prisma, type PrismaClient } from "@prisma/client";
+import {
+  PortalNotificationKind,
+  UserRole,
+  type Prisma,
+  type PrismaClient,
+  type User
+} from "@prisma/client";
 
 type WriteDb = Prisma.TransactionClient | PrismaClient;
+
+/** Role-scoped inbox filter: reps see admin decisions on their leads only; admins see rep submissions. */
+export function notificationVisibilityWhere(
+  user: Pick<User, "id" | "role">,
+  options?: { unreadOnly?: boolean }
+): Prisma.PortalNotificationWhereInput {
+  const base: Prisma.PortalNotificationWhereInput = {
+    userId: user.id,
+    ...(options?.unreadOnly ? { readAt: null } : {})
+  };
+
+  if (user.role === UserRole.ADMIN) {
+    return {
+      ...base,
+      kind: PortalNotificationKind.REP_SUBMITTED
+    };
+  }
+
+  return {
+    ...base,
+    kind: {
+      in: [PortalNotificationKind.ADMIN_VERIFIED, PortalNotificationKind.ADMIN_DECLINED]
+    },
+    lead: {
+      OR: [{ assignedToUserId: user.id }, { createdByUserId: user.id }]
+    }
+  };
+}
 
 export async function notifyActiveAdmins(
   tx: WriteDb,
@@ -49,29 +83,6 @@ export async function notifyUser(
   });
 }
 
-/** Notify assignee rep and all admins when rep submits for review. */
-export async function notifyRepSubmitted(
-  tx: WriteDb,
-  params: {
-    leadId: string;
-    repUserId: string | null;
-    stageKey: string;
-    message: string;
-    actorUserId: string;
-  }
-): Promise<void> {
-  await notifyActiveAdmins(tx, {
-    leadId: params.leadId,
-    kind: PortalNotificationKind.REP_SUBMITTED,
-    stageKey: params.stageKey,
-    message: params.message,
-    excludeUserId: params.actorUserId
-  });
-  if (params.repUserId && params.repUserId !== params.actorUserId) {
-    // Rep is actor; admins already notified
-  }
-}
-
 export async function notifyRepOfAdminDecision(
   tx: WriteDb,
   params: {
@@ -92,8 +103,11 @@ export async function notifyRepOfAdminDecision(
   });
 }
 
-export async function unreadNotificationCount(prisma: PrismaClient, userId: string): Promise<number> {
+export async function unreadNotificationCount(
+  prisma: PrismaClient,
+  user: Pick<User, "id" | "role">
+): Promise<number> {
   return prisma.portalNotification.count({
-    where: { userId, readAt: null }
+    where: notificationVisibilityWhere(user, { unreadOnly: true })
   });
 }

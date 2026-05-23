@@ -1,6 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { requireUser } from "../auth/requireUser.js";
-import { unreadNotificationCount } from "../services/notifications.js";
+import {
+  notificationVisibilityWhere,
+  unreadNotificationCount
+} from "../services/notifications.js";
 import { paginationQuerySchema } from "../validators/schemas.js";
 import { z } from "zod";
 
@@ -17,7 +20,7 @@ export async function registerNotificationRoutes(app: FastifyInstance): Promise<
     { preHandler: [requireUser] },
     async (request, reply) => {
       const user = request.currentUser!;
-      const total = await unreadNotificationCount(app.prisma, user.id);
+      const total = await unreadNotificationCount(app.prisma, user);
       return reply.send({ total });
     }
   );
@@ -28,10 +31,9 @@ export async function registerNotificationRoutes(app: FastifyInstance): Promise<
     async (request, reply) => {
       const user = request.currentUser!;
       const query = notificationsQuerySchema.parse(request.query);
-      const where = {
-        userId: user.id,
-        ...(query.unreadOnly ? { readAt: null } : {})
-      };
+      const where = notificationVisibilityWhere(user, {
+        unreadOnly: query.unreadOnly
+      });
       const total = await app.prisma.portalNotification.count({ where });
       const skip = (query.page - 1) * query.pageSize;
       const items = await app.prisma.portalNotification.findMany({
@@ -68,7 +70,7 @@ export async function registerNotificationRoutes(app: FastifyInstance): Promise<
       const user = request.currentUser!;
       const { id } = request.params as { id: string };
       const claim = await app.prisma.portalNotification.updateMany({
-        where: { id, userId: user.id, readAt: null },
+        where: { id, ...notificationVisibilityWhere(user, { unreadOnly: true }) },
         data: { readAt: new Date() }
       });
       if (claim.count === 0) {
