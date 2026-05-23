@@ -20,11 +20,20 @@ type Props = {
   showActorHints?: boolean;
   /** Show hints/blocked only on highlighted (current) step */
   detailsOnHighlightOnly?: boolean;
+  /** Rep read-only access to admin-saved demo preview URL */
+  repPreviewUrl?: string | null;
 };
 
-function stageIsClickable(stage: PipelineStageView, actorMode: "rep" | "admin"): boolean {
+export function stageIsClickable(
+  stage: PipelineStageView,
+  actorMode: "rep" | "admin",
+  repPreviewUrl?: string | null
+): boolean {
   if (actorMode === "rep") {
     if (stage.adminActor && !stage.repActor) {
+      if (stage.key === "build_demo" && repPreviewUrl?.trim()) {
+        return true;
+      }
       return false;
     }
     if (stage.state === "actionable") {
@@ -84,7 +93,8 @@ export function PipelineProgress({
   compact = false,
   highlightKey,
   showActorHints = true,
-  detailsOnHighlightOnly = true
+  detailsOnHighlightOnly = true,
+  repPreviewUrl
 }: Props) {
   const readonly = mode === "readonly";
   const list = (
@@ -92,7 +102,7 @@ export function PipelineProgress({
       <ol className={compact ? "space-y-1" : "space-y-2"}>
         {stages.map((stage) => {
           const canOpen =
-            !readonly && !!onStageClick && stageIsClickable(stage, actorMode);
+            !readonly && !!onStageClick && stageIsClickable(stage, actorMode, repPreviewUrl);
           const highlighted = highlightKey === stage.key;
           const showDetails =
             !compact && (!detailsOnHighlightOnly || highlighted);

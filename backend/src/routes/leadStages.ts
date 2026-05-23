@@ -13,7 +13,7 @@ import { assertLeadMutable } from "../services/leadGuards.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings } from "../services/settings.js";
-import { pipelineStageKeySchema, rejectStageBodySchema } from "../validators/schemas.js";
+import { pipelineStageKeySchema, rejectStageBodySchema, verifyRepoTransferBodySchema } from "../validators/schemas.js";
 import {
   notifyActiveAdmins,
   notifyRepOfAdminDecision
@@ -44,6 +44,10 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
       const admin = request.currentUser!;
       const { id, stageKey } = request.params as { id: string; stageKey: string };
       const key = pipelineStageKeySchema.parse(stageKey);
+      const repoTransferBody =
+        key === "repo_transfer"
+          ? verifyRepoTransferBodySchema.parse(request.body ?? {})
+          : null;
 
       const result = await app.prisma.$transaction(async (tx) => {
         const lead = await tx.lead.findUnique({
@@ -163,7 +167,10 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
             }
             const claim = await tx.lead.updateMany({
               where: { id, repoTransferVerifiedAt: null },
-              data: { repoTransferVerifiedAt: now }
+              data: {
+                repoTransferVerifiedAt: now,
+                transferredGithubRepoUrl: repoTransferBody!.transferredGithubRepoUrl
+              }
             });
             if (claim.count === 0) {
               throw new HttpError(409, "CONCURRENT_MODIFICATION", "Lead was modified concurrently.");

@@ -4,6 +4,11 @@ import { useAdminSettingsQuery, usePatchSettingsMutation } from "../../hooks/use
 import { portalSettingsSchema } from "../../validation/schemas";
 import type { LeadStatus, PortalSettingsValues } from "../../types";
 import { bpsToPercentLabel } from "../../lib/money";
+import {
+  PAYMENT_SHARE_METHOD_KEYS,
+  PAYMENT_SHARE_METHOD_LABELS,
+  mergePaymentShareMethods
+} from "../../lib/paymentShareMethods";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,9 +113,16 @@ export function SettingsPage() {
 
       <form
         className="space-y-6"
-        onSubmit={form.handleSubmit((v) => patch.mutate(v), () => {
-          toast.error("Fix the highlighted fields before saving.");
-        })}
+        onSubmit={form.handleSubmit(
+          (v) =>
+            patch.mutate({
+              ...v,
+              paymentShareMethods: mergePaymentShareMethods(v.paymentShareMethods)
+            }),
+          () => {
+            toast.error("Fix the highlighted fields before saving.");
+          }
+        )}
       >
         <Tabs defaultValue="pricing" className="space-y-4">
           <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
@@ -204,26 +216,9 @@ export function SettingsPage() {
                 }}
               />
               <p className="text-xs text-muted-foreground">
-                {bpsToPercentLabel(Number(form.watch("commissionRateBps") ?? 0))} of commission basis.
+                {bpsToPercentLabel(Number(form.watch("commissionRateBps") ?? 0))} of agreed project
+                total (set at convert).
               </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="settings-commission-basis">Commission basis</Label>
-              <Select
-                value={form.watch("commissionBasis")}
-                onValueChange={(v) =>
-                  form.setValue("commissionBasis", v as PortalSettingsValues["commissionBasis"])
-                }
-              >
-                <SelectTrigger id="settings-commission-basis" className="min-h-11">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="VERIFIED_FINAL_PAYMENT">Verified final payment amount</SelectItem>
-                  <SelectItem value="FINAL_QUOTE">Final quote on lead</SelectItem>
-                  <SelectItem value="AGREED_TOTAL">Agreed total on lead</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="settings-commission-rounding">Commission rounding</Label>
@@ -376,6 +371,56 @@ export function SettingsPage() {
                   <Trash2 className="mr-1 h-4 w-4" />
                   Remove category
                 </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Payment methods</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Values reps share with clients when collecting advance and due payments.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {PAYMENT_SHARE_METHOD_KEYS.map((key, i) => (
+              <div key={key} className="space-y-3 rounded-md border p-3">
+                <p className="text-sm font-medium">{PAYMENT_SHARE_METHOD_LABELS[key]}</p>
+                <div className="space-y-2">
+                  <Label className="text-xs">
+                    {key === "upi_id" ? "UPI ID" : key.includes("qr") ? "Label or note" : "Payment URL"}
+                  </Label>
+                  <Input
+                    className="min-h-11"
+                    placeholder={
+                      key === "upi_id"
+                        ? "business@upi"
+                        : key.includes("qr")
+                          ? "Optional caption for QR"
+                          : "https://rzp.io/…"
+                    }
+                    {...form.register(`paymentShareMethods.${i}.shareValue`)}
+                  />
+                </div>
+                {(key === "razorpay_qr" || key === "sbi_qr") && (
+                  <div className="space-y-2">
+                    <Label className="text-xs">QR image URL</Label>
+                    <Input
+                      className="min-h-11"
+                      placeholder="https://…/qr.png"
+                      {...form.register(`paymentShareMethods.${i}.qrImageUrl`)}
+                    />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label className="text-xs">Instructions for reps (optional)</Label>
+                  <Textarea
+                    className="min-h-[4rem]"
+                    placeholder="Short note shown when rep selects this method"
+                    {...form.register(`paymentShareMethods.${i}.instructions`)}
+                  />
+                </div>
               </div>
             ))}
           </CardContent>

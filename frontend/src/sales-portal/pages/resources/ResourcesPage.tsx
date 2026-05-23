@@ -1,4 +1,4 @@
-import { BookOpen, ExternalLink, FileText, Video } from "lucide-react";
+import { BookOpen, CreditCard, ExternalLink, FileText, Video } from "lucide-react";
 import { usePortalSettingsQuery } from "../../hooks/useSalesQueries";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
+import { PaymentMethodsResourceList } from "../../components/pipeline/PaymentMethodField";
+import { mergePaymentShareMethods } from "../../lib/paymentShareMethods";
 
 export function ResourcesPage() {
   const { data, isLoading, isError, refetch } = usePortalSettingsQuery();
@@ -47,6 +49,21 @@ export function ResourcesPage() {
               Open gallery
             </a>
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+          <CreditCard className="h-8 w-8 text-muted-foreground" aria-hidden />
+          <CardTitle className="text-lg">Payment methods</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Share these with clients when collecting advance or due payments.
+          </p>
+          <PaymentMethodsResourceList
+            methods={mergePaymentShareMethods(settings.paymentShareMethods)}
+          />
         </CardContent>
       </Card>
 

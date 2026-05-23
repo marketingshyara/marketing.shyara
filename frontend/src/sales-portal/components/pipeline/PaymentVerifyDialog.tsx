@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StageModalShell } from "./StageModalShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { LeadPayment } from "../../types";
+import type { LeadPayment, PaymentShareMethodConfig } from "../../types";
 import { formatMinorUnits } from "../../lib/money";
 import { paymentKindLabel } from "../../lib/copy";
 import type { VerifyPaymentRequestBody } from "../../api/salesApi";
+import { PaymentSubmissionReviewSection } from "./PaymentSubmissionReviewSection";
+import type { PaymentSubmissionLead } from "./paymentSubmissionMetaItems";
 
 type Props = {
   payment: LeadPayment | null;
@@ -16,9 +19,10 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   onVerify: (paymentId: string, body: VerifyPaymentRequestBody) => void;
   isPending: boolean;
-  clientName?: string;
+  lead: PaymentSubmissionLead | null;
   templateLabel?: string | null;
-  agreedTotalCents?: number | null;
+  paymentShareMethods?: PaymentShareMethodConfig[];
+  leadLoading?: boolean;
 };
 
 export function PaymentVerifyDialog({
@@ -27,9 +31,10 @@ export function PaymentVerifyDialog({
   onOpenChange,
   onVerify,
   isPending,
-  clientName,
+  lead,
   templateLabel,
-  agreedTotalCents
+  paymentShareMethods = [],
+  leadLoading = false
 }: Props) {
   const [ref, setRef] = useState("");
   const [note, setNote] = useState("");
@@ -40,10 +45,26 @@ export function PaymentVerifyDialog({
     setNote("");
   }, [open, payment?.id]);
 
-  if (!payment) return null;
+  if (!open) return null;
+
+  if (!payment) {
+    return (
+      <StageModalShell
+        open={open}
+        onOpenChange={onOpenChange}
+        title="Verify payment"
+        description="Loading payment details…"
+      >
+        <div className="min-w-0 space-y-3" aria-busy="true">
+          <Skeleton className="h-32 w-full" />
+        </div>
+      </StageModalShell>
+    );
+  }
 
   const isRejected = payment.verificationStatus === "REJECTED";
   const isPaymentPending = payment.verificationStatus === "PENDING";
+  const amountLabel = payment.kind === "ADVANCE" ? "Advance" : "Due";
 
   return (
     <StageModalShell
@@ -54,7 +75,7 @@ export function PaymentVerifyDialog({
           ? `${paymentKindLabel(payment.kind)} payment declined`
           : `Verify ${paymentKindLabel(payment.kind)} payment`
       }
-      description={`Amount: ${formatMinorUnits(payment.amountCents)}`}
+      description={`${amountLabel} payment · ${formatMinorUnits(payment.amountCents)}`}
       footer={
         isRejected ? (
           <Button
@@ -99,7 +120,7 @@ export function PaymentVerifyDialog({
               Approve payment
             </Button>
             {!ref.trim() ? (
-              <p className="w-full text-left text-xs text-muted-foreground">
+              <p className="w-full break-words text-left text-xs text-muted-foreground">
                 Enter the Razorpay reference to enable Approve.
               </p>
             ) : null}
@@ -107,56 +128,21 @@ export function PaymentVerifyDialog({
         )
       }
     >
-      <div className="space-y-3">
-        {clientName ? (
-          <dl className="grid gap-2 text-sm">
-            <div>
-              <dt className="text-muted-foreground">Client</dt>
-              <dd className="font-medium">{clientName}</dd>
-            </div>
-            {templateLabel ? (
-              <div>
-                <dt className="text-muted-foreground">Template</dt>
-                <dd>{templateLabel}</dd>
-              </div>
-            ) : null}
-            {agreedTotalCents != null ? (
-              <div>
-                <dt className="text-muted-foreground">Agreed total</dt>
-                <dd>{formatMinorUnits(agreedTotalCents)}</dd>
-              </div>
-            ) : null}
-            {payment.repNote ? (
-              <div>
-                <dt className="text-muted-foreground">Rep note</dt>
-                <dd>{payment.repNote}</dd>
-              </div>
-            ) : null}
-            {payment.verificationStatus === "VERIFIED" && payment.externalReference ? (
-              <div>
-                <dt className="text-muted-foreground">Razorpay reference</dt>
-                <dd className="font-mono text-xs">{payment.externalReference}</dd>
-              </div>
-            ) : null}
-            {isRejected && payment.adminNote ? (
-              <div>
-                <dt className="text-muted-foreground">Decline reason</dt>
-                <dd>{payment.adminNote}</dd>
-              </div>
-            ) : null}
-            {isRejected && payment.verifiedAt ? (
-              <div>
-                <dt className="text-muted-foreground">Declined at</dt>
-                <dd>{new Date(payment.verifiedAt).toLocaleString()}</dd>
-              </div>
-            ) : null}
-          </dl>
-        ) : null}
+      <div className="space-y-4">
+        <PaymentSubmissionReviewSection
+          lead={lead}
+          payment={payment}
+          methods={paymentShareMethods}
+          options={{
+            includeClient: true,
+            templateLabel: templateLabel ?? undefined
+          }}
+          showMismatchAlert={isPaymentPending}
+          leadLoading={leadLoading}
+        />
         {isRejected ? (
-          <p className="text-sm text-muted-foreground" role="status">
-            {payment.adminNote?.trim()
-              ? "This payment was declined with the reason above. The rep can record a new payment."
-              : "This payment was declined. The rep can record a new payment."}
+          <p className="break-words text-sm text-muted-foreground" role="status">
+            The rep can record a new payment after reviewing the decline reason above.
           </p>
         ) : (
           <>
@@ -176,7 +162,7 @@ export function PaymentVerifyDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="pay-note">Admin note (required if declining)</Label>
-              <Textarea id="pay-note" value={note} onChange={(e) => setNote(e.target.value)} />
+              <Textarea id="pay-note" className="min-h-[5rem]" value={note} onChange={(e) => setNote(e.target.value)} />
             </div>
           </>
         )}

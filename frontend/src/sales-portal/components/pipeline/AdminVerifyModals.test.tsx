@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { AdminVerifyModals } from "./AdminVerifyModals";
 import type { Lead, PortalSettingsValues } from "../../types";
+import { defaultPaymentShareMethods } from "../../lib/paymentShareMethods";
 
 const adminSettingsStub: PortalSettingsValues = {
   minAgreedTotalCents: 0,
@@ -22,7 +24,8 @@ const adminSettingsStub: PortalSettingsValues = {
   performanceBonusAfterCompletedSales: 3,
   templatesCatalogUrl: "https://example.com/templates",
   tutorialLinks: [],
-  painPointsByCategory: []
+  painPointsByCategory: [],
+  paymentShareMethods: defaultPaymentShareMethods()
 };
 
 vi.mock("../../hooks/useSalesQueries", async (importOriginal) => {
@@ -68,6 +71,8 @@ function leadWithAdvance(overrides: Partial<Lead> = {}): Lead {
     demoFinalizedVerifiedAt: null,
     accountsReadyAt: null,
     accountsReadyVerifiedAt: null,
+    clientGithubId: null,
+    clientGithubEmail: null,
     repoTransferVerifiedAt: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
@@ -109,8 +114,6 @@ describe("AdminVerifyModals build_demo", () => {
         savePreviewPending={false}
         onMarkDemoReady={onMarkDemoReady}
         markDemoPending={false}
-        commissionEditRupees=""
-        onCommissionEditRupeesChange={vi.fn()}
       />
     );
 
@@ -147,8 +150,6 @@ describe("AdminVerifyModals build_demo", () => {
         savePreviewPending={false}
         onMarkDemoReady={onMarkDemoReady}
         markDemoPending={false}
-        commissionEditRupees=""
-        onCommissionEditRupeesChange={vi.fn()}
       />
     );
 
@@ -170,8 +171,6 @@ describe("AdminVerifyModals build_demo", () => {
         savePreviewPending={false}
         onMarkDemoReady={vi.fn()}
         markDemoPending={false}
-        commissionEditRupees=""
-        onCommissionEditRupeesChange={vi.fn()}
       />
     );
 
@@ -182,6 +181,30 @@ describe("AdminVerifyModals build_demo", () => {
 });
 
 describe("AdminVerifyModals later stages", () => {
+  function leadWithFinalVerified(overrides: Partial<Lead> = {}): Lead {
+    return leadWithAdvance({
+      status: "FINAL_PAID",
+      payments: [
+        ...(leadWithAdvance().payments ?? []),
+        {
+          id: "pay-final",
+          leadId: "lead-1",
+          kind: "FINAL",
+          amountCents: 40000,
+          verificationStatus: "VERIFIED",
+          externalReference: "ref-final",
+          repNote: null,
+          adminNote: null,
+          markedByUserId: "rep-1",
+          verifiedByUserId: "admin-1",
+          verifiedAt: "2026-01-03T00:00:00.000Z",
+          markedAt: "2026-01-03T00:00:00.000Z"
+        }
+      ],
+      ...overrides
+    });
+  }
+
   it("disables repo transfer verify until final payment is verified", () => {
     render(
       <AdminVerifyModals
@@ -196,13 +219,52 @@ describe("AdminVerifyModals later stages", () => {
         savePreviewPending={false}
         onMarkDemoReady={vi.fn()}
         markDemoPending={false}
-        commissionEditRupees=""
-        onCommissionEditRupeesChange={vi.fn()}
       />
     );
 
     expect(screen.getByRole("button", { name: "Verify repo transfer" })).toBeDisabled();
     expect(screen.getByText(/due payment first/i)).toBeInTheDocument();
+  });
+
+  it("requires transferred github repo link before verify when final is verified", async () => {
+    const user = userEvent.setup();
+
+    function RepoTransferHarness() {
+      const [url, setUrl] = useState("");
+      return (
+        <AdminVerifyModals
+          pipelineStages={[]}
+          lead={leadWithFinalVerified({
+            clientGithubId: "client-org",
+            clientGithubEmail: "client@example.com"
+          })}
+          activeStage="repo_transfer"
+          onClose={vi.fn()}
+          previewUrl=""
+          onPreviewUrlChange={vi.fn()}
+          verify={verifyStub}
+          onSavePreview={vi.fn()}
+          savePreviewPending={false}
+          onMarkDemoReady={vi.fn()}
+          markDemoPending={false}
+          transferredGithubRepoUrl={url}
+          onTransferredGithubRepoUrlChange={setUrl}
+        />
+      );
+    }
+
+    render(<RepoTransferHarness />);
+
+    expect(screen.getByRole("button", { name: "Verify repo transfer" })).toBeDisabled();
+    expect(
+      screen.getByLabelText(/Transferred GitHub repository link/i)
+    ).toBeInTheDocument();
+
+    await user.type(
+      screen.getByLabelText(/Transferred GitHub repository link/i),
+      "github.com/client-org/website"
+    );
+    expect(screen.getByRole("button", { name: "Verify repo transfer" })).toBeEnabled();
   });
 
   it("disables deployment verify until rep submitted live URL", () => {
@@ -232,8 +294,6 @@ describe("AdminVerifyModals later stages", () => {
         savePreviewPending={false}
         onMarkDemoReady={vi.fn()}
         markDemoPending={false}
-        commissionEditRupees=""
-        onCommissionEditRupeesChange={vi.fn()}
       />
     );
 
@@ -289,20 +349,17 @@ describe("AdminVerifyModals commission", () => {
         savePreviewPending={false}
         onMarkDemoReady={vi.fn()}
         markDemoPending={false}
-        commissionEditRupees="100"
-        onCommissionEditRupeesChange={vi.fn()}
-        onPatchCommission={vi.fn()}
       />
     );
 
     expect(screen.getByRole("button", { name: "Mark commission paid" })).not.toBeDisabled();
   });
 
-  it("shows an empty payout field when parent passes empty string (no modal refill)", () => {
+  it("shows read-only commission payout from agreed total", () => {
     render(
       <AdminVerifyModals
         pipelineStages={[]}
-        lead={leadWithCommission()}
+        lead={leadWithCommission({ agreedTotalCents: 50_000 })}
         activeStage="commission"
         onClose={vi.fn()}
         previewUrl=""
@@ -312,13 +369,13 @@ describe("AdminVerifyModals commission", () => {
         savePreviewPending={false}
         onMarkDemoReady={vi.fn()}
         markDemoPending={false}
-        commissionEditRupees=""
-        onCommissionEditRupeesChange={vi.fn()}
-        onPatchCommission={vi.fn()}
       />
     );
 
-    expect(screen.getByLabelText(/Payout amount/i)).toHaveValue("");
+    expect(screen.getByText("Agreed total", { selector: "dt" })).toBeInTheDocument();
+    expect(document.getElementById("commission-payout")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Payout amount/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save amount" })).not.toBeInTheDocument();
   });
 
   it("calls onVerify when Mark commission paid is clicked", async () => {
@@ -337,9 +394,6 @@ describe("AdminVerifyModals commission", () => {
         savePreviewPending={false}
         onMarkDemoReady={vi.fn()}
         markDemoPending={false}
-        commissionEditRupees="100"
-        onCommissionEditRupeesChange={vi.fn()}
-        onPatchCommission={vi.fn()}
       />
     );
 
@@ -347,7 +401,7 @@ describe("AdminVerifyModals commission", () => {
     expect(onVerify).toHaveBeenCalledTimes(1);
   });
 
-  it("shows calculated estimate from portal settings", () => {
+  it("shows calculated payout from agreed total and portal rate", () => {
     render(
       <AdminVerifyModals
         pipelineStages={[]}
@@ -361,14 +415,69 @@ describe("AdminVerifyModals commission", () => {
         savePreviewPending={false}
         onMarkDemoReady={vi.fn()}
         markDemoPending={false}
-        commissionEditRupees="100"
-        onCommissionEditRupeesChange={vi.fn()}
-        onPatchCommission={vi.fn()}
       />
     );
 
-    expect(screen.getByText(/Estimate/i)).toBeInTheDocument();
-    expect(screen.getByText(/Agreed project total/i)).toBeInTheDocument();
+    expect(screen.getByText("Agreed total", { selector: "dt" })).toBeInTheDocument();
     expect(screen.getByText(/^20%$/)).toBeInTheDocument();
+    expect(screen.getByText(/₹100\.00/)).toBeInTheDocument();
+    expect(screen.queryByText(/Estimate/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("AdminVerifyModals whatsapp_group", () => {
+  it("shows group link as clickable with copy action", () => {
+    render(
+      <AdminVerifyModals
+        pipelineStages={[]}
+        lead={leadWithAdvance({
+          whatsappGroupLink: "https://chat.whatsapp.com/test-group"
+        })}
+        activeStage="whatsapp_group"
+        onClose={vi.fn()}
+        previewUrl=""
+        onPreviewUrlChange={vi.fn()}
+        verify={verifyStub}
+        onSavePreview={vi.fn()}
+        savePreviewPending={false}
+        onMarkDemoReady={vi.fn()}
+        markDemoPending={false}
+      />
+    );
+
+    const link = screen.getByRole("link", { name: /chat\.whatsapp\.com\/test-group/i });
+    expect(link).toHaveAttribute("href", "https://chat.whatsapp.com/test-group");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(screen.getByRole("button", { name: "Copy Group link" })).toBeInTheDocument();
+  });
+});
+
+describe("AdminVerifyModals accounts_ready", () => {
+  it("shows github username and email as plain text with copy", () => {
+    render(
+      <AdminVerifyModals
+        pipelineStages={[]}
+        lead={leadWithAdvance({
+          accountsReadyAt: "2026-01-02T12:00:00.000Z",
+          clientGithubId: "acme-corp",
+          clientGithubEmail: "client@example.com"
+        })}
+        activeStage="accounts_ready"
+        onClose={vi.fn()}
+        previewUrl=""
+        onPreviewUrlChange={vi.fn()}
+        verify={verifyStub}
+        onSavePreview={vi.fn()}
+        savePreviewPending={false}
+        onMarkDemoReady={vi.fn()}
+        markDemoPending={false}
+      />
+    );
+
+    expect(screen.getByText("acme-corp")).toBeInTheDocument();
+    expect(screen.getByText("client@example.com")).toBeInTheDocument();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy GitHub username" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy GitHub account email" })).toBeInTheDocument();
   });
 });

@@ -14,6 +14,7 @@ import type {
   LeadStatus,
   PipelineStageVerifyKey,
   PortalSettingsValues,
+  PaymentShareMethodKey,
   SessionUser
 } from "../types";
 
@@ -74,6 +75,13 @@ export function errToast(e: unknown, qc?: QueryClient) {
     }
     if (e.code === "PENDING_PAYMENT") {
       toast.error(e.message || "A payment is already waiting for admin approval.");
+      return;
+    }
+    if (e.code === "PAYMENT_AMOUNT_MISMATCH") {
+      toast.error(
+        e.message || "Payment amount no longer matches the deal. Refresh the page and try again."
+      );
+      if (qc) invalidateQueryPrefixes(qc, ["lead", "leads"]);
       return;
     }
     if (e.code === "ALREADY_PROCESSED") {
@@ -284,8 +292,7 @@ export function useConvertLeadMutation(leadId: string, repId?: string | null) {
     mutationFn: (body: {
       websiteTemplateId: string;
       agreedTotalCents: number;
-      advanceAmountCents?: number;
-      repNote?: string | null;
+      repNote: PaymentShareMethodKey;
     }) => salesApi.convertLead(leadId, body),
     onSuccess: (data) => {
       invalidateLeadAndRep(qc, {
@@ -304,7 +311,15 @@ export function useConvertLeadMutation(leadId: string, repId?: string | null) {
 export function useVerifyLeadStageMutation(leadId: string, repId?: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (stageKey: PipelineStageVerifyKey) => salesApi.verifyLeadStage(leadId, stageKey),
+    mutationFn: (
+      arg:
+        | PipelineStageVerifyKey
+        | { stageKey: PipelineStageVerifyKey; body?: Record<string, unknown> }
+    ) => {
+      const stageKey = typeof arg === "string" ? arg : arg.stageKey;
+      const body = typeof arg === "string" ? undefined : arg.body;
+      return salesApi.verifyLeadStage(leadId, stageKey, body);
+    },
     onSuccess: (data, _vars, _ctx, context) => {
       applyLeadDetailToCache(qc, leadId, data);
       invalidateLeadAndRep(qc, {
@@ -353,7 +368,7 @@ export function useMarkPaymentMutation(leadId: string, repId?: string | null) {
     mutationFn: (body: {
       kind: "ADVANCE" | "FINAL";
       amountCents: number;
-      repNote?: string | null;
+      repNote: PaymentShareMethodKey;
     }) => salesApi.markPayment(leadId, body),
     onSuccess: () => {
       invalidateLeadAndRep(qc, { leadId, repId: repId ?? undefined });
@@ -405,26 +420,6 @@ export function useCommissionsQuery(params: {
     queryKey: qk.commissions(rest),
     queryFn: () => salesApi.commissions(rest),
     enabled
-  });
-}
-
-export function usePatchCommissionMutation(leadId: string, repId?: string | null) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, amountCents }: { id: string; amountCents: number }) =>
-      salesApi.patchCommission(id, { amountCents }),
-    onSuccess: (data, _vars, _ctx, context) => {
-      applyLeadDetailToCache(qc, leadId, data);
-      invalidateLeadAndRep(qc, {
-        leadId,
-        repId: repId ?? data.lead.assignedToUserId
-      });
-      qc.invalidateQueries({ queryKey: ["commissions"] });
-      invalidateQueryPrefixes(qc, ["leads", "activity-logs"]);
-      const meta = context?.meta as { skipSuccessToast?: boolean } | undefined;
-      if (!meta?.skipSuccessToast) toast.success("Commission amount saved.");
-    },
-    onError: (e) => errToast(e, qc)
   });
 }
 

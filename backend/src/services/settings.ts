@@ -108,7 +108,8 @@ export function toRepPortalSettings(values: PortalSettingsValues) {
     commissionRateBps: values.commissionRateBps,
     templatesCatalogUrl: values.templatesCatalogUrl,
     tutorialLinks: values.tutorialLinks,
-    painPointsByCategory: values.painPointsByCategory
+    painPointsByCategory: values.painPointsByCategory,
+    paymentShareMethods: values.paymentShareMethods
   };
 }
 

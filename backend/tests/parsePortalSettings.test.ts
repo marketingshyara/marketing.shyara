@@ -22,6 +22,7 @@ describe("parsePortalSettings", () => {
     const settings = parsePortalSettings({});
     expect(settings.commissionRateBps).toBe(2000);
     expect(settings.advancePaymentShareBps).toBe(5000);
+    expect(settings.paymentShareMethods).toHaveLength(5);
   });
 
   it("patch input ignores unknown keys before partial parse", () => {

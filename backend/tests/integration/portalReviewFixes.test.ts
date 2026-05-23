@@ -190,7 +190,8 @@ d("portal review fixes - integration", () => {
         createdByUserId: adminId,
         assignedToUserId: repId,
         clientName: "Pending Uniqueness Lead",
-        status: LeadStatus.NEW
+        status: LeadStatus.NEW,
+        advanceAmountCents: 1000
       }
     });
     const { app, cookieHeader } = await loginAs(repEmail, "RepPass123!");
@@ -199,13 +200,13 @@ d("portal review fixes - integration", () => {
         method: "POST",
         url: `/api/leads/${lead.id}/payments`,
         headers: { cookie: cookieHeader, "content-type": "application/json" },
-        payload: { kind: "ADVANCE", amountCents: 1000 }
+        payload: { kind: "ADVANCE", amountCents: 1000, repNote: "upi_id" }
       }),
       inject(app, {
         method: "POST",
         url: `/api/leads/${lead.id}/payments`,
         headers: { cookie: cookieHeader, "content-type": "application/json" },
-        payload: { kind: "ADVANCE", amountCents: 1000 }
+        payload: { kind: "ADVANCE", amountCents: 1000, repNote: "upi_id" }
       })
     ]);
 
@@ -225,6 +226,44 @@ d("portal review fixes - integration", () => {
       }
     });
     expect(pendingRows).toBe(1);
+
+    await prisma.leadPayment.deleteMany({ where: { leadId: lead.id } });
+    await prisma.lead.delete({ where: { id: lead.id } });
+    await app.close();
+  });
+
+  it("mark FINAL payment rejects amount mismatch and accepts quoted amount", async () => {
+    const lead = await prisma.lead.create({
+      data: {
+        createdByUserId: repId,
+        assignedToUserId: repId,
+        clientName: "Due Amount Lead",
+        status: LeadStatus.PREVIEW_SENT,
+        agreedTotalCents: 799_900,
+        advanceAmountCents: 399_950,
+        finalQuoteCents: 399_950,
+        convertedAt: new Date(),
+        accountsReadyVerifiedAt: new Date()
+      }
+    });
+    const { app, cookieHeader } = await loginAs(repEmail, "RepPass123!");
+
+    const mismatch = await inject(app, {
+      method: "POST",
+      url: `/api/leads/${lead.id}/payments`,
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: { kind: PaymentKind.FINAL, amountCents: 1, repNote: "upi_id" }
+    });
+    expect(mismatch.statusCode).toBe(400);
+    expect(JSON.parse(mismatch.body).error.code).toBe("PAYMENT_AMOUNT_MISMATCH");
+
+    const ok = await inject(app, {
+      method: "POST",
+      url: `/api/leads/${lead.id}/payments`,
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: { kind: PaymentKind.FINAL, amountCents: 399_950, repNote: "upi_id" }
+    });
+    expect(ok.statusCode).toBe(201);
 
     await prisma.leadPayment.deleteMany({ where: { leadId: lead.id } });
     await prisma.lead.delete({ where: { id: lead.id } });
@@ -350,15 +389,13 @@ d("portal review fixes - integration", () => {
         assignedToUserId: repId,
         clientName: "Atomic Lead",
         status: LeadStatus.NEW,
-        finalQuoteCents: 1000
+        agreedTotalCents: 1000
       }
     });
     await prisma.commission.create({
       data: { leadId: lead.id, repUserId: repId, amountCents: 100, isPaid: false }
     });
-    // Switch to FINAL_QUOTE basis so a finalQuoteCents change forces a commission.update.
     const settings = portalSettingsSchema.parse({
-      commissionBasis: "FINAL_QUOTE",
       commissionRateBps: 2000
     });
     await prisma.portalSettings.upsert({
@@ -413,13 +450,13 @@ d("portal review fixes - integration", () => {
       method: "PATCH",
       url: `/api/leads/${lead.id}`,
       headers: { cookie: cookieHeader, "content-type": "application/json" },
-      payload: { clientName: "Should Roll Back", finalQuoteCents: 50_000 }
+      payload: { clientName: "Should Roll Back", agreedTotalCents: 50_000 }
     });
     expect(res.statusCode).toBeGreaterThanOrEqual(500);
 
     const after = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
     expect(after.clientName).toBe(beforeName);
-    expect(after.finalQuoteCents).toBe(1000);
+    expect(after.agreedTotalCents).toBe(1000);
 
     const commission = await prisma.commission.findUniqueOrThrow({ where: { leadId: lead.id } });
     expect(commission.amountCents).toBe(100);

@@ -1,0 +1,39 @@
+---
+description: Rep-first bug fixes — full-stack logic + elevated UI/UX on every reported bug
+alwaysApply: true
+---
+
+# Sales Portal bug-fix workflow
+
+When the user reports a bug, treat it as a **full-stack product fix**, not a patch. Follow `sales-portal-delivery.mdc` and `sales-portal-ux.mdc`; this rule adds the **rep-first, stage-by-stage, UI-elevation** bar.
+
+## How we work through bugs
+
+1. **Rep journey first** — Walk the lead → payment → project → commission FSM from the **Sales Rep** perspective unless the bug is explicitly admin-only.
+2. **Trace before edit** — Map frontend → `salesApi` → route → service/Prisma; fix root cause, not symptoms.
+3. **One bug, whole surface** — Fix logic **and** every UI/UX touchpoint for that stage (copy, empty/error states, loading, mobile, who acts next).
+
+## Full-stack requirement (non-negotiable)
+
+- **Backend**: invariants, error codes, API shape, tests for status/role guards.
+- **Frontend**: types, Zod, `salesApi`, query invalidation, toasts, guards.
+- Never ship a frontend-only or backend-only fix when both layers are involved.
+
+## UI/UX elevation bar
+
+Logic fixes alone are incomplete. For each bug, improve the affected UI so it feels **human, clear, and modern**:
+
+- **Guided flows** — steppers, progress, banners, inline help; show **why blocked** and **who acts next** (rep vs admin).
+- **State truth** — badges, labels, and amounts must match machine state; no optimistic lies.
+- **Advanced components when warranted** — reuse shadcn/Radix patterns in-repo; compose or rebuild sections if the current UI hides the fix. Prefer polished, accessible patterns over minimal diffs.
+- **Mobile-first** — primary actions and nav are never icon-only without text on small screens.
+- **Skills to apply to taste** — `frontend-design`, `web-design-guidelines`, `react-best-practices`, `composition-patterns`, `accesslint-audit` (a11y), `webapp-testing` (Playwright) for critical paths.
+
+Creative, user-friendly UI is part of the definition of done — not optional polish.
+
+## Definition of done per bug
+
+- Regression test for the fixed branch; negative/auth paths when permissions change.
+- Ripple grep in `frontend/src/sales-portal/**` and `backend/src/{routes,services}/**`.
+- Backend tests pass; no new lint/type errors in touched files.
+- Rep **and** admin paths checked unless bug is role-specific.

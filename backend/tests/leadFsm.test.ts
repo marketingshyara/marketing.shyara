@@ -12,56 +12,35 @@ function leadStub(partial: Partial<Lead>): Lead {
 }
 
 describe("commissionAmountCents", () => {
-  it("uses verified final payment and default 20% bps (bankers rounding)", () => {
-    const lead = leadStub({ finalQuoteCents: 999 });
-    expect(commissionAmountCents(lead, 100_000, defaultSettings)).toBe(20_000);
-    // 99c * 20% = 19.8c -> rounds up to 20 with bankers (closer to 20 than 19).
-    expect(commissionAmountCents(lead, 99, defaultSettings)).toBe(20);
+  it("uses agreed total and default 20% bps (bankers rounding)", () => {
+    const lead = leadStub({ agreedTotalCents: 100_000 });
+    expect(commissionAmountCents(lead, 50_000, defaultSettings)).toBe(20_000);
+    const leadSmall = leadStub({ agreedTotalCents: 99 });
+    expect(commissionAmountCents(leadSmall, 99, defaultSettings)).toBe(20);
+  });
+
+  it("ignores verified final payment amount (always agreed total)", () => {
+    const lead = leadStub({ agreedTotalCents: 799_900 });
+    expect(commissionAmountCents(lead, 399_950, defaultSettings)).toBe(159_980);
   });
 
   it("respects floor rounding when configured", () => {
     const settings = portalSettingsSchema.parse({ commissionRounding: "floor" });
-    const lead = leadStub({ finalQuoteCents: 999 });
+    const lead = leadStub({ agreedTotalCents: 99 });
     expect(commissionAmountCents(lead, 99, settings)).toBe(19);
   });
 
   it("rounds exact halves to even with bankers", () => {
-    // 5c * 1000bps = 5000 / 10000 = 0.5 -> bankers picks 0 (even).
-    const lead = leadStub({ finalQuoteCents: null });
+    const lead = leadStub({ agreedTotalCents: 5 });
     const settings = portalSettingsSchema.parse({ commissionRateBps: 1000 });
-    expect(commissionAmountCents(lead, 5, settings)).toBe(0);
-    // 15c * 1000bps = 15000 / 10000 = 1.5 -> bankers picks 2 (even).
-    expect(commissionAmountCents(lead, 15, settings)).toBe(2);
+    expect(commissionAmountCents(lead, 0, settings)).toBe(0);
+    const lead2 = leadStub({ agreedTotalCents: 15 });
+    expect(commissionAmountCents(lead2, 0, settings)).toBe(2);
   });
 
-  it("uses final quote when commissionBasis is FINAL_QUOTE", () => {
-    const settings = portalSettingsSchema.parse({
-      commissionBasis: "FINAL_QUOTE",
-      commissionRateBps: 1500
-    });
-    const lead = leadStub({ finalQuoteCents: 100_000 });
-    expect(commissionAmountCents(lead, 50_000, settings)).toBe(15_000);
-  });
-
-  it("throws when FINAL_QUOTE basis but quote missing", () => {
-    const settings = portalSettingsSchema.parse({ commissionBasis: "FINAL_QUOTE" });
-    const lead = leadStub({ finalQuoteCents: null });
-    expect(() => commissionAmountCents(lead, 100_000, settings)).toThrow(HttpError);
-  });
-
-  it("uses agreed total when commissionBasis is AGREED_TOTAL", () => {
-    const settings = portalSettingsSchema.parse({
-      commissionBasis: "AGREED_TOTAL",
-      commissionRateBps: 2000
-    });
-    const lead = leadStub({ agreedTotalCents: 100_000 });
-    expect(commissionAmountCents(lead, 999, settings)).toBe(20_000);
-  });
-
-  it("throws when AGREED_TOTAL basis but agreed total missing", () => {
-    const settings = portalSettingsSchema.parse({ commissionBasis: "AGREED_TOTAL" });
+  it("throws when agreed total missing", () => {
     const lead = leadStub({ agreedTotalCents: null });
-    expect(() => commissionAmountCents(lead, 100_000, settings)).toThrow(HttpError);
+    expect(() => commissionAmountCents(lead, 100_000, defaultSettings)).toThrow(HttpError);
   });
 });
 

@@ -9,6 +9,8 @@ import {
   usePendingActionsCountQuery,
   useVerifyPaymentMutation
 } from "../../hooks/useSalesQueries";
+import { usePaymentShareMethods } from "../../hooks/usePaymentShareMethods";
+import { formatTemplateOption } from "../../lib/templateLabel";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
 import { AdminQueueNav } from "../../components/admin/AdminQueueNav";
@@ -29,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatMinorUnits } from "../../lib/money";
 import { paymentKindLabel } from "../../lib/copy";
 import type { VerifyPaymentRequestBody } from "../../api/salesApi";
+import type { LeadPayment } from "../../types";
 
 export function PendingPaymentsPage() {
   const qc = useQueryClient();
@@ -39,6 +42,7 @@ export function PendingPaymentsPage() {
     leadId: string;
     paymentId: string;
     repId: string | null;
+    payment: LeadPayment;
   } | null>(null);
 
   useEffect(() => {
@@ -54,11 +58,15 @@ export function PendingPaymentsPage() {
   const pendingCount = usePendingActionsCountQuery(true);
   const leadQr = useLeadQuery(verifyTarget?.leadId, !!verifyTarget?.leadId);
   const payment =
-    verifyTarget && leadQr.data?.lead.payments
-      ? leadQr.data.lead.payments.find((p) => p.id === verifyTarget.paymentId) ?? null
-      : null;
+    verifyTarget == null
+      ? null
+      : leadQr.data?.lead.payments?.find((p) => p.id === verifyTarget.paymentId) ??
+        verifyTarget.payment;
 
   const verifyPay = useVerifyPaymentMutation(verifyTarget?.leadId ?? "", verifyTarget?.repId);
+  const paymentShareMethods = usePaymentShareMethods(!!verifyTarget?.leadId);
+  const verifyLead = leadQr.data?.lead;
+  const verifyLeadLoading = !!verifyTarget && leadQr.isLoading && !verifyLead;
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
 
@@ -123,7 +131,8 @@ export function PendingPaymentsPage() {
                         setVerifyTarget({
                           leadId: row.leadId,
                           paymentId: row.id,
-                          repId: row.lead.assignedToUserId
+                          repId: row.lead.assignedToUserId,
+                          payment: row
                         })
                       }
                     >
@@ -184,7 +193,14 @@ export function PendingPaymentsPage() {
         open={verifyTarget != null}
         onOpenChange={(o) => !o && setVerifyTarget(null)}
         isPending={verifyPay.isPending}
-        clientName={leadQr.data?.lead.clientName}
+        lead={verifyLead ?? null}
+        templateLabel={
+          verifyLead?.websiteTemplate
+            ? formatTemplateOption(verifyLead.websiteTemplate)
+            : null
+        }
+        paymentShareMethods={paymentShareMethods}
+        leadLoading={verifyLeadLoading}
         onVerify={(paymentId, body: VerifyPaymentRequestBody) =>
           verifyPay.mutate(
             { paymentId, body },

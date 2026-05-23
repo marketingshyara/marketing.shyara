@@ -11,37 +11,36 @@ import { inject } from "../helpers/inject.js";
 const run = Boolean(process.env.DATABASE_URL && process.env.SESSION_SECRET);
 const d = run ? describe : describe.skip;
 
-d("integration: commission amount sync when final quote patched (FINAL_QUOTE basis)", () => {
+d("integration: commission amount sync when agreed total patched", () => {
   let adminId: string;
   let repId: string;
 
   beforeAll(async () => {
     await prisma.user.deleteMany({
-      where: { email: { in: ["quote-sync-admin@test.local", "quote-sync-rep@test.local"] } }
+      where: { email: { in: ["agreed-sync-admin@test.local", "agreed-sync-rep@test.local"] } }
     });
 
     const admin = await prisma.user.create({
       data: {
-        email: "quote-sync-admin@test.local",
+        email: "agreed-sync-admin@test.local",
         passwordHash: await bcrypt.hash("AdminPass123!", 10),
         role: UserRole.ADMIN,
-        displayName: "Quote Sync Admin"
+        displayName: "Agreed Sync Admin"
       }
     });
     adminId = admin.id;
 
     const rep = await prisma.user.create({
       data: {
-        email: "quote-sync-rep@test.local",
+        email: "agreed-sync-rep@test.local",
         passwordHash: await bcrypt.hash("RepPass123!", 10),
         role: UserRole.SALES_REP,
-        displayName: "Quote Sync Rep"
+        displayName: "Agreed Sync Rep"
       }
     });
     repId = rep.id;
 
     const values = portalSettingsSchema.parse({
-      commissionBasis: "FINAL_QUOTE",
       commissionRateBps: 1000
     });
     await prisma.portalSettings.upsert({
@@ -67,14 +66,14 @@ d("integration: commission amount sync when final quote patched (FINAL_QUOTE bas
     await prisma.$disconnect();
   });
 
-  it("updates unpaid commission amountCents when finalQuoteCents changes", async () => {
+  it("updates unpaid commission amountCents when agreedTotalCents changes", async () => {
     const config = loadConfig();
     const app = await buildApp({ config });
 
     const login = await inject(app, {
       method: "POST",
       url: "/api/auth/login",
-      payload: { email: "quote-sync-admin@test.local", password: "AdminPass123!" }
+      payload: { email: "agreed-sync-admin@test.local", password: "AdminPass123!" }
     });
     expect(login.statusCode).toBe(200);
     const cookie = login.cookies.find((c) => c.name === config.cookieName);
@@ -84,9 +83,9 @@ d("integration: commission amount sync when final quote patched (FINAL_QUOTE bas
       data: {
         createdByUserId: adminId,
         assignedToUserId: repId,
-        clientName: "Quote sync lead",
+        clientName: "Agreed sync lead",
         status: LeadStatus.NEW,
-        finalQuoteCents: 10_000
+        agreedTotalCents: 10_000
       }
     });
 
@@ -103,7 +102,7 @@ d("integration: commission amount sync when final quote patched (FINAL_QUOTE bas
       method: "PATCH",
       url: `/api/leads/${lead.id}`,
       headers: { cookie: `${config.cookieName}=${cookie!.value}` },
-      payload: { finalQuoteCents: 50_000 }
+      payload: { agreedTotalCents: 50_000 }
     });
     expect(patch.statusCode).toBe(200);
 

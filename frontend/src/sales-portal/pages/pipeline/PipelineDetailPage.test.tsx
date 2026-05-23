@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PipelineDetailPage } from "./PipelineDetailPage";
 import type { Lead, LeadDetailResponse } from "../../types";
+import { defaultPaymentShareMethods } from "../../lib/paymentShareMethods";
 
 const useLeadQuery = vi.fn();
 const usePortalSettingsQuery = vi.fn();
@@ -44,6 +46,8 @@ const mockLead: Lead = {
   demoFinalizedVerifiedAt: null,
   accountsReadyAt: null,
   accountsReadyVerifiedAt: null,
+  clientGithubId: null,
+  clientGithubEmail: null,
   repoTransferVerifiedAt: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z"
@@ -93,21 +97,25 @@ describe("PipelineDetailPage", () => {
     useConvertLeadMutation.mockReturnValue(mutationStub());
     useMarkPaymentMutation.mockReturnValue(mutationStub());
     usePatchProjectMutation.mockReturnValue(mutationStub());
-    useWebsiteTemplatesQuery.mockReturnValue({ data: { items: [] }, isLoading: false });
     usePortalSettingsQuery.mockReturnValue({
       data: {
         settings: {
           minAgreedTotalCents: 799_900,
           advancePaymentShareBps: 5000,
           commissionRateBps: 3000,
-          templatesCatalogUrl: "",
+          templatesCatalogUrl: "https://example.com/templates",
           tutorialLinks: [],
-          painPointsByCategory: []
+          painPointsByCategory: [],
+          paymentShareMethods: defaultPaymentShareMethods()
         }
       },
       isLoading: false,
       isError: false,
       refetch: vi.fn()
+    });
+    useWebsiteTemplatesQuery.mockReturnValue({
+      data: { items: [{ id: "RES/001", name: "Test", category: "Restaurant" }] },
+      isLoading: false
     });
   });
 
@@ -145,5 +153,291 @@ describe("PipelineDetailPage", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Acme Corp" })).toBeTruthy();
     expect(screen.getByRole("status")).toBeTruthy();
+  });
+
+  it("convert modal shows live advance and keeps submit disabled without payment method", async () => {
+    const user = userEvent.setup();
+    useLeadQuery.mockReturnValue({
+      data: mockDetail,
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /Submit for approval/i }));
+
+    expect(screen.getByLabelText(/Advance payment \(50%\)/i)).toHaveValue("—");
+
+    await user.type(screen.getByLabelText(/Agreed total/i), "7999");
+    expect(screen.getByLabelText(/Advance payment \(50%\)/i)).toHaveValue("₹3,999.50");
+    expect(screen.getByText(/Due after build: ₹3,999.50/i)).toBeInTheDocument();
+
+    const submit = screen.getByRole("button", { name: /Submit for admin approval/i });
+    expect(submit).toBeDisabled();
+    expect(screen.getByLabelText(/Payment method/i)).toBeInTheDocument();
+  });
+
+  it("convert read-only modal shows server advance and due amounts", async () => {
+    const user = userEvent.setup();
+    useLeadQuery.mockReturnValue({
+      data: {
+        lead: {
+          ...mockLead,
+          convertedAt: "2026-01-02T00:00:00.000Z",
+          agreedTotalCents: 799_900,
+          advanceAmountCents: 399_950,
+          finalQuoteCents: 399_950,
+          websiteTemplateId: "RES/001"
+        },
+        pipelineStages: [
+          {
+            key: "convert_deal",
+            title: "Convert",
+            repActor: true,
+            adminActor: false,
+            state: "pending_admin"
+          }
+        ]
+      },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+
+    renderDetail();
+    await user.click(screen.getByRole("button", { name: /View submission/i }));
+
+    expect(screen.getByLabelText(/Advance payment \(50%\)/i)).toHaveValue("₹3,999.50");
+    expect(screen.getByText(/Due after build: ₹3,999.50/i)).toBeInTheDocument();
+  });
+
+  it("due payment modal shows read-only amount from finalQuoteCents", async () => {
+    const user = userEvent.setup();
+    useLeadQuery.mockReturnValue({
+      data: {
+        lead: {
+          ...mockLead,
+          status: "PREVIEW_SENT",
+          agreedTotalCents: 799_900,
+          advanceAmountCents: 399_950,
+          finalQuoteCents: 399_950,
+          convertedAt: "2026-01-02T00:00:00.000Z",
+          accountsReadyVerifiedAt: "2026-01-02T00:00:00.000Z",
+          payments: [
+            {
+              id: "pay-fin",
+              leadId: "lead-1",
+              kind: "FINAL",
+              amountCents: 399_950,
+              verificationStatus: "PENDING",
+              repNote: "upi_id",
+              markedByUserId: "rep-1",
+              markedAt: "2026-01-04T00:00:00.000Z",
+              verifiedByUserId: null,
+              verifiedAt: null,
+              adminNote: null
+            }
+          ]
+        },
+        pipelineStages: [
+          {
+            key: "final_payment",
+            title: "Due payment",
+            repActor: true,
+            adminActor: false,
+            state: "pending_admin"
+          }
+        ]
+      },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+
+    renderDetail();
+    await user.click(screen.getByRole("button", { name: /View submission/i }));
+
+    expect(screen.getByText("Agreed total")).toBeInTheDocument();
+    expect(screen.getByText("Advance")).toBeInTheDocument();
+    expect(screen.getByText("Due amount")).toBeInTheDocument();
+    expect(screen.getByText("Submitted at")).toBeInTheDocument();
+  });
+});
+
+describe("PipelineDetailPage demo preview", () => {
+  const demoStages: LeadDetailResponse["pipelineStages"] = [
+    {
+      key: "build_demo",
+      title: "Website build & demo link",
+      repActor: false,
+      adminActor: true,
+      state: "pending_admin",
+      hint: "Waiting on technical team"
+    },
+    {
+      key: "demo_finalized",
+      title: "Demo approved by client",
+      repActor: true,
+      adminActor: true,
+      state: "actionable"
+    }
+  ];
+
+  function leadWithPreview(overrides: Partial<Lead> = {}): LeadDetailResponse {
+    return {
+      lead: {
+        ...mockLead,
+        convertedAt: "2026-01-02T00:00:00.000Z",
+        whatsappVerifiedAt: "2026-01-02T00:00:00.000Z",
+        status: "BUILDING",
+        project: {
+          id: "proj-1",
+          leadId: "lead-1",
+          previewUrl: "https://demo.test/preview",
+          deployedUrl: null,
+          deploymentSubmittedAt: null,
+          deploymentVerifiedAt: null,
+          createdAt: "2026-01-02T00:00:00.000Z",
+          updatedAt: "2026-01-02T00:00:00.000Z"
+        },
+        ...overrides
+      },
+      pipelineStages: demoStages
+    };
+  }
+
+  beforeEach(() => {
+    useLeadQuery.mockReturnValue({
+      data: leadWithPreview(),
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+  });
+
+  it("shows demo preview link in demo_finalized modal", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /Mark demo approved/i }));
+
+    const link = screen.getByRole("link", { name: /demo\.test\/preview/i });
+    expect(link).toHaveAttribute("href", "https://demo.test/preview");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(screen.getByRole("button", { name: "Copy Demo preview" })).toBeInTheDocument();
+  });
+
+  it("opens build_demo read-only modal from accordion when preview URL exists", async () => {
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /View all pipeline steps/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Website build & demo link, pending_admin/i })
+    );
+
+    expect(screen.getByRole("dialog", { name: /Demo preview link/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /demo\.test\/preview/i })).toBeInTheDocument();
+  });
+
+  it("shows not-ready message in demo_finalized modal when preview URL is missing", async () => {
+    useLeadQuery.mockReturnValue({
+      data: leadWithPreview({
+        project: {
+          id: "proj-1",
+          leadId: "lead-1",
+          previewUrl: null,
+          deployedUrl: null,
+          deploymentSubmittedAt: null,
+          deploymentVerifiedAt: null,
+          createdAt: "2026-01-02T00:00:00.000Z",
+          updatedAt: "2026-01-02T00:00:00.000Z"
+        }
+      }),
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /Mark demo approved/i }));
+
+    expect(
+      screen.getByText(/Demo preview not ready yet — waiting on technical team/i)
+    ).toBeInTheDocument();
+  });
+
+  it("keeps Mark demo finalized disabled when preview URL is missing", async () => {
+    useLeadQuery.mockReturnValue({
+      data: leadWithPreview({
+        project: {
+          id: "proj-1",
+          leadId: "lead-1",
+          previewUrl: null,
+          deployedUrl: null,
+          deploymentSubmittedAt: null,
+          deploymentVerifiedAt: null,
+          createdAt: "2026-01-02T00:00:00.000Z",
+          updatedAt: "2026-01-02T00:00:00.000Z"
+        }
+      }),
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /Mark demo approved/i }));
+
+    expect(screen.getByRole("button", { name: /Mark demo finalized/i })).toBeDisabled();
+  });
+
+  it("keeps build_demo step disabled when preview URL is missing", async () => {
+    useLeadQuery.mockReturnValue({
+      data: leadWithPreview({
+        project: {
+          id: "proj-1",
+          leadId: "lead-1",
+          previewUrl: null,
+          deployedUrl: null,
+          deploymentSubmittedAt: null,
+          deploymentVerifiedAt: null,
+          createdAt: "2026-01-02T00:00:00.000Z",
+          updatedAt: "2026-01-02T00:00:00.000Z"
+        }
+      }),
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+
+    const user = userEvent.setup();
+    renderDetail();
+
+    await user.click(screen.getByRole("button", { name: /View all pipeline steps/i }));
+
+    expect(
+      screen.getByRole("button", { name: /Website build & demo link, pending_admin/i })
+    ).toBeDisabled();
   });
 });

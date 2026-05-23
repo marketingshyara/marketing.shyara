@@ -11,9 +11,17 @@ type Props = {
   actorMode: PipelineActorMode;
   onPrimaryAction: (key: PipelineStageKey) => void;
   onViewSubmission?: (key: PipelineStageKey) => void;
+  /** Shown under the headline when rep is waiting on admin (e.g. payment submitted). */
+  waitingDetail?: string | null;
 };
 
-export function PipelineFocusCard({ stages, actorMode, onPrimaryAction, onViewSubmission }: Props) {
+export function PipelineFocusCard({
+  stages,
+  actorMode,
+  onPrimaryAction,
+  onViewSubmission,
+  waitingDetail
+}: Props) {
   const focus = getPipelineFocus(stages, actorMode);
   const urgent = focus.kind === "action";
   const waiting = focus.kind === "waiting";
@@ -39,8 +47,10 @@ export function PipelineFocusCard({ stages, actorMode, onPrimaryAction, onViewSu
       <CardHeader className="space-y-2 pb-2">
         <PortalStatusChip kind={focus.statusChip.kind} label={focus.statusChip.label} />
         <CardTitle className="break-words text-lg md:text-xl">{focus.headline}</CardTitle>
-        {focus.detail ? (
-          <p className="text-sm text-muted-foreground">{focus.detail}</p>
+        {waitingDetail ?? focus.detail ? (
+          <p className="break-words text-sm text-muted-foreground">
+            {waitingDetail ?? focus.detail}
+          </p>
         ) : null}
         <PortalWhyBlocked reasons={focus.expandReasons} />
       </CardHeader>

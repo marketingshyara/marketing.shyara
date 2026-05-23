@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PipelineDetailGate } from "./PipelineDetailGate";
 import type { Lead, LeadDetailResponse } from "../../types";
+import { defaultPaymentShareMethods } from "../../lib/paymentShareMethods";
 
 const useSessionQuery = vi.fn();
 const useLeadQuery = vi.fn();
@@ -12,7 +13,13 @@ vi.mock("../../hooks/useSalesQueries", () => ({
   useSessionQuery: (...args: unknown[]) => useSessionQuery(...args),
   useLeadQuery: (...args: unknown[]) => useLeadQuery(...args),
   usePortalSettingsQuery: () => ({
-    data: { settings: { minAgreedTotalCents: 799_900, advancePaymentShareBps: 5000 } },
+    data: {
+      settings: {
+        minAgreedTotalCents: 799_900,
+        advancePaymentShareBps: 5000,
+        paymentShareMethods: defaultPaymentShareMethods()
+      }
+    },
     isLoading: false,
     isError: false,
     refetch: vi.fn()

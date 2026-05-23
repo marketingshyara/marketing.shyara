@@ -4,6 +4,7 @@ import type {
   Commission,
   Lead,
   LeadDetailResponse,
+  PaymentShareMethodKey,
   LeadPayment,
   LeadPaymentWithRelations,
   Paginated,
@@ -92,16 +93,18 @@ export const salesApi = {
     body: {
       websiteTemplateId: string;
       agreedTotalCents: number;
-      advanceAmountCents?: number;
-      repNote?: string | null;
+      repNote: PaymentShareMethodKey;
     }
   ) => apiJson<LeadDetailResponse>("POST", `/leads/${id}/convert`, body),
 
   patchLead: (id: string, body: Record<string, unknown>) =>
     apiJson<LeadDetailResponse>("PATCH", `/leads/${id}`, body),
 
-  verifyLeadStage: (leadId: string, stageKey: PipelineStageVerifyKey) =>
-    apiJson<LeadDetailResponse>("POST", `/leads/${leadId}/stages/${stageKey}/verify`, {}),
+  verifyLeadStage: (
+    leadId: string,
+    stageKey: PipelineStageVerifyKey,
+    body?: Record<string, unknown>
+  ) => apiJson<LeadDetailResponse>("POST", `/leads/${leadId}/stages/${stageKey}/verify`, body ?? {}),
 
   rejectLeadStage: (
     leadId: string,
@@ -111,7 +114,7 @@ export const salesApi = {
 
   markPayment: (
     leadId: string,
-    body: { kind: "ADVANCE" | "FINAL"; amountCents: number; repNote?: string | null }
+    body: { kind: "ADVANCE" | "FINAL"; amountCents: number; repNote: PaymentShareMethodKey }
   ) => apiJson<{ payment: unknown }>("POST", `/leads/${leadId}/payments`, body),
 
   verifyPayment: (paymentId: string, body: VerifyPaymentRequestBody) =>
@@ -194,9 +197,6 @@ export const salesApi = {
       Paginated<Commission & { lead: { id: string; clientName: string; status: LeadStatus } }>
     >("GET", `/commissions${qs ? `?${qs}` : ""}`);
   },
-
-  patchCommission: (id: string, body: { amountCents: number }) =>
-    apiJson<LeadDetailResponse & { commission: Commission }>("PATCH", `/commissions/${id}`, body),
 
   markCommissionPaid: (id: string) =>
     apiJson<LeadDetailResponse & { commission: Commission }>(

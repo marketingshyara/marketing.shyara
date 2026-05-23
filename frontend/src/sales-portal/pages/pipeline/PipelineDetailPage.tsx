@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { DealAmountField } from "../../components/pipeline/DealAmountField";
+import { PaymentMethodField } from "../../components/pipeline/PaymentMethodField";
 import { StageModalShell } from "../../components/pipeline/StageModalShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +21,19 @@ import { DeclineFeedbackInline } from "../../components/pipeline/DeclineFeedback
 import { PipelineFocusCard } from "../../components/pipeline/PipelineFocusCard";
 import { declineNoteForStage, findDeclineFeedbackStage } from "../../lib/declineFeedback";
 import { StageModalWaitingFooter } from "../../components/pipeline/StageModalWaiting";
+import { PortalLinkDisplay } from "../../components/ui/PortalLinkDisplay";
+import { prepareAccountsReadyPatch } from "../../lib/githubAccount";
+import { PortalMetaGrid } from "../../components/ui/PortalMetaGrid";
+import {
+  accountsReadyMetaItems,
+  accountsReadyMissingGithubHint
+} from "../../components/pipeline/accountsReadyMetaItems";
+import {
+  repPaymentWaitingDetail,
+  pendingPaymentForKind
+} from "../../components/pipeline/paymentSubmissionMetaItems";
+import { PaymentSubmissionReviewSection } from "../../components/pipeline/PaymentSubmissionReviewSection";
+import { RepDemoPreviewLink } from "../../components/pipeline/RepDemoPreviewLink";
 import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
@@ -32,10 +47,19 @@ import {
   usePatchProjectMutation,
   useWebsiteTemplatesQuery
 } from "../../hooks/useSalesQueries";
+import { usePaymentShareMethods } from "../../hooks/usePaymentShareMethods";
 import { prepareHttpUrlForMutation } from "../../lib/httpUrl";
 import { toastIfStageBlocked } from "../../lib/pipelineStageGuard";
-import type { PipelineStageKey } from "../../types";
-import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
+import type { PaymentShareMethodKey, PipelineStageKey } from "../../types";
+import {
+  bpsToPercentLabel,
+  formatMinorUnits,
+  parseRupeeInputToCents,
+  resolveDealSplitDisplay,
+  splitAgreedTotalCents
+} from "../../lib/money";
+import { repPaymentMethodFromLead } from "../../lib/repPaymentMethod";
+import { commissionBreakdownHint } from "../../lib/commissionEstimate";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { Badge } from "@/components/ui/badge";
 import { leadStatusLabel } from "../../lib/copy";
@@ -61,10 +85,13 @@ export function PipelineDetailPage() {
   const [notes, setNotes] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [agreedRupees, setAgreedRupees] = useState("");
-  const [advanceNote, setAdvanceNote] = useState("");
+  const [paymentMethodKey, setPaymentMethodKey] = useState<PaymentShareMethodKey | "">("");
+  const [finalPaymentMethodKey, setFinalPaymentMethodKey] = useState<PaymentShareMethodKey | "">("");
   const [whatsappLink, setWhatsappLink] = useState("");
-  const [dueRupees, setDueRupees] = useState("");
   const [deployUrl, setDeployUrl] = useState("");
+  const [clientGithubId, setClientGithubId] = useState("");
+  const [clientGithubEmail, setClientGithubEmail] = useState("");
+  const [accountsGithubError, setAccountsGithubError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -75,10 +102,13 @@ export function PipelineDetailPage() {
     setNotes("");
     setTemplateId("");
     setAgreedRupees("");
-    setAdvanceNote("");
+    setPaymentMethodKey("");
+    setFinalPaymentMethodKey("");
     setWhatsappLink("");
-    setDueRupees("");
     setDeployUrl("");
+    setClientGithubId("");
+    setClientGithubEmail("");
+    setAccountsGithubError(null);
   }, [id]);
 
   const loading = leadQr.isLoading || (settingsQr.isLoading && !settingsQr.isError);
@@ -86,6 +116,23 @@ export function PipelineDetailPage() {
   const stages = leadQr.data?.pipelineStages ?? [];
   const declineFeedback = findDeclineFeedbackStage(stages);
   const settings = settingsQr.data?.settings;
+  const advanceShareBps = settings?.advancePaymentShareBps ?? 5000;
+  const paymentShareMethods = usePaymentShareMethods();
+  const commissionHint =
+    lead && settings ? commissionBreakdownHint(lead, settings) : null;
+  const agreedTotalCents = parseRupeeInputToCents(agreedRupees);
+  const convertSplit = useMemo(() => {
+    if (lead?.convertedAt) return null;
+    if (agreedTotalCents == null || agreedTotalCents <= 0) return null;
+    return splitAgreedTotalCents(agreedTotalCents, advanceShareBps);
+  }, [lead?.convertedAt, agreedTotalCents, advanceShareBps]);
+  const dealSplitDisplay = useMemo(
+    () =>
+      lead
+        ? resolveDealSplitDisplay(lead, convertSplit)
+        : { advanceCents: null, dueCents: null, fromServer: false },
+    [lead, convertSplit]
+  );
 
   if (loading) {
     return (
@@ -115,6 +162,8 @@ export function PipelineDetailPage() {
     setReadOnlyModal(false);
   };
 
+  const demoPreviewUrl = lead.project?.previewUrl?.trim() || null;
+
   const handleStageClick = (key: PipelineStageKey) => {
     if (!lead) return;
     const stage = stages.find((s) => s.key === key);
@@ -132,6 +181,7 @@ export function PipelineDetailPage() {
       setAgreedRupees(
         lead.agreedTotalCents ? String(lead.agreedTotalCents / 100) : ""
       );
+      setPaymentMethodKey(repPaymentMethodFromLead(lead, "ADVANCE"));
       if (lead.convertedAt) {
         setReadOnlyModal(true);
       }
@@ -139,16 +189,54 @@ export function PipelineDetailPage() {
     if (key === "whatsapp_group") {
       setWhatsappLink(lead.whatsappGroupLink ?? "");
     }
-    if (key === "final_payment" && lead.finalQuoteCents) {
-      setDueRupees(String(lead.finalQuoteCents / 100));
+    if (key === "final_payment") {
+      setFinalPaymentMethodKey(repPaymentMethodFromLead(lead, "FINAL"));
     }
     if (key === "deployment_submit") {
       setDeployUrl(lead.project?.deployedUrl ?? "");
+    }
+    if (key === "accounts_ready") {
+      setClientGithubId(lead.clientGithubId ?? "");
+      setClientGithubEmail(lead.clientGithubEmail ?? "");
+      setAccountsGithubError(null);
+    }
+    if (key === "build_demo") {
+      setReadOnlyModal(true);
     }
     setActiveStage(key);
   };
 
   const minRupees = settings ? settings.minAgreedTotalCents / 100 : 7999;
+
+  const canSubmitConvert =
+    !readOnlyModal &&
+    !!templateId &&
+    agreedTotalCents != null &&
+    agreedTotalCents >= (settings?.minAgreedTotalCents ?? 799_900) &&
+    !!paymentMethodKey;
+
+  const canSubmitFinal =
+    !readOnlyModal &&
+    lead.finalQuoteCents != null &&
+    lead.finalQuoteCents > 0 &&
+    !!finalPaymentMethodKey;
+
+  const canSubmitAccountsReady =
+    !readOnlyModal &&
+    clientGithubId.trim().length > 0 &&
+    clientGithubEmail.trim().length > 0;
+
+  const templateLabel = lead.websiteTemplate
+    ? formatTemplateOption(lead.websiteTemplate)
+    : null;
+
+  const repWaitingDetail = repPaymentWaitingDetail(
+    stages.find((s) => s.state === "pending_admin" && s.repActor)?.key,
+    lead
+  );
+
+  const pendingFinalPayment = pendingPaymentForKind(lead, "FINAL");
+  const pendingAdvancePayment = pendingPaymentForKind(lead, "ADVANCE");
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -195,12 +283,14 @@ export function PipelineDetailPage() {
         actorMode="rep"
         onPrimaryAction={handleStageClick}
         onViewSubmission={handleStageClick}
+        waitingDetail={repWaitingDetail}
       />
 
       <PipelineStepsAccordion
         stages={stages}
         actorMode="rep"
         onStageClick={handleStageClick}
+        repPreviewUrl={demoPreviewUrl}
       />
 
       {lead.commission && (
@@ -216,6 +306,9 @@ export function PipelineDetailPage() {
               {lead.commission.isPaid ? "Paid" : "Pending payout"}
             </Badge>
           </div>
+          {commissionHint ? (
+            <p className="text-xs text-muted-foreground">{commissionHint}</p>
+          ) : null}
           <Button variant="link" className="h-auto min-h-11 px-0 text-sm" asChild>
             <Link to="/portal/commission">View all commission</Link>
           </Button>
@@ -287,15 +380,14 @@ export function PipelineDetailPage() {
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
-              disabled={convert.isPending || !templateId || !agreedRupees.trim()}
+              disabled={convert.isPending || !canSubmitConvert}
               onClick={() => {
-                const agreedTotalCents = parseRupeeInputToCents(agreedRupees);
-                if (agreedTotalCents == null) return;
+                if (agreedTotalCents == null || !paymentMethodKey) return;
                 convert.mutate(
                   {
                     websiteTemplateId: templateId,
                     agreedTotalCents,
-                    repNote: advanceNote.trim() || null
+                    repNote: paymentMethodKey
                   },
                   { onSuccess: closeModal }
                 );
@@ -322,7 +414,11 @@ export function PipelineDetailPage() {
         <div className="space-y-3">
           <div className="space-y-2">
             <Label>Template</Label>
-            <Select value={templateId || "__none__"} onValueChange={(v) => setTemplateId(v === "__none__" ? "" : v)}>
+            <Select
+              value={templateId || "__none__"}
+              onValueChange={(v) => setTemplateId(v === "__none__" ? "" : v)}
+              disabled={readOnlyModal}
+            >
               <SelectTrigger className="min-h-11">
                 <SelectValue placeholder="Choose template" />
               </SelectTrigger>
@@ -337,15 +433,51 @@ export function PipelineDetailPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="agreed">Agreed total (₹)</Label>
-            <Input id="agreed" className="min-h-11" inputMode="decimal" value={agreedRupees} onChange={(e) => setAgreedRupees(e.target.value)} />
-            <p className="text-xs text-muted-foreground">
-              Min ₹{minRupees}. Advance {settings ? settings.advancePaymentShareBps / 100 : 50}%.
-            </p>
+            <Input
+              id="agreed"
+              className="min-h-11"
+              inputMode="decimal"
+              value={agreedRupees}
+              onChange={(e) => setAgreedRupees(e.target.value)}
+              readOnly={readOnlyModal}
+              aria-readonly={readOnlyModal}
+            />
+            <p className="text-xs text-muted-foreground">Min ₹{minRupees}.</p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="adv-note">Payment note (optional)</Label>
-            <Input id="adv-note" className="min-h-11" value={advanceNote} onChange={(e) => setAdvanceNote(e.target.value)} />
-          </div>
+          <DealAmountField
+            id="advance-preview"
+            label={`Advance payment (${bpsToPercentLabel(advanceShareBps)})`}
+            amountCents={dealSplitDisplay.advanceCents}
+            hint={
+              dealSplitDisplay.dueCents != null
+                ? `Due after build: ${formatMinorUnits(dealSplitDisplay.dueCents)}${
+                    dealSplitDisplay.fromServer
+                      ? " · from agreed deal at convert"
+                      : " · updates as you type agreed total"
+                  }`
+                : dealSplitDisplay.fromServer
+                  ? "From agreed deal at convert"
+                  : undefined
+            }
+          />
+          <PaymentMethodField
+            id="convert-payment-method"
+            value={paymentMethodKey}
+            onChange={setPaymentMethodKey}
+            methods={paymentShareMethods}
+            disabled={readOnlyModal}
+          />
+          {readOnlyModal && pendingAdvancePayment ? (
+            <div className="min-w-0 space-y-3 border-t pt-3">
+              <p className="text-xs font-medium text-muted-foreground">Advance payment submitted</p>
+              <PaymentSubmissionReviewSection
+                lead={lead}
+                payment={pendingAdvancePayment}
+                methods={paymentShareMethods}
+                options={{ includeDealContext: false }}
+              />
+            </div>
+          ) : null}
         </div>
       </StageModalShell>
 
@@ -383,16 +515,38 @@ export function PipelineDetailPage() {
         <div className="space-y-2">
           <Label htmlFor="wa-link">Group invite link</Label>
           <p className="text-xs text-muted-foreground">Invite link for client + technical team.</p>
-          <Input
-            id="wa-link"
-            className="min-h-11"
-            type="url"
-            inputMode="url"
-            placeholder="https://chat.whatsapp.com/…"
-            value={whatsappLink}
-            onChange={(e) => setWhatsappLink(e.target.value)}
-          />
+          {readOnlyModal ? (
+            <PortalLinkDisplay url={whatsappLink} copyLabel="Group link" />
+          ) : (
+            <Input
+              id="wa-link"
+              className="min-h-11"
+              type="url"
+              inputMode="url"
+              placeholder="https://chat.whatsapp.com/…"
+              value={whatsappLink}
+              onChange={(e) => setWhatsappLink(e.target.value)}
+            />
+          )}
         </div>
+      </StageModalShell>
+
+      <StageModalShell
+        open={activeStage === "build_demo"}
+        onOpenChange={(o) => !o && closeModal()}
+        title="Demo preview link"
+        footer={
+          <Button
+            type="button"
+            variant="secondary"
+            className="min-h-11 w-full sm:w-auto"
+            onClick={closeModal}
+          >
+            Close
+          </Button>
+        }
+      >
+        <RepDemoPreviewLink previewUrl={demoPreviewUrl} context="building" />
       </StageModalShell>
 
       <StageModalShell
@@ -405,7 +559,7 @@ export function PipelineDetailPage() {
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
-              disabled={patch.isPending}
+              disabled={patch.isPending || !demoPreviewUrl}
               onClick={() => patch.mutate({ markDemoFinalized: true }, { onSuccess: closeModal })}
             >
               Mark demo finalized
@@ -419,7 +573,13 @@ export function PipelineDetailPage() {
             <DeclineFeedbackInline declineNote={note} className="mb-3" />
           ) : null;
         })()}
-        <p className="text-xs text-muted-foreground">Client signed off on the demo.</p>
+        <div className="space-y-3">
+          <RepDemoPreviewLink
+            previewUrl={demoPreviewUrl}
+            context={readOnlyModal ? "submitted" : "approve"}
+          />
+          <p className="text-xs text-muted-foreground">Client signed off on the demo.</p>
+        </div>
       </StageModalShell>
 
       <StageModalShell
@@ -432,8 +592,21 @@ export function PipelineDetailPage() {
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
-              disabled={patch.isPending}
-              onClick={() => patch.mutate({ markAccountsReady: true }, { onSuccess: closeModal })}
+              disabled={patch.isPending || !canSubmitAccountsReady}
+              onClick={() => {
+                try {
+                  setAccountsGithubError(null);
+                  const body = prepareAccountsReadyPatch(clientGithubId, clientGithubEmail);
+                  patch.mutate(body, { onSuccess: closeModal });
+                } catch (e) {
+                  const msg =
+                    e instanceof Error
+                      ? e.message
+                      : "Enter a valid GitHub username and email.";
+                  setAccountsGithubError(msg);
+                  errToast(e);
+                }
+              }}
             >
               Mark accounts ready
             </Button>
@@ -446,7 +619,75 @@ export function PipelineDetailPage() {
             <DeclineFeedbackInline declineNote={note} className="mb-3" />
           ) : null;
         })()}
-        <p className="text-xs text-muted-foreground">GitHub + static hosting for the client.</p>
+        <div className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            GitHub + static hosting for the client. Add the account details admin will verify.
+          </p>
+          {readOnlyModal ? (
+            <>
+              <PortalMetaGrid items={accountsReadyMetaItems(lead)} />
+              {accountsReadyMissingGithubHint(lead) ? (
+                <p className="text-xs text-amber-700 dark:text-amber-300" role="status">
+                  GitHub details were not saved with this submission — contact admin if this looks
+                  wrong.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="client-github-id">GitHub username</Label>
+                <p className="text-xs text-muted-foreground">
+                  Client&apos;s GitHub ID (username), not your personal account.
+                </p>
+                <Input
+                  id="client-github-id"
+                  className="min-h-11"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="e.g. acme-corp"
+                  value={clientGithubId}
+                  onChange={(e) => {
+                    setClientGithubId(e.target.value);
+                    if (accountsGithubError) setAccountsGithubError(null);
+                  }}
+                  aria-invalid={!!accountsGithubError}
+                  aria-describedby={
+                    accountsGithubError ? "accounts-github-error" : "accounts-github-id-hint"
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="client-github-email">GitHub account email</Label>
+                <p id="accounts-github-id-hint" className="text-xs text-muted-foreground">
+                  Email used when the client&apos;s GitHub account was created.
+                </p>
+                <Input
+                  id="client-github-email"
+                  className="min-h-11"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="client@example.com"
+                  value={clientGithubEmail}
+                  onChange={(e) => {
+                    setClientGithubEmail(e.target.value);
+                    if (accountsGithubError) setAccountsGithubError(null);
+                  }}
+                  aria-invalid={!!accountsGithubError}
+                  aria-describedby={
+                    accountsGithubError ? "accounts-github-error" : undefined
+                  }
+                />
+              </div>
+              {accountsGithubError ? (
+                <p id="accounts-github-error" className="text-xs text-destructive" role="alert">
+                  {accountsGithubError}
+                </p>
+              ) : null}
+            </>
+          )}
+        </div>
       </StageModalShell>
 
       <StageModalShell
@@ -459,11 +700,14 @@ export function PipelineDetailPage() {
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
-              disabled={markPay.isPending}
+              disabled={markPay.isPending || !canSubmitFinal}
               onClick={() => {
-                const cents = parseRupeeInputToCents(dueRupees);
-                if (cents == null) return;
-                markPay.mutate({ kind: "FINAL", amountCents: cents }, { onSuccess: closeModal });
+                const amountCents = lead.finalQuoteCents;
+                if (amountCents == null || amountCents <= 0 || !finalPaymentMethodKey) return;
+                markPay.mutate(
+                  { kind: "FINAL", amountCents, repNote: finalPaymentMethodKey },
+                  { onSuccess: closeModal }
+                );
               }}
             >
               Record due payment
@@ -477,9 +721,35 @@ export function PipelineDetailPage() {
             <DeclineFeedbackInline declineNote={note} className="mb-3" />
           ) : null;
         })()}
-        <div className="space-y-2">
-          <Label htmlFor="due">Amount (₹)</Label>
-          <Input id="due" className="min-h-11" inputMode="decimal" value={dueRupees} onChange={(e) => setDueRupees(e.target.value)} />
+        <div className="space-y-3">
+          {readOnlyModal && pendingFinalPayment ? (
+            <PaymentSubmissionReviewSection
+              lead={lead}
+              payment={pendingFinalPayment}
+              methods={paymentShareMethods}
+              options={{ templateLabel }}
+            />
+          ) : readOnlyModal ? (
+            <p className="text-xs text-amber-700 dark:text-amber-300" role="status">
+              Payment details are not on file yet — refresh or contact admin if this looks wrong.
+            </p>
+          ) : (
+            <>
+              <DealAmountField
+                id="due"
+                label="Due amount"
+                amountCents={lead.finalQuoteCents}
+                hint="Calculated from agreed total at convert — you cannot edit this."
+                missingMessage="Due amount is missing on this deal. Ask admin to confirm the convert step saved correctly."
+              />
+              <PaymentMethodField
+                id="final-payment-method"
+                value={finalPaymentMethodKey}
+                onChange={setFinalPaymentMethodKey}
+                methods={paymentShareMethods}
+              />
+            </>
+          )}
         </div>
       </StageModalShell>
 
@@ -529,15 +799,19 @@ export function PipelineDetailPage() {
         ) : null}
         <div className="space-y-2">
           <Label htmlFor="live-url">Live site URL</Label>
-          <Input
-            id="live-url"
-            className="min-h-11"
-            type="url"
-            inputMode="url"
-            placeholder="https://… or yourdomain.com"
-            value={deployUrl}
-            onChange={(e) => setDeployUrl(e.target.value)}
-          />
+          {readOnlyModal ? (
+            <PortalLinkDisplay url={deployUrl} copyLabel="Live URL" />
+          ) : (
+            <Input
+              id="live-url"
+              className="min-h-11"
+              type="url"
+              inputMode="url"
+              placeholder="https://… or yourdomain.com"
+              value={deployUrl}
+              onChange={(e) => setDeployUrl(e.target.value)}
+            />
+          )}
         </div>
       </StageModalShell>
 

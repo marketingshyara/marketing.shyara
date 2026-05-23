@@ -7,6 +7,8 @@ import {
 } from "@prisma/client";
 import { getPortalSettings } from "./settings.js";
 import { getPipelineStages } from "./pipeline.js";
+import { commissionAmountCents } from "./leadFsm.js";
+import type { PortalSettingsValues } from "../validators/schemas.js";
 
 const leadDetailInclude = {
   payments: { orderBy: { markedAt: "desc" as const } },
@@ -75,4 +77,33 @@ export async function loadLeadDetailForAdmin(tx: Prisma.TransactionClient, leadI
   });
   const pipelineStages = getPipelineStages(lead, settings, UserRole.ADMIN);
   return { lead, pipelineStages };
+}
+
+/** Recompute unpaid commission from agreed total × rate; returns synced amount or null if none. */
+export async function syncUnpaidCommissionAmount(
+  tx: Prisma.TransactionClient,
+  leadId: string,
+  settings: PortalSettingsValues
+): Promise<number | null> {
+  const commission = await tx.commission.findUnique({
+    where: { leadId },
+    include: { lead: { include: { payments: true } } }
+  });
+  if (!commission || commission.isPaid) return null;
+
+  const verifiedFinal = commission.lead.payments.find(
+    (p) => p.kind === PaymentKind.FINAL && p.verificationStatus === PaymentVerificationStatus.VERIFIED
+  );
+  const amountCents = commissionAmountCents(
+    commission.lead,
+    verifiedFinal?.amountCents ?? 0,
+    settings
+  );
+  if (amountCents !== commission.amountCents) {
+    await tx.commission.update({
+      where: { leadId },
+      data: { amountCents }
+    });
+  }
+  return amountCents;
 }

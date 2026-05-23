@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { optionalHttpUrlSchema } from "../lib/httpUrl";
 import {
+  paymentShareMethodConfigSchema,
+  paymentShareMethodKeySchema
+} from "../lib/paymentShareMethods";
+import {
   indianMobilePhoneSchema,
   optionalIndianMobilePhoneSchema
 } from "../lib/indianMobilePhone";
@@ -101,6 +105,14 @@ export const patchLeadSchema = z.object({
   whatsappGroupLink: optionalHttpUrlSchema,
   markDemoFinalized: z.boolean().optional(),
   markAccountsReady: z.boolean().optional(),
+  clientGithubId: z
+    .string()
+    .trim()
+    .min(1)
+    .max(39)
+    .regex(/^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/)
+    .optional(),
+  clientGithubEmail: z.string().trim().email().max(320).optional(),
   assignedToUserId: z.string().min(1).optional().nullable(),
   previewUrl: optionalHttpUrlSchema
 });
@@ -112,7 +124,7 @@ export const transitionSchema = z.object({
 export const markPaymentSchema = z.object({
   kind: paymentKindSchema,
   amountCents: z.number().int().positive(),
-  repNote: z.string().max(2000).optional().nullable()
+  repNote: paymentShareMethodKeySchema
 });
 
 export const verifyPaymentSchema = z.discriminatedUnion("decision", [
@@ -164,13 +176,10 @@ export const portalSettingsSchema = z
     performanceBonusAfterCompletedSales: z.number().int().min(0),
     templatesCatalogUrl: z.string().url().max(2000),
     tutorialLinks: z.array(repTutorialLinkSchema),
-    painPointsByCategory: z.array(repPainPointSchema)
+    painPointsByCategory: z.array(repPainPointSchema),
+    paymentShareMethods: z.array(paymentShareMethodConfigSchema)
   })
   .strict();
-
-export const patchCommissionSchema = z.object({
-  amountCents: z.number().int().min(0)
-});
 
 export const createProjectSchema = z.object({
   leadId: z.string().min(1),

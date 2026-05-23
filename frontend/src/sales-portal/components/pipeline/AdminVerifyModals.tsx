@@ -4,17 +4,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Lead, LeadStatus, PipelineStageKey } from "../../types";
-import { formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
+import { formatMinorUnits } from "../../lib/money";
 import { useAdminSettingsQuery } from "../../hooks/useSalesQueries";
+import { DealAmountField } from "./DealAmountField";
 import {
-  commissionBasisLabel,
   commissionRateLabel,
   estimatedCommissionForLead
 } from "../../lib/commissionEstimate";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { tryNormalizeHttpUrl } from "../../lib/httpUrl";
+import { tryNormalizeGithubRepoUrl } from "../../lib/githubRepoUrl";
 import { PortalMetaGrid } from "../ui/PortalMetaGrid";
+import { PortalLinkDisplay } from "../ui/PortalLinkDisplay";
 import { DeclineFeedbackInline } from "./DeclineFeedbackBanner";
+import {
+  accountsReadyMetaItems,
+  accountsReadyMissingGithubHint
+} from "./accountsReadyMetaItems";
 import { declineNoteForStage } from "../../lib/declineFeedback";
 import type { PipelineStageView } from "../../types";
 
@@ -60,16 +66,15 @@ type Props = {
   onClose: () => void;
   previewUrl: string;
   onPreviewUrlChange: (v: string) => void;
-  commissionEditRupees: string;
-  onCommissionEditRupeesChange: (v: string) => void;
   verify: VerifyHandlers;
   onSavePreview: () => void;
   savePreviewPending: boolean;
   onMarkDemoReady: () => void;
   markDemoPending: boolean;
   previewUrlError?: string | null;
-  onPatchCommission?: () => void;
-  patchCommissionPending?: boolean;
+  transferredGithubRepoUrl?: string;
+  onTransferredGithubRepoUrlChange?: (v: string) => void;
+  transferredGithubRepoUrlError?: string | null;
 };
 
 function VerifyFooter({
@@ -113,16 +118,15 @@ export function AdminVerifyModals({
   onClose,
   previewUrl,
   onPreviewUrlChange,
-  commissionEditRupees,
-  onCommissionEditRupeesChange,
   verify,
   onSavePreview,
   savePreviewPending,
   onMarkDemoReady,
   markDemoPending,
   previewUrlError,
-  onPatchCommission,
-  patchCommissionPending
+  transferredGithubRepoUrl = "",
+  onTransferredGithubRepoUrlChange = () => {},
+  transferredGithubRepoUrlError = null
 }: Props) {
   const templateLabel = lead.websiteTemplate
     ? formatTemplateOption(lead.websiteTemplate)
@@ -157,6 +161,11 @@ export function AdminVerifyModals({
   const repoDisabledReasons: string[] = [];
   if (!finalOk) repoDisabledReasons.push("Verify the due (final) payment before confirming repo transfer.");
   if (repoDone) repoDisabledReasons.push("Repository transfer is already verified.");
+  const repoUrlDraftValid = tryNormalizeGithubRepoUrl(transferredGithubRepoUrl) != null;
+  const repoUrlRequired = finalOk && !repoDone;
+  if (repoUrlRequired && !repoUrlDraftValid) {
+    repoDisabledReasons.push("Enter the transferred GitHub repository link.");
+  }
 
   const deployDisabledReasons: string[] = [];
   if (!deploySubmitted)
@@ -165,14 +174,6 @@ export function AdminVerifyModals({
 
   const settingsQr = useAdminSettingsQuery(activeStage === "commission");
   const portalSettings = settingsQr.data?.settings;
-
-  const commissionCents = parseRupeeInputToCents(commissionEditRupees);
-  const commissionSaveValid =
-    commissionCents != null && commissionCents > 0 && lead.commission != null;
-  const commissionUnchanged =
-    lead.commission != null &&
-    commissionCents != null &&
-    commissionCents === lead.commission.amountCents;
 
   const commissionStatusOk = (s: LeadStatus) => s === "DEPLOYED" || s === "FINAL_PAID";
   const canMarkCommissionPaid =
@@ -192,17 +193,6 @@ export function AdminVerifyModals({
     commissionMarkDisabledReasons.push("Verify deployment first — commission is due after the site is live.");
   } else if (!commissionStatusOk(lead.status)) {
     commissionMarkDisabledReasons.push("Complete due payment verification before marking commission paid.");
-  }
-
-  const commissionSaveDisabledReasons: string[] = [];
-  if (lead.commission && !lead.commission.isPaid && onPatchCommission) {
-    if (!commissionEditRupees.trim()) {
-      commissionSaveDisabledReasons.push("Enter a commission amount in rupees to save.");
-    } else if (commissionUnchanged) {
-      commissionSaveDisabledReasons.push("Amount unchanged — edit the value before saving.");
-    } else if (!commissionSaveValid) {
-      commissionSaveDisabledReasons.push("Enter a valid positive amount in rupees.");
-    }
   }
 
   const estimatedCents =
@@ -262,10 +252,12 @@ export function AdminVerifyModals({
           items={[
             {
               label: "Group link",
-              value: lead.whatsappGroupLink ? (
-                <span className="break-all">{lead.whatsappGroupLink}</span>
-              ) : (
-                "—"
+              value: (
+                <PortalLinkDisplay
+                  url={lead.whatsappGroupLink}
+                  copyLabel="Group link"
+                  variant="plain"
+                />
               )
             }
           ]}
@@ -315,7 +307,13 @@ export function AdminVerifyModals({
             },
             {
               label: "Preview URL",
-              value: <span className="break-all">{lead.project?.previewUrl ?? "—"}</span>
+              value: (
+                <PortalLinkDisplay
+                  url={lead.project?.previewUrl}
+                  copyLabel="Preview URL"
+                  variant="plain"
+                />
+              )
             }
           ]}
         />
@@ -376,7 +374,13 @@ export function AdminVerifyModals({
             items={[
               {
                 label: "Saved URL",
-                value: <span className="break-all">{lead.project.previewUrl}</span>
+                value: (
+                  <PortalLinkDisplay
+                    url={lead.project.previewUrl}
+                    copyLabel="Preview URL"
+                    variant="plain"
+                  />
+                )
               }
             ]}
           />
@@ -431,16 +435,12 @@ export function AdminVerifyModals({
             <DeclineFeedbackInline declineNote={note} className="mb-3" />
           ) : null;
         })()}
-        <PortalMetaGrid
-          items={[
-            {
-              label: "Rep marked",
-              value: lead.accountsReadyAt
-                ? new Date(lead.accountsReadyAt).toLocaleString()
-                : "Not yet"
-            }
-          ]}
-        />
+        <PortalMetaGrid items={accountsReadyMetaItems(lead)} />
+        {accountsReadyMissingGithubHint(lead) ? (
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-300" role="status">
+            Rep submission missing GitHub details — ask rep to resubmit.
+          </p>
+        ) : null}
         {verify.onDecline ? (
           <div className="mt-3 space-y-2">
             <Label htmlFor="decline-note-acct">Decline note (optional)</Label>
@@ -473,7 +473,13 @@ export function AdminVerifyModals({
           items={[
             {
               label: "Live URL",
-              value: <span className="break-all">{lead.project?.deployedUrl ?? "—"}</span>
+              value: (
+                <PortalLinkDisplay
+                  url={lead.project?.deployedUrl}
+                  copyLabel="Live URL"
+                  variant="plain"
+                />
+              )
             },
             ...(lead.project?.deploymentSubmittedAt
               ? [
@@ -524,7 +530,13 @@ export function AdminVerifyModals({
           items={[
             {
               label: "Live URL",
-              value: <span className="break-all">{lead.project?.deployedUrl ?? "—"}</span>
+              value: (
+                <PortalLinkDisplay
+                  url={lead.project?.deployedUrl}
+                  copyLabel="Live URL"
+                  variant="plain"
+                />
+              )
             }
           ]}
         />
@@ -539,18 +551,74 @@ export function AdminVerifyModals({
             <VerifyFooter
               verify={verify}
               verifyLabel="Verify repo transfer"
-              verifyDisabled={!finalOk || repoDone}
+              verifyDisabled={!finalOk || repoDone || (repoUrlRequired && !repoUrlDraftValid)}
             />
-            <ModalDisabledHints reasons={!finalOk || repoDone ? repoDisabledReasons : []} />
+            <ModalDisabledHints reasons={repoDisabledReasons} />
           </>
         }
       >
-        <p className="text-xs text-muted-foreground">Repo ownership moved to client.</p>
-        {!finalOk ? (
-          <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
-            Verify due payment first.
+        <div className="min-w-0 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Confirm the repo now lives under the client&apos;s GitHub account after they accepted the
+            transfer.
           </p>
-        ) : null}
+          {!finalOk ? (
+            <p className="text-xs text-amber-700 dark:text-amber-400" role="status">
+              Verify due payment first.
+            </p>
+          ) : null}
+          {(lead.clientGithubId || lead.clientGithubEmail) && !repoDone ? (
+            <PortalMetaGrid items={accountsReadyMetaItems(lead).slice(0, 2)} />
+          ) : null}
+          {repoDone && lead.transferredGithubRepoUrl ? (
+            <PortalMetaGrid
+              items={[
+                {
+                  label: "Transferred repo",
+                  value: (
+                    <PortalLinkDisplay
+                      url={lead.transferredGithubRepoUrl}
+                      copyLabel="GitHub repo"
+                      variant="plain"
+                    />
+                  )
+                }
+              ]}
+            />
+          ) : !repoDone ? (
+            <div className="space-y-2">
+              <Label htmlFor="transferred-github-repo">Transferred GitHub repository link</Label>
+              <Input
+                id="transferred-github-repo"
+                className="min-h-11"
+                type="url"
+                inputMode="url"
+                placeholder="github.com/client-org/website-repo"
+                value={transferredGithubRepoUrl}
+                onChange={(e) => onTransferredGithubRepoUrlChange(e.target.value)}
+                aria-invalid={transferredGithubRepoUrlError ? true : undefined}
+                aria-describedby={
+                  transferredGithubRepoUrlError
+                    ? "transferred-github-repo-error"
+                    : "transferred-github-repo-hint"
+                }
+              />
+              {transferredGithubRepoUrlError ? (
+                <p
+                  id="transferred-github-repo-error"
+                  className="text-xs text-destructive"
+                  role="alert"
+                >
+                  {transferredGithubRepoUrlError}
+                </p>
+              ) : (
+                <p id="transferred-github-repo-hint" className="text-xs text-muted-foreground">
+                  Paste the repo URL under the client&apos;s account (e.g. github.com/owner/repo).
+                </p>
+              )}
+            </div>
+          ) : null}
+        </div>
       </StageModalShell>
 
       <StageModalShell
@@ -560,21 +628,6 @@ export function AdminVerifyModals({
         footer={
           lead.commission && !lead.commission.isPaid ? (
             <>
-              {onPatchCommission ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="min-h-11 w-full sm:w-auto"
-                  disabled={
-                    patchCommissionPending ||
-                    !commissionSaveValid ||
-                    commissionUnchanged
-                  }
-                  onClick={onPatchCommission}
-                >
-                  Save amount
-                </Button>
-              ) : null}
               <Button
                 type="button"
                 className="min-h-11 w-full sm:w-auto"
@@ -584,14 +637,7 @@ export function AdminVerifyModals({
                 Mark commission paid
               </Button>
               <ModalDisabledHints
-                reasons={[
-                  ...(patchCommissionPending ||
-                  !commissionSaveValid ||
-                  commissionUnchanged
-                    ? commissionSaveDisabledReasons
-                    : []),
-                  ...(!canMarkCommissionPaid ? commissionMarkDisabledReasons : [])
-                ]}
+                reasons={!canMarkCommissionPaid ? commissionMarkDisabledReasons : []}
               />
             </>
           ) : (
@@ -600,39 +646,40 @@ export function AdminVerifyModals({
         }
       >
         {lead.commission ? (
-          <div className="space-y-3 text-sm">
-            <p>
-              Saved amount: {formatMinorUnits(lead.commission.amountCents)}
-              {lead.commission.bonusCents > 0
-                ? ` + ${formatMinorUnits(lead.commission.bonusCents)} bonus`
-                : ""}
-            </p>
+          <div className="min-w-0 space-y-3 text-sm">
             {portalSettings && !lead.commission.isPaid ? (
-              <PortalMetaGrid
-                items={[
-                  { label: "Basis", value: commissionBasisLabel(portalSettings.commissionBasis) },
-                  { label: "Rate", value: commissionRateLabel(portalSettings) },
-                  ...(estimatedCents != null
-                    ? [{ label: "Estimate", value: formatMinorUnits(estimatedCents) }]
-                    : [])
-                ]}
-              />
-            ) : null}
-            {onPatchCommission && !lead.commission.isPaid ? (
-              <div className="space-y-2">
-                <Label htmlFor="comm-edit">Payout amount (₹)</Label>
-                <Input
-                  id="comm-edit"
-                  className="min-h-11"
-                  inputMode="decimal"
-                  value={commissionEditRupees}
-                  onChange={(e) => onCommissionEditRupeesChange(e.target.value)}
+              <>
+                <PortalMetaGrid
+                  items={[
+                    {
+                      label: "Agreed total",
+                      value: formatMinorUnits(lead.agreedTotalCents)
+                    },
+                    { label: "Rate", value: commissionRateLabel(portalSettings) }
+                  ]}
                 />
-                <p className="text-xs text-muted-foreground">
-                  You may adjust slightly before saving.
-                </p>
-              </div>
-            ) : null}
+                <DealAmountField
+                  id="commission-payout"
+                  label="Commission payout"
+                  amountCents={lead.commission.amountCents}
+                  hint="Calculated automatically from agreed total × rate"
+                  missingMessage="Agreed total is missing on this deal."
+                />
+                {estimatedCents != null && estimatedCents !== lead.commission.amountCents ? (
+                  <p className="text-xs text-amber-700 dark:text-amber-300" role="status">
+                    Payout will refresh to {formatMinorUnits(estimatedCents)} when you mark
+                    commission paid.
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <p>
+                Payout: {formatMinorUnits(lead.commission.amountCents)}
+                {lead.commission.bonusCents > 0
+                  ? ` + ${formatMinorUnits(lead.commission.bonusCents)} bonus`
+                  : ""}
+              </p>
+            )}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">Commission is created after deployment verify.</p>

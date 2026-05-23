@@ -20,7 +20,10 @@ import {
   assertSalesRepActor,
   wasPatchFieldSent
 } from "../services/leadMutations.js";
-import { assertLeadMutable } from "../services/leadGuards.js";
+import {
+  assertLeadMutable,
+  assertMarkedPaymentAmountMatchesLead
+} from "../services/leadGuards.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings, getRequiredLeadStatusForPaymentKind } from "../services/settings.js";
 import { getPipelineStages, summarizePipelineStages } from "../services/pipeline.js";
@@ -298,7 +301,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
             await assertWebsiteTemplateExists(tx, body.websiteTemplateId);
 
             const split = splitAgreedTotalCents(body.agreedTotalCents, settings.advancePaymentShareBps);
-            const advanceAmountCents = body.advanceAmountCents ?? split.advanceAmountCents;
+            const advanceAmountCents = split.advanceAmountCents;
 
             const requiredStatus = getRequiredLeadStatusForPaymentKind(settings, "ADVANCE");
             if (lead.status !== requiredStatus) {
@@ -464,6 +467,22 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           throw new HttpError(400, "INVALID_STATE", "Admin must verify demo approval before accounts ready.");
         }
 
+        if (wasPatchFieldSent(rawBody, "markAccountsReady") && body.markAccountsReady === true) {
+          const githubId = wasPatchFieldSent(rawBody, "clientGithubId")
+            ? body.clientGithubId?.trim()
+            : lead.clientGithubId?.trim();
+          const githubEmail = wasPatchFieldSent(rawBody, "clientGithubEmail")
+            ? body.clientGithubEmail?.trim()
+            : lead.clientGithubEmail?.trim();
+          if (!githubId || !githubEmail) {
+            throw new HttpError(
+              400,
+              "VALIDATION_ERROR",
+              "GitHub username and email are required before marking accounts ready."
+            );
+          }
+        }
+
         let agreedPatch: {
           agreedTotalCents?: number | null;
           advanceAmountCents?: number | null;
@@ -518,6 +537,12 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
             : {}),
           ...(wasPatchFieldSent(rawBody, "markAccountsReady") && body.markAccountsReady === true
             ? { accountsReadyAt: new Date() }
+            : {}),
+          ...(wasPatchFieldSent(rawBody, "clientGithubId") && body.clientGithubId !== undefined
+            ? { clientGithubId: body.clientGithubId }
+            : {}),
+          ...(wasPatchFieldSent(rawBody, "clientGithubEmail") && body.clientGithubEmail !== undefined
+            ? { clientGithubEmail: body.clientGithubEmail }
             : {}),
           ...(assignedToUserId !== undefined ? { assignedToUserId } : {})
         };
@@ -599,12 +624,8 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
             }
           }
           if (
-            (settings.commissionBasis === "FINAL_QUOTE" &&
-              wasPatchFieldSent(rawBody, "finalQuoteCents") &&
-              body.finalQuoteCents !== undefined) ||
-            (settings.commissionBasis === "AGREED_TOTAL" &&
-              wasPatchFieldSent(rawBody, "agreedTotalCents") &&
-              body.agreedTotalCents !== undefined)
+            wasPatchFieldSent(rawBody, "agreedTotalCents") &&
+            body.agreedTotalCents !== undefined
           ) {
             const amountCents = commissionAmountCents(updated, 0, settings);
             if (amountCents !== commission.amountCents) {
@@ -796,6 +817,8 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
                 "Accounts must be verified before recording due payment."
               );
             }
+
+            assertMarkedPaymentAmountMatchesLead(body.kind, body.amountCents, lead);
 
             let created;
             try {

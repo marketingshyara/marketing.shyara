@@ -32,27 +32,18 @@ export function assertManualTransition(
 
 export function commissionAmountCents(
   lead: Lead,
-  verifiedFinalPaymentCents: number,
+  _verifiedFinalPaymentCents: number,
   settings: PortalSettingsValues
 ): number {
   const rate = settings.commissionRateBps;
-  let base: number;
-  if (settings.commissionBasis === "FINAL_QUOTE") {
-    base = lead.finalQuoteCents ?? -1;
-  } else if (settings.commissionBasis === "AGREED_TOTAL") {
-    base = lead.agreedTotalCents ?? -1;
-  } else {
-    base = verifiedFinalPaymentCents;
-  }
+  const base = lead.agreedTotalCents ?? -1;
 
   if (base === null || base === undefined || base < 0) {
-    const message =
-      settings.commissionBasis === "FINAL_QUOTE"
-        ? "Lead is missing finalQuoteCents; set it before computing commission."
-        : settings.commissionBasis === "AGREED_TOTAL"
-          ? "Lead is missing agreedTotalCents; set the agreed total before deployment verification."
-          : "Cannot compute commission from verified payment amount.";
-    throw new HttpError(400, "COMMISSION_BASE_MISSING", message);
+    throw new HttpError(
+      400,
+      "COMMISSION_BASE_MISSING",
+      "Lead is missing agreedTotalCents; set the agreed total before computing commission."
+    );
   }
 
   return divideCentsWithRounding(base * rate, 10000, settings.commissionRounding);

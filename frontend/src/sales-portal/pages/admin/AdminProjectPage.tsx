@@ -24,16 +24,17 @@ import {
   errToast,
   useLeadQuery,
   useMarkCommissionPaidMutation,
-  usePatchCommissionMutation,
   usePatchLeadMutation,
   useRejectLeadStageMutation,
   useTeamRepsQuery,
   useVerifyLeadStageMutation,
   useVerifyPaymentMutation
 } from "../../hooks/useSalesQueries";
+import { usePaymentShareMethods } from "../../hooks/usePaymentShareMethods";
 import { prepareHttpUrlForMutation, tryNormalizeHttpUrl } from "../../lib/httpUrl";
+import { prepareGithubRepoUrlForMutation } from "../../lib/githubRepoUrl";
 import type { LeadPayment, PipelineStageKey, PipelineStageVerifyKey, PipelineStageView } from "../../types";
-import { centsToRupeeInputString, formatMinorUnits, parseRupeeInputToCents } from "../../lib/money";
+import { formatMinorUnits } from "../../lib/money";
 import { leadStatusLabel } from "../../lib/copy";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { toastIfStageBlocked } from "../../lib/pipelineStageGuard";
@@ -67,22 +68,26 @@ export function AdminProjectPage() {
   const [verifyPayment, setVerifyPayment] = useState<LeadPayment | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [declineNote, setDeclineNote] = useState("");
-  const [commissionEditRupees, setCommissionEditRupees] = useState("");
   const [previewUrlError, setPreviewUrlError] = useState<string | null>(null);
+  const [transferredGithubRepoUrl, setTransferredGithubRepoUrl] = useState("");
+  const [transferredGithubRepoUrlError, setTransferredGithubRepoUrlError] = useState<string | null>(
+    null
+  );
 
   const verifyPay = useVerifyPaymentMutation(leadId ?? "", repId);
   const verifyStage = useVerifyLeadStageMutation(leadId ?? "", repId);
   const rejectStage = useRejectLeadStageMutation(leadId ?? "", repId);
   const markCommissionPaid = useMarkCommissionPaidMutation(leadId ?? "", repId);
-  const patchCommission = usePatchCommissionMutation(leadId ?? "", repId);
   const patch = usePatchLeadMutation(leadId ?? "", repId);
 
   const lead = leadQr.data?.lead;
   const stages = leadQr.data?.pipelineStages ?? [];
+  const paymentShareMethods = usePaymentShareMethods(!!lead);
 
   const closeModal = () => {
     setActiveStage(null);
     setDeclineNote("");
+    setTransferredGithubRepoUrlError(null);
   };
 
   useEffect(() => {
@@ -90,7 +95,8 @@ export function AdminProjectPage() {
     setVerifyPayment(null);
     setDeclineNote("");
     setPreviewUrl("");
-    setCommissionEditRupees("");
+    setTransferredGithubRepoUrl("");
+    setTransferredGithubRepoUrlError(null);
   }, [leadId]);
 
   useEffect(() => {
@@ -168,15 +174,32 @@ export function AdminProjectPage() {
     const stage = stages.find((s) => s.key === key);
     if (!stage) return;
     if (key === "commission") {
-      if (lead.commission) {
-        setCommissionEditRupees(centsToRupeeInputString(lead.commission.amountCents));
-      }
       setActiveStage(key);
       return;
     }
     if (adminCanOpenStageModal(stage)) {
+      if (key === "repo_transfer") {
+        setTransferredGithubRepoUrl(lead.transferredGithubRepoUrl ?? "");
+        setTransferredGithubRepoUrlError(null);
+      }
       setActiveStage(key);
     }
+  };
+
+  const runStageVerify = (stageKey: PipelineStageVerifyKey) => {
+    verifyStage.mutate(stageKey, {
+      meta: { skipSuccessToast: true },
+      onSuccess: (data) => {
+        closeModal();
+        const next = getPipelineFocus(data.pipelineStages, "admin");
+        if (next.headline && next.kind !== "idle") {
+          toast.success(`Verified. Next: ${next.headline}`);
+        } else {
+          toast.success("Verified.");
+        }
+      },
+      onError: (e) => errToast(e, qc)
+    });
   };
 
   const runVerify = () => {
@@ -203,19 +226,37 @@ export function AdminProjectPage() {
     }
     const apiKey = STAGE_TO_VERIFY[activeStage];
     if (!apiKey) return;
-    verifyStage.mutate(apiKey, {
-      meta: { skipSuccessToast: true },
-      onSuccess: (data) => {
-        closeModal();
-        const next = getPipelineFocus(data.pipelineStages, "admin");
-        if (next.headline && next.kind !== "idle") {
-          toast.success(`Verified. Next: ${next.headline}`);
-        } else {
-          toast.success("Verified.");
-        }
-      },
-      onError: (e) => errToast(e, qc)
-    });
+    if (activeStage === "repo_transfer") {
+      setTransferredGithubRepoUrlError(null);
+      try {
+        const url = prepareGithubRepoUrlForMutation(transferredGithubRepoUrl);
+        verifyStage.mutate(
+          { stageKey: apiKey, body: { transferredGithubRepoUrl: url } },
+          {
+            meta: { skipSuccessToast: true },
+            onSuccess: (data) => {
+              closeModal();
+              const next = getPipelineFocus(data.pipelineStages, "admin");
+              if (next.headline && next.kind !== "idle") {
+                toast.success(`Verified. Next: ${next.headline}`);
+              } else {
+                toast.success("Verified.");
+              }
+            },
+            onError: (e) => errToast(e, qc)
+          }
+        );
+      } catch (e) {
+        const msg =
+          e instanceof Error
+            ? e.message
+            : "Enter a valid GitHub repo link (e.g. github.com/owner/repo).";
+        setTransferredGithubRepoUrlError(msg);
+        errToast(e, qc);
+      }
+      return;
+    }
+    runStageVerify(apiKey);
   };
 
   const runDecline = () => {
@@ -475,8 +516,6 @@ export function AdminProjectPage() {
           if (previewUrlError) setPreviewUrlError(null);
         }}
         previewUrlError={previewUrlError}
-        commissionEditRupees={commissionEditRupees}
-        onCommissionEditRupeesChange={setCommissionEditRupees}
         verify={{
           onVerify: runVerify,
           onDecline: rejectable ? runDecline : undefined,
@@ -489,26 +528,12 @@ export function AdminProjectPage() {
         savePreviewPending={patch.isPending}
         onMarkDemoReady={runMarkDemoReady}
         markDemoPending={markDemoPending}
-        onPatchCommission={() => {
-          const cents = parseRupeeInputToCents(commissionEditRupees);
-          if (!lead.commission) return;
-          if (cents == null || cents <= 0) {
-            toast.error("Enter a valid commission amount in rupees.");
-            return;
-          }
-          patchCommission.mutate(
-            { id: lead.commission.id, amountCents: cents },
-            {
-              onSuccess: (data) => {
-                if (data.commission) {
-                  setCommissionEditRupees(centsToRupeeInputString(data.commission.amountCents));
-                }
-              },
-              onError: (e) => errToast(e, qc)
-            }
-          );
+        transferredGithubRepoUrl={transferredGithubRepoUrl}
+        onTransferredGithubRepoUrlChange={(v) => {
+          setTransferredGithubRepoUrl(v);
+          if (transferredGithubRepoUrlError) setTransferredGithubRepoUrlError(null);
         }}
-        patchCommissionPending={patchCommission.isPending}
+        transferredGithubRepoUrlError={transferredGithubRepoUrlError}
       />
 
       <PaymentVerifyDialog
@@ -516,9 +541,9 @@ export function AdminProjectPage() {
         open={verifyPayment != null}
         onOpenChange={(o) => !o && setVerifyPayment(null)}
         isPending={verifyPay.isPending}
-        clientName={lead.clientName}
+        lead={lead}
         templateLabel={lead.websiteTemplate ? formatTemplateOption(lead.websiteTemplate) : null}
-        agreedTotalCents={lead.agreedTotalCents}
+        paymentShareMethods={paymentShareMethods}
         onVerify={(paymentId, body) =>
           verifyPay.mutate(
             { paymentId, body },

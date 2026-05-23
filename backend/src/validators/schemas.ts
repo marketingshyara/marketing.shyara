@@ -1,6 +1,14 @@
 import { LeadStatus, PaymentKind, PaymentVerificationStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
+import {
+  defaultPaymentShareMethods,
+  mergePaymentShareMethods,
+  paymentShareMethodConfigSchema,
+  paymentShareMethodKeySchema,
+  type PaymentShareMethodConfig
+} from "../data/paymentShareMethods.js";
 import { optionalHttpUrlSchema, requiredHttpUrlSchema } from "../lib/httpUrl.js";
+import { githubRepoUrlSchema } from "../lib/githubRepoUrl.js";
 import {
   indianMobilePhoneSchema,
   optionalIndianMobilePhoneSchema
@@ -97,6 +105,17 @@ const optionalLeadEmail = z.preprocess(
   z.union([z.string().email(), z.null()]).optional()
 );
 
+/** GitHub username (https://docs.github.com/en/get-started/getting-started-with-github/keyboard-shortcuts) */
+export const githubUsernameSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter the client's GitHub username.")
+  .max(39, "GitHub username is too long.")
+  .regex(
+    /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/,
+    "Enter a valid GitHub username (letters, numbers, hyphens)."
+  );
+
 export const createLeadBodySchema = z.object({
   clientName: z.string().min(1).max(200),
   clientEmail: optionalLeadEmail,
@@ -121,6 +140,8 @@ export const patchLeadBodySchema = z.object({
   whatsappGroupLink: optionalHttpUrlSchema,
   markDemoFinalized: z.boolean().optional(),
   markAccountsReady: z.boolean().optional(),
+  clientGithubId: githubUsernameSchema.optional(),
+  clientGithubEmail: z.string().trim().email().max(320).optional(),
   assignedToUserId: z.string().min(1).optional().nullable(),
   /** Admin: set project preview URL on linked project */
   previewUrl: optionalHttpUrlSchema
@@ -129,12 +150,16 @@ export const patchLeadBodySchema = z.object({
 export const convertLeadBodySchema = z.object({
   websiteTemplateId: z.string().min(1).max(64),
   agreedTotalCents: z.number().int().positive(),
-  advanceAmountCents: z.number().int().positive().optional(),
-  repNote: z.string().max(2000).optional().nullable()
+  /** Payment share method key (stored on LeadPayment.repNote). */
+  repNote: paymentShareMethodKeySchema
 });
 
 export const rejectStageBodySchema = z.object({
   adminNote: z.string().max(2000).optional().nullable()
+});
+
+export const verifyRepoTransferBodySchema = z.object({
+  transferredGithubRepoUrl: githubRepoUrlSchema
 });
 
 export const transitionBodySchema = z.object({
@@ -144,7 +169,8 @@ export const transitionBodySchema = z.object({
 export const markPaymentBodySchema = z.object({
   kind: z.nativeEnum(PaymentKind),
   amountCents: z.number().int().positive(),
-  repNote: z.string().max(2000).optional().nullable()
+  /** Payment share method key (stored on LeadPayment.repNote). */
+  repNote: paymentShareMethodKeySchema
 });
 
 export const verifyPaymentBodySchema = z.discriminatedUnion("decision", [
@@ -243,7 +269,7 @@ export const portalSettingsSchema = z
     commissionRateBps: z.number().int().min(0).max(10000).default(2000),
     commissionBasis: z
       .enum(["VERIFIED_FINAL_PAYMENT", "FINAL_QUOTE", "AGREED_TOTAL"])
-      .default("VERIFIED_FINAL_PAYMENT"),
+      .default("AGREED_TOTAL"),
     manualTransitions: z.array(manualTransitionSchema).default([...defaultManualTransitions]),
     advancePaymentRequiredLeadStatus: z.nativeEnum(LeadStatus).default(LeadStatus.NEW),
     finalPaymentRequiredLeadStatus: z.nativeEnum(LeadStatus).default(LeadStatus.PREVIEW_SENT),
@@ -261,9 +287,21 @@ export const portalSettingsSchema = z
     performanceBonusAfterCompletedSales: z.number().int().min(0).default(10),
     templatesCatalogUrl: z.string().url().max(2000).default("https://marketing.shyara.co.in/samples/websites"),
     tutorialLinks: z.array(repTutorialLinkSchema).default([]),
-    painPointsByCategory: z.array(repPainPointSchema).default([])
+    painPointsByCategory: z.array(repPainPointSchema).default([]),
+    paymentShareMethods: z
+      .preprocess(
+        (v) =>
+          mergePaymentShareMethods(
+            Array.isArray(v) ? (v as PaymentShareMethodConfig[]) : undefined
+          ),
+        z.array(paymentShareMethodConfigSchema).length(5)
+      )
+      .default(defaultPaymentShareMethods())
   })
   .strict();
+
+export { paymentShareMethodKeySchema, paymentShareMethodConfigSchema };
+export type { PaymentShareMethodConfig } from "../data/paymentShareMethods.js";
 
 export type PortalSettingsValues = z.infer<typeof portalSettingsSchema>;
 
@@ -286,7 +324,8 @@ const PORTAL_SETTINGS_INPUT_KEYS = [
   "performanceBonusAfterCompletedSales",
   "templatesCatalogUrl",
   "tutorialLinks",
-  "painPointsByCategory"
+  "painPointsByCategory",
+  "paymentShareMethods"
 ] as const satisfies readonly (keyof PortalSettingsValues)[];
 
 function pickKnownPortalSettings(

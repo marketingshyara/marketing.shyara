@@ -74,7 +74,8 @@ d("live portal fixes — integration", () => {
       headers: { cookie: adminCookie },
       payload: {
         clientName: "LPF Client",
-        assignedToUserId: repId
+        assignedToUserId: repId,
+        agreedTotalCents: 100_00
       }
     });
     expect(leadRes.statusCode).toBe(201);
@@ -85,7 +86,7 @@ d("live portal fixes — integration", () => {
       method: "POST",
       url: `/api/leads/${leadId}/payments`,
       headers: { cookie: repCookie },
-      payload: { kind: PaymentKind.ADVANCE, amountCents: 50_00 }
+      payload: { kind: PaymentKind.ADVANCE, amountCents: 50_00, repNote: "upi_id" }
     });
     expect(markRes.statusCode).toBe(201);
 

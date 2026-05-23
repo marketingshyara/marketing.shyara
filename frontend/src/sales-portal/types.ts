@@ -106,6 +106,9 @@ export interface Lead {
   demoFinalizedVerifiedAt: string | null;
   accountsReadyAt: string | null;
   accountsReadyVerifiedAt: string | null;
+  clientGithubId: string | null;
+  clientGithubEmail: string | null;
+  transferredGithubRepoUrl: string | null;
   repoTransferVerifiedAt: string | null;
   stageDeclineNotes?: Record<
     string,
@@ -173,6 +176,20 @@ export interface RepPainPoint {
   bullets: string[];
 }
 
+export type PaymentShareMethodKey =
+  | "upi_id"
+  | "razorpay_qr"
+  | "sbi_qr"
+  | "razorpay_payment_link"
+  | "razorpay_payment_page";
+
+export interface PaymentShareMethodConfig {
+  key: PaymentShareMethodKey;
+  shareValue: string;
+  qrImageUrl?: string | null;
+  instructions?: string | null;
+}
+
 export interface TeamRepSummary {
   id: string;
   email: string;
@@ -206,6 +223,7 @@ export interface RepPortalSettings {
   templatesCatalogUrl: string;
   tutorialLinks: RepTutorialLink[];
   painPointsByCategory: RepPainPoint[];
+  paymentShareMethods: PaymentShareMethodConfig[];
 }
 
 export interface PortalSettingsValues extends RepPortalSettings {

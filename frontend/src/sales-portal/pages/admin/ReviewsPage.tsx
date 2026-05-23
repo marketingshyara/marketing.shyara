@@ -8,6 +8,8 @@ import {
   useTeamRepsQuery,
   useVerifyPaymentMutation
 } from "../../hooks/useSalesQueries";
+import { usePaymentShareMethods } from "../../hooks/usePaymentShareMethods";
+import { formatTemplateOption } from "../../lib/templateLabel";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
 import { AdminQueueNav } from "../../components/admin/AdminQueueNav";
@@ -87,6 +89,9 @@ export function ReviewsPage() {
     paymentVerify?.leadId ?? "",
     paymentVerify?.repId
   );
+  const paymentShareMethods = usePaymentShareMethods(!!paymentVerify?.leadId);
+  const verifyLead = leadQr.data?.lead;
+  const verifyLeadLoading = !!paymentVerify && leadQr.isLoading && !verifyLead;
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
   const pendingCount = usePendingActionsCountQuery(true);
@@ -192,12 +197,17 @@ export function ReviewsPage() {
 
       <PaymentVerifyDialog
         payment={payment}
-        open={paymentVerify != null && payment != null}
+        open={paymentVerify != null}
         onOpenChange={(o) => !o && setPaymentVerify(null)}
         isPending={verifyPay.isPending}
-        clientName={leadQr.data?.lead.clientName}
-        templateLabel={null}
-        agreedTotalCents={leadQr.data?.lead.agreedTotalCents}
+        lead={verifyLead ?? null}
+        templateLabel={
+          verifyLead?.websiteTemplate
+            ? formatTemplateOption(verifyLead.websiteTemplate)
+            : null
+        }
+        paymentShareMethods={paymentShareMethods}
+        leadLoading={verifyLeadLoading}
         onVerify={(paymentId, body: VerifyPaymentRequestBody) =>
           verifyPay.mutate(
             { paymentId, body },

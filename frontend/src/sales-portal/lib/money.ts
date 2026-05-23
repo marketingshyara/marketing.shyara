@@ -37,6 +37,44 @@ export function splitAgreedTotalCents(
   return { advanceAmountCents, finalQuoteCents: totalCents - advanceAmountCents };
 }
 
+export type DealSplitPreview = {
+  advanceAmountCents: number;
+  finalQuoteCents: number;
+};
+
+export type DealSplitDisplay = {
+  advanceCents: number | null;
+  dueCents: number | null;
+  /** True when amounts come from persisted lead fields (post-convert). */
+  fromServer: boolean;
+};
+
+/** Server-stored split after convert; otherwise live preview from agreed total input. */
+export function resolveDealSplitDisplay(
+  lead: {
+    convertedAt: string | null;
+    advanceAmountCents: number | null;
+    finalQuoteCents: number | null;
+  },
+  preview: DealSplitPreview | null
+): DealSplitDisplay {
+  if (lead.convertedAt) {
+    return {
+      advanceCents: lead.advanceAmountCents,
+      dueCents: lead.finalQuoteCents,
+      fromServer: true
+    };
+  }
+  if (preview) {
+    return {
+      advanceCents: preview.advanceAmountCents,
+      dueCents: preview.finalQuoteCents,
+      fromServer: false
+    };
+  }
+  return { advanceCents: null, dueCents: null, fromServer: false };
+}
+
 export function centsToRupeeInputString(cents: number): string {
   if (cents <= 0) return "0";
   const rupees = cents / 100;

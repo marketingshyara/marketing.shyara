@@ -109,6 +109,12 @@ model Lead {
   demoFinalizedVerifiedAt   DateTime?
   accountsReadyAt      DateTime?
   accountsReadyVerifiedAt DateTime?
+  /** GitHub username for client hosting account (rep submits at accounts_ready). */
+  clientGithubId       String?
+  /** Email used to create the client's GitHub account. */
+  clientGithubEmail    String?
+  /** GitHub repo URL after ownership transfer to client (admin records at repo_transfer verify). */
+  transferredGithubRepoUrl String?
   repoTransferVerifiedAt  DateTime?
   /** Per-stage admin decline context keyed by pipeline stage (e.g. accounts_ready). */
   stageDeclineNotes    Json?

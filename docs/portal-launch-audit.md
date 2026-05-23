@@ -434,14 +434,12 @@ Team → rep → project (`/portal/team/:repId/projects/:leadId`). Optional deep
 | Repo transfer | Verify only (no decline) | Verify | Due payment verified |
 | Deployment submit | Read-only (rep submitted URL) | Close | Rep submitted |
 | Deployment verify | Verify / Decline | Verify | Rep submitted live URL |
-| Commission | Save amount (₹) + Mark paid | Both | Deployment verified; valid amount |
+| Commission | Mark paid (read-only payout) | Mark paid | Deployment verified; payout = rate × agreed total |
 
 **commission (payout)** — detailed:
 
-1. After **Verify deployment**, open Commission — see basis, rate %, calculated estimate, and editable ₹ (prefilled from saved amount).
-2. Clear the field and retype — value must **not** snap back until you save or reopen the modal.
-3. **Save amount** — toast “Commission amount saved”; summary updates.
-4. **Mark commission paid** — works when deployment is verified even if lead status was still `FINAL_PAID` (server promotes to `DEPLOYED`); success toast; pipeline shows commission verified; rep **Commission** page shows Paid.
+1. After **Verify deployment**, open Commission — see agreed total basis, rate %, and read-only **Commission payout** (no editable ₹ field).
+2. **Mark commission paid** — syncs payout to current agreed total × rate if stale; works when deployment is verified even if lead status was still `FINAL_PAID` (server promotes to `DEPLOYED`); success toast; pipeline shows commission verified; rep **Commission** page shows Paid.
 5. From **Reviews** COMMISSION row (`?stage=commission` deep link) — same flow as project page.
 6. **Lists after payout:** Rep Pipeline → project **not** on **Active clients**; appears under **Settled**. Admin Team → rep → **Active** empty for that project; **Completed** shows it.
 

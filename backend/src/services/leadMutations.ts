@@ -24,7 +24,9 @@ export const REP_ONLY_LEAD_PATCH_FIELDS = [
   "websiteTemplateId",
   "whatsappGroupLink",
   "markDemoFinalized",
-  "markAccountsReady"
+  "markAccountsReady",
+  "clientGithubId",
+  "clientGithubEmail"
 ] as const satisfies readonly (keyof PatchLeadBody)[];
 
 /** True when the client sent this key (omit vs null vs value). Guards against Zod injecting omitted keys. */

@@ -16,13 +16,15 @@ type Props = {
   actorMode?: PipelineActorMode;
   onStageClick?: (key: PipelineStageKey) => void;
   mode?: "interactive" | "readonly";
+  repPreviewUrl?: string | null;
 };
 
 export function PipelineStepsAccordion({
   stages,
   actorMode = "rep",
   onStageClick,
-  mode = "interactive"
+  mode = "interactive",
+  repPreviewUrl
 }: Props) {
   const [open, setOpen] = useState(false);
   const count = stages.length;
@@ -55,6 +57,7 @@ export function PipelineStepsAccordion({
           showActorHints={false}
           highlightKey={highlightKey}
           detailsOnHighlightOnly
+          repPreviewUrl={repPreviewUrl}
         />
       </CollapsibleContent>
     </Collapsible>

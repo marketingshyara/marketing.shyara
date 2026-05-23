@@ -9,7 +9,8 @@ import { getPortalSettings } from "../services/settings.js";
 import {
   healLeadToCommissionPaidIfNeeded,
   loadLeadDetailForAdmin,
-  promoteLeadToDeployedIfEligible
+  promoteLeadToDeployedIfEligible,
+  syncUnpaidCommissionAmount
 } from "../services/commissionPayout.js";
 import { commissionsListQuerySchema, patchCommissionBodySchema } from "../validators/schemas.js";
 
@@ -57,52 +58,14 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
   app.patch(
     "/api/commissions/:id",
     { preHandler: [requireUser] },
-    async (request, reply) => {
+    async (request) => {
       requireAdmin(request);
-      const { id } = request.params as { id: string };
-      const body = patchCommissionBodySchema.parse(request.body);
-
-      const result = await app.prisma.$transaction(async (tx) => {
-        const existing = await tx.commission.findUnique({
-          where: { id },
-          include: { lead: { include: { project: true } } }
-        });
-        if (!existing) {
-          throw new HttpError(404, "NOT_FOUND", "Commission not found.");
-        }
-        if (existing.isPaid) {
-          throw new HttpError(400, "ALREADY_PAID", "Cannot change amount after commission is paid.");
-        }
-        if (existing.lead.status === LeadStatus.COMMISSION_PAID) {
-          throw new HttpError(400, "LEAD_TERMINAL", "Lead is already commission-paid.");
-        }
-
-        const claim = await tx.commission.updateMany({
-          where: { id, isPaid: false },
-          data: { amountCents: body.amountCents }
-        });
-        if (claim.count === 0) {
-          throw new HttpError(400, "ALREADY_PAID", "Cannot change amount after commission is paid.");
-        }
-        const updated = await tx.commission.findUniqueOrThrow({ where: { id } });
-
-        await logActivity({
-          prisma: app.prisma,
-          tx,
-          userId: request.currentUser!.id,
-          action: ActivityAction.UPDATE,
-          entityType: "Commission",
-          entityId: id,
-          before: { amountCents: existing.amountCents },
-          after: { amountCents: updated.amountCents },
-          request
-        });
-
-        const detail = await loadLeadDetailForAdmin(tx, existing.leadId);
-        return { commission: updated, ...detail };
-      });
-
-      return reply.send(result);
+      patchCommissionBodySchema.parse(request.body);
+      throw new HttpError(
+        403,
+        "COMMISSION_AMOUNT_LOCKED",
+        "Commission amount is calculated automatically from the agreed project total and cannot be edited."
+      );
     }
   );
 
@@ -130,12 +93,14 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
             return { commission: healed, ...detail };
           }
 
+          const settings = await getPortalSettings(tx);
+          await syncUnpaidCommissionAmount(tx, commission.leadId, settings);
+
           const project = commission.lead.project;
           await promoteLeadToDeployedIfEligible(tx, commission.leadId, {
             deploymentVerifiedAt: project?.deploymentVerifiedAt
           });
 
-          const settings = await getPortalSettings(tx);
           const paidCount = await tx.commission.count({
             where: { repUserId: commission.repUserId, isPaid: true }
           });
