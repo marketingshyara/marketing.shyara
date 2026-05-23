@@ -100,6 +100,8 @@ export interface Lead {
   websiteTemplateId: string | null;
   contentReceivedAt: string | null;
   convertedAt: string | null;
+  clientDetailsSubmittedAt: string | null;
+  clientDetailsVerifiedAt: string | null;
   whatsappGroupLink: string | null;
   whatsappVerifiedAt: string | null;
   demoFinalizedAt: string | null;
@@ -282,7 +284,8 @@ export type PipelineStageVerifyKey =
   | "demo_finalized"
   | "accounts_ready"
   | "repo_transfer"
-  | "deployment";
+  | "deployment"
+  | "client_details";
 
 export type PortalNotificationKind = "REP_SUBMITTED" | "ADMIN_VERIFIED" | "ADMIN_DECLINED";
 
@@ -299,6 +302,7 @@ export interface PortalNotification {
 
 export type PendingActionType =
   | "PAYMENT"
+  | "CLIENT_DETAILS"
   | "WHATSAPP"
   | "DEMO_FINALIZED"
   | "ACCOUNTS"

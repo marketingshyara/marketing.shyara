@@ -11,6 +11,7 @@ type Props = {
   onBlur?: () => void;
   error?: string;
   required?: boolean;
+  disabled?: boolean;
   className?: string;
 };
 
@@ -22,6 +23,7 @@ export function IndianMobileField({
   onBlur,
   error,
   required = false,
+  disabled = false,
   className
 }: Props) {
   const digits = normalizeIndianMobileInput(value);
@@ -62,6 +64,8 @@ export function IndianMobileField({
           maxLength={10}
           className="min-h-11 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           value={digits}
+          disabled={disabled}
+          readOnly={disabled}
           onChange={(e) => onChange(normalizeIndianMobileInput(e.target.value))}
           onBlur={onBlur}
           aria-invalid={!!error}

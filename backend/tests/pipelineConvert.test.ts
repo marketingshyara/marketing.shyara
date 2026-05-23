@@ -99,6 +99,44 @@ describe("getPipelineStages", () => {
     expect(wa?.state).not.toBe("actionable");
   });
 
+  it("lead_capture is pending_admin when converted client details await review", () => {
+    const stages = getPipelineStages(
+      {
+        id: "1",
+        createdByUserId: "u",
+        assignedToUserId: "u",
+        clientName: "Acme",
+        clientEmail: null,
+        clientPhone: null,
+        notes: null,
+        status: LeadStatus.ADVANCE_PAID,
+        advanceAmountCents: 400_000,
+        finalQuoteCents: 400_000,
+        agreedTotalCents: 800_000,
+        websiteTemplateId: "tpl",
+        contentReceivedAt: null,
+        convertedAt: new Date(),
+        clientDetailsSubmittedAt: new Date(),
+        clientDetailsVerifiedAt: null,
+        whatsappGroupLink: null,
+        whatsappVerifiedAt: null,
+        demoFinalizedAt: null,
+        demoFinalizedVerifiedAt: null,
+        accountsReadyAt: null,
+        accountsReadyVerifiedAt: null,
+        repoTransferVerifiedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        payments: []
+      },
+      settings,
+      "SALES_REP"
+    );
+    const capture = stages.find((s) => s.key === "lead_capture");
+    expect(capture?.state).toBe("pending_admin");
+    expect(capture?.adminActor).toBe(true);
+  });
+
   it("summarizePipelineStages flags pending admin on advance verify", () => {
     const stages = getPipelineStages(
       {

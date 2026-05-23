@@ -201,6 +201,60 @@ export function AdminVerifyModals({
   return (
     <>
       <StageModalShell
+        open={activeStage === "lead_capture"}
+        onOpenChange={(o) => !o && onClose()}
+        title={
+          lead.clientDetailsSubmittedAt && !lead.clientDetailsVerifiedAt
+            ? "Verify client details"
+            : "Client details"
+        }
+        description={
+          lead.clientDetailsSubmittedAt && !lead.clientDetailsVerifiedAt
+            ? "Rep updated contact fields after conversion."
+            : undefined
+        }
+        footer={
+          lead.clientDetailsSubmittedAt && !lead.clientDetailsVerifiedAt ? (
+            <VerifyFooter verify={verify} verifyLabel="Verify client details" />
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              className="min-h-11 w-full sm:w-auto"
+              onClick={onClose}
+            >
+              Close
+            </Button>
+          )
+        }
+      >
+        {(() => {
+          const note = stageDecline("lead_capture");
+          return note !== undefined ? (
+            <DeclineFeedbackInline declineNote={note} className="mb-3" />
+          ) : null;
+        })()}
+        <PortalMetaGrid
+          items={[
+            { label: "Client name", value: lead.clientName },
+            { label: "Email", value: lead.clientEmail ?? "—" },
+            { label: "Phone", value: lead.clientPhone ?? "—" },
+            { label: "Notes", value: lead.notes?.trim() ? lead.notes : "—" }
+          ]}
+        />
+        {verify.onDecline && lead.clientDetailsSubmittedAt && !lead.clientDetailsVerifiedAt ? (
+          <div className="mt-3 space-y-2">
+            <Label htmlFor="decline-note-lead">Decline note (optional)</Label>
+            <Textarea
+              id="decline-note-lead"
+              value={verify.declineNote}
+              onChange={(e) => verify.onDeclineNoteChange(e.target.value)}
+            />
+          </div>
+        ) : null}
+      </StageModalShell>
+
+      <StageModalShell
         open={activeStage === "convert_deal"}
         onOpenChange={(o) => !o && onClose()}
         title="Deal submitted"

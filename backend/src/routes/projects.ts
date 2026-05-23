@@ -15,6 +15,7 @@ import {
 import { notifyActiveAdmins } from "../services/notifications.js";
 import { stageDeclineNotesAfterClear } from "../services/stageDeclineNotes.js";
 import { PortalNotificationKind } from "@prisma/client";
+import { assertRepDeploymentPatchAllowed } from "../services/stageLocks.js";
 
 export async function registerProjectRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -168,6 +169,7 @@ export async function registerProjectRoutes(app: FastifyInstance): Promise<void>
             "Admin must verify repository transfer before you submit the live URL."
           );
         }
+        assertRepDeploymentPatchAllowed(existing);
         data.deployedUrl = body.deployedUrl;
         data.deploymentSubmittedAt = new Date();
       }

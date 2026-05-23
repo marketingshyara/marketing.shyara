@@ -44,6 +44,7 @@ import { adminCanOpenStageModal } from "../../lib/adminPipelineStageClick";
 import { toast } from "sonner";
 
 const STAGE_TO_VERIFY: Partial<Record<PipelineStageKey, PipelineStageVerifyKey>> = {
+  lead_capture: "client_details",
   whatsapp_group: "whatsapp",
   demo_finalized: "demo_finalized",
   build_demo: "preview_ready",
@@ -53,6 +54,7 @@ const STAGE_TO_VERIFY: Partial<Record<PipelineStageKey, PipelineStageVerifyKey>>
 };
 
 const STAGE_REJECTABLE: Partial<Record<PipelineStageKey, PipelineStageVerifyKey>> = {
+  lead_capture: "client_details",
   whatsapp_group: "whatsapp",
   demo_finalized: "demo_finalized",
   accounts_ready: "accounts_ready",

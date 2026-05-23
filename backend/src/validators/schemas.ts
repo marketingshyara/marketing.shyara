@@ -65,7 +65,8 @@ export const pipelineStageKeySchema = z.enum([
   "demo_finalized",
   "accounts_ready",
   "repo_transfer",
-  "deployment"
+  "deployment",
+  "client_details"
 ]);
 
 export const leadsListQuerySchema = paginationQuerySchema

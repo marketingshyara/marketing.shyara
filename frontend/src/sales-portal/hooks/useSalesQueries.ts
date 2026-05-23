@@ -118,6 +118,13 @@ export function errToast(e: unknown, qc?: QueryClient) {
       toast.error(e.message || "Cannot delete a prospect that already has a project.");
       return;
     }
+    if (e.code === "STAGE_LOCKED") {
+      toast.error(
+        e.message ||
+          "This step was approved by admin. Ask admin to decline it before making changes."
+      );
+      return;
+    }
     toast.error(e.message);
   } else if (e instanceof Error && e.message) {
     toast.error(e.message);

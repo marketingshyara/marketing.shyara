@@ -22,7 +22,8 @@ vi.mock("../../hooks/useSalesQueries", () => ({
   usePatchLeadMutation: (...args: unknown[]) => usePatchLeadMutation(...args),
   useConvertLeadMutation: (...args: unknown[]) => useConvertLeadMutation(...args),
   useMarkPaymentMutation: (...args: unknown[]) => useMarkPaymentMutation(...args),
-  usePatchProjectMutation: (...args: unknown[]) => usePatchProjectMutation(...args)
+  usePatchProjectMutation: (...args: unknown[]) => usePatchProjectMutation(...args),
+  useDeleteLeadMutation: () => ({ mutate: vi.fn(), isPending: false })
 }));
 
 const mockLead: Lead = {
@@ -408,6 +409,62 @@ describe("PipelineDetailPage demo preview", () => {
     await user.click(screen.getByRole("button", { name: /Mark demo approved/i }));
 
     expect(screen.getByRole("button", { name: /Mark demo finalized/i })).toBeDisabled();
+  });
+
+  it("verified WhatsApp stage opens read-only without Save", async () => {
+    const user = userEvent.setup();
+    useLeadQuery.mockReturnValue({
+      data: {
+        lead: {
+          ...mockLead,
+          status: "BUILDING",
+          convertedAt: "2026-01-02T00:00:00.000Z",
+          whatsappGroupLink: "https://chat.whatsapp.com/abc",
+          whatsappVerifiedAt: "2026-01-03T00:00:00.000Z",
+          payments: [
+            {
+              id: "pay-adv",
+              leadId: "lead-1",
+              kind: "ADVANCE",
+              amountCents: 399_950,
+              verificationStatus: "VERIFIED",
+              repNote: null,
+              markedByUserId: "rep-1",
+              markedAt: "2026-01-02T00:00:00.000Z",
+              verifiedByUserId: "admin-1",
+              verifiedAt: "2026-01-02T00:00:00.000Z",
+              adminNote: null
+            }
+          ]
+        },
+        pipelineStages: [
+          {
+            key: "whatsapp_group",
+            title: "WhatsApp group",
+            repActor: true,
+            adminActor: false,
+            state: "verified",
+            hint: "Locked after admin approval."
+          }
+        ]
+      },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+
+    renderDetail();
+    await user.click(screen.getByRole("button", { name: /View all pipeline steps/i }));
+    await user.click(
+      screen.getByRole("button", { name: /WhatsApp group, verified/i })
+    );
+
+    const dialog = screen.getByRole("dialog", { name: /WhatsApp group/i });
+    expect(dialog).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Save$/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Verified by admin")).toBeInTheDocument();
   });
 
   it("keeps build_demo step disabled when preview URL is missing", async () => {

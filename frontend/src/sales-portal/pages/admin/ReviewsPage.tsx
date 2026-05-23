@@ -33,6 +33,7 @@ import type { VerifyPaymentRequestBody } from "../../api/salesApi";
 const ACTION_TYPES: (PendingActionType | "all")[] = [
   "all",
   "PAYMENT",
+  "CLIENT_DETAILS",
   "WHATSAPP",
   "DEMO_FINALIZED",
   "ACCOUNTS",
@@ -45,6 +46,7 @@ const ACTION_TYPES: (PendingActionType | "all")[] = [
 function actionTypeLabel(t: PendingActionType): string {
   const map: Record<PendingActionType, string> = {
     PAYMENT: "Payment",
+    CLIENT_DETAILS: "Client details",
     WHATSAPP: "WhatsApp",
     DEMO_FINALIZED: "Demo approval",
     ACCOUNTS: "Accounts",

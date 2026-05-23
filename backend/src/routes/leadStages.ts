@@ -177,6 +177,29 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
             }
             break;
           }
+          case "client_details": {
+            if (!lead.convertedAt) {
+              throw new HttpError(
+                400,
+                "INVALID_STATE",
+                "Client details review is only for converted clients."
+              );
+            }
+            if (!lead.clientDetailsSubmittedAt) {
+              throw new HttpError(400, "INVALID_STATE", "Rep has not submitted updated client details.");
+            }
+            if (lead.clientDetailsVerifiedAt) {
+              throw new HttpError(400, "ALREADY_PROCESSED", "Client details already verified.");
+            }
+            const claim = await tx.lead.updateMany({
+              where: { id, clientDetailsVerifiedAt: null },
+              data: { clientDetailsVerifiedAt: now }
+            });
+            if (claim.count === 0) {
+              throw new HttpError(409, "CONCURRENT_MODIFICATION", "Lead was modified concurrently.");
+            }
+            break;
+          }
           case "deployment": {
             project = lead.project;
             if (!project?.deploymentSubmittedAt) {
@@ -325,6 +348,22 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
                 deployedUrl: null,
                 deploymentSubmittedAt: null,
                 deploymentVerifiedAt: null
+              }
+            });
+            break;
+          }
+          case "client_details": {
+            if (!lead.convertedAt) {
+              throw new HttpError(400, "INVALID_STATE", "Client details review is only for converted clients.");
+            }
+            if (!lead.clientDetailsSubmittedAt && !lead.clientDetailsVerifiedAt) {
+              throw new HttpError(400, "INVALID_STATE", "Nothing to decline on client details.");
+            }
+            await tx.lead.updateMany({
+              where: { id },
+              data: {
+                clientDetailsSubmittedAt: null,
+                clientDetailsVerifiedAt: null
               }
             });
             break;

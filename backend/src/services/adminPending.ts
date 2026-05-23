@@ -8,6 +8,7 @@ import {
 
 export type PendingActionType =
   | "PAYMENT"
+  | "CLIENT_DETAILS"
   | "WHATSAPP"
   | "DEMO_FINALIZED"
   | "ACCOUNTS"
@@ -66,6 +67,22 @@ export async function listPendingActions(
           paymentKind: p.kind
         });
       }
+    }
+
+    if (
+      lead.convertedAt &&
+      lead.clientDetailsSubmittedAt &&
+      !lead.clientDetailsVerifiedAt
+    ) {
+      items.push({
+        type: "CLIENT_DETAILS",
+        leadId: lead.id,
+        repId,
+        clientName: lead.clientName,
+        stageKey: "lead_capture",
+        submittedAt: lead.clientDetailsSubmittedAt.toISOString(),
+        summary: "Updated client details to verify"
+      });
     }
 
     if (

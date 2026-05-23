@@ -4,6 +4,7 @@ import type { PipelineStageKey } from "./pipeline.js";
 
 /** Keys stored in Lead.stageDeclineNotes — pipeline stage keys that support decline. */
 export type StageDeclineNoteKey =
+  | "lead_capture"
   | "whatsapp_group"
   | "demo_finalized"
   | "accounts_ready"
@@ -27,13 +28,15 @@ export const REJECT_KEY_TO_PIPELINE_STAGE: Record<string, StageDeclineNoteKey> =
   whatsapp: "whatsapp_group",
   demo_finalized: "demo_finalized",
   accounts_ready: "accounts_ready",
-  deployment: "deployment_verify"
+  deployment: "deployment_verify",
+  client_details: "lead_capture"
 };
 
 export function pipelineStageToDeclineKey(stageKey: PipelineStageKey): StageDeclineNoteKey | null {
   if (stageKey === "deployment_verify") return "deployment_verify";
   if (stageKey === "deployment_submit") return "deployment_submit";
   if (
+    stageKey === "lead_capture" ||
     stageKey === "whatsapp_group" ||
     stageKey === "demo_finalized" ||
     stageKey === "accounts_ready" ||
@@ -127,7 +130,8 @@ const VERIFY_KEY_TO_CLEAR: Record<string, StageDeclineNoteKey[]> = {
   whatsapp: ["whatsapp_group"],
   demo_finalized: ["demo_finalized"],
   accounts_ready: ["accounts_ready"],
-  deployment: ["deployment_verify", "deployment_submit"]
+  deployment: ["deployment_verify", "deployment_submit"],
+  client_details: ["lead_capture"]
 };
 
 export async function clearStageDeclineNotesForVerify(

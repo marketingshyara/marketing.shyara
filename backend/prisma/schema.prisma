@@ -103,6 +103,8 @@ model Lead {
   websiteTemplateId  String?
   contentReceivedAt  DateTime?
   convertedAt          DateTime?
+  clientDetailsSubmittedAt DateTime?
+  clientDetailsVerifiedAt  DateTime?
   whatsappGroupLink    String?
   whatsappVerifiedAt   DateTime?
   demoFinalizedAt           DateTime?

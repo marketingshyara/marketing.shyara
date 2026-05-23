@@ -20,7 +20,10 @@ import { DeclineFeedbackBanner } from "../../components/pipeline/DeclineFeedback
 import { DeclineFeedbackInline } from "../../components/pipeline/DeclineFeedbackBanner";
 import { PipelineFocusCard } from "../../components/pipeline/PipelineFocusCard";
 import { declineNoteForStage, findDeclineFeedbackStage } from "../../lib/declineFeedback";
-import { StageModalWaitingFooter } from "../../components/pipeline/StageModalWaiting";
+import {
+  StageModalVerifiedFooter,
+  StageModalWaitingFooter
+} from "../../components/pipeline/StageModalWaiting";
 import { PortalLinkDisplay } from "../../components/ui/PortalLinkDisplay";
 import { prepareAccountsReadyPatch } from "../../lib/githubAccount";
 import { PortalMetaGrid } from "../../components/ui/PortalMetaGrid";
@@ -67,6 +70,11 @@ import { Badge } from "@/components/ui/badge";
 import { leadStatusLabel } from "../../lib/copy";
 import { IndianMobileField } from "../../components/IndianMobileField";
 import { isValidIndianMobile, normalizeIndianMobileInput } from "../../lib/indianMobilePhone";
+import {
+  isRepAdminLockedVerified,
+  repStageModalReadOnly,
+  repStageModalTitle
+} from "../../lib/stageLockUi";
 
 export function PipelineDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -76,7 +84,6 @@ export function PipelineDetailPage() {
   const tplQr = useWebsiteTemplatesQuery(true);
 
   const [activeStage, setActiveStage] = useState<PipelineStageKey | null>(null);
-  const [readOnlyModal, setReadOnlyModal] = useState(false);
 
   const patch = usePatchLeadMutation(id ?? "");
   const convert = useConvertLeadMutation(id ?? "");
@@ -85,6 +92,7 @@ export function PipelineDetailPage() {
 
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [agreedRupees, setAgreedRupees] = useState("");
@@ -96,12 +104,13 @@ export function PipelineDetailPage() {
   const [clientGithubEmail, setClientGithubEmail] = useState("");
   const [accountsGithubError, setAccountsGithubError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   useEffect(() => {
     setActiveStage(null);
-    setReadOnlyModal(false);
     setClientName("");
     setClientPhone("");
+    setClientEmail("");
     setNotes("");
     setTemplateId("");
     setAgreedRupees("");
@@ -137,6 +146,28 @@ export function PipelineDetailPage() {
     [lead, convertSplit]
   );
 
+  const activeStageView = useMemo(
+    () => (activeStage ? stages.find((s) => s.key === activeStage) : undefined),
+    [activeStage, stages]
+  );
+
+  const readOnlyModal = useMemo(
+    () =>
+      lead && activeStage != null
+        ? repStageModalReadOnly(activeStageView, activeStage, lead)
+        : false,
+    [activeStage, activeStageView, lead]
+  );
+
+  const readOnlyStageFooter = useMemo(() => {
+    if (!activeStage) return null;
+    return activeStageView?.state === "verified" ? (
+      <StageModalVerifiedFooter />
+    ) : (
+      <StageModalWaitingFooter />
+    );
+  }, [activeStage, activeStageView?.state]);
+
   if (loading) {
     return (
       <div className="mx-auto max-w-2xl space-y-4">
@@ -162,22 +193,21 @@ export function PipelineDetailPage() {
 
   const closeModal = () => {
     setActiveStage(null);
-    setReadOnlyModal(false);
   };
 
   const demoPreviewUrl = lead.project?.previewUrl?.trim() || null;
 
   const handleStageClick = (key: PipelineStageKey) => {
     if (!lead) return;
-    const stage = stages.find((s) => s.key === key);
     if (toastIfStageBlocked(stages, key)) return;
-    setReadOnlyModal(stage?.state === "pending_admin");
 
     if (key === "lead_capture") {
       setClientName(lead.clientName);
       setClientPhone(lead.clientPhone ?? "");
+      setClientEmail(lead.clientEmail ?? "");
       setNotes(lead.notes ?? "");
       setPhoneError(null);
+      setEmailError(null);
     }
     if (key === "convert_deal") {
       setTemplateId(lead.websiteTemplateId ?? "");
@@ -185,9 +215,6 @@ export function PipelineDetailPage() {
         lead.agreedTotalCents ? String(lead.agreedTotalCents / 100) : ""
       );
       setPaymentMethodKey(repPaymentMethodFromLead(lead, "ADVANCE"));
-      if (lead.convertedAt) {
-        setReadOnlyModal(true);
-      }
     }
     if (key === "whatsapp_group") {
       setWhatsappLink(lead.whatsappGroupLink ?? "");
@@ -202,9 +229,6 @@ export function PipelineDetailPage() {
       setClientGithubId(lead.clientGithubId ?? "");
       setClientGithubEmail(lead.clientGithubEmail ?? "");
       setAccountsGithubError(null);
-    }
-    if (key === "build_demo") {
-      setReadOnlyModal(true);
     }
     setActiveStage(key);
   };
@@ -240,6 +264,11 @@ export function PipelineDetailPage() {
 
   const pendingFinalPayment = pendingPaymentForKind(lead, "FINAL");
   const pendingAdvancePayment = pendingPaymentForKind(lead, "ADVANCE");
+
+  const activeModalTitle =
+    activeStage != null
+      ? repStageModalTitle(activeStage, readOnlyModal, activeStageView)
+      : "";
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -331,10 +360,17 @@ export function PipelineDetailPage() {
       <StageModalShell
         open={activeStage === "lead_capture"}
         onOpenChange={(o) => !o && closeModal()}
-        title="Lead details"
+        title={activeStage === "lead_capture" ? activeModalTitle : "Lead details"}
+        description={
+          activeStageView?.state === "pending_admin" && activeStage === "lead_capture"
+            ? "Admin must verify these details before they are locked again."
+            : activeStageView && isRepAdminLockedVerified(activeStageView)
+              ? "Ask admin to decline this step if you need to change approved details."
+              : undefined
+        }
         footer={
           readOnlyModal ? (
-            <StageModalWaitingFooter />
+            readOnlyStageFooter
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -345,10 +381,17 @@ export function PipelineDetailPage() {
                   setPhoneError("Enter a valid 10-digit mobile number.");
                   return;
                 }
+                const emailTrim = clientEmail.trim();
+                if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+                  setEmailError("Enter a valid email address.");
+                  return;
+                }
                 setPhoneError(null);
+                setEmailError(null);
                 patch.mutate(
                   {
                     clientName: clientName.trim(),
+                    clientEmail: emailTrim || null,
                     clientPhone: digits || null,
                     notes: notes.trim() || null
                   },
@@ -356,7 +399,7 @@ export function PipelineDetailPage() {
                 );
               }}
             >
-              Save
+              {lead.convertedAt ? "Submit for admin review" : "Save"}
             </Button>
           )
         }
@@ -364,12 +407,43 @@ export function PipelineDetailPage() {
         <div className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="edit-name">Name</Label>
-            <Input id="edit-name" className="min-h-11" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+            <Input
+              id="edit-name"
+              className="min-h-11"
+              value={clientName}
+              disabled={readOnlyModal}
+              readOnly={readOnlyModal}
+              onChange={(e) => setClientName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-email">Email (optional)</Label>
+            <Input
+              id="edit-email"
+              className="min-h-11"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={clientEmail}
+              disabled={readOnlyModal}
+              readOnly={readOnlyModal}
+              aria-invalid={!!emailError}
+              onChange={(e) => {
+                setClientEmail(e.target.value);
+                if (emailError) setEmailError(null);
+              }}
+            />
+            {emailError ? (
+              <p className="text-xs text-destructive" role="alert">
+                {emailError}
+              </p>
+            ) : null}
           </div>
           <IndianMobileField
             id="edit-phone"
             label="Mobile number"
             value={clientPhone}
+            disabled={readOnlyModal}
             onChange={(v) => {
               setClientPhone(v);
               if (phoneError) setPhoneError(null);
@@ -378,7 +452,13 @@ export function PipelineDetailPage() {
           />
           <div className="space-y-2">
             <Label htmlFor="edit-notes">Notes</Label>
-            <Textarea id="edit-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea
+              id="edit-notes"
+              value={notes}
+              disabled={readOnlyModal}
+              readOnly={readOnlyModal}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </div>
         </div>
       </StageModalShell>
@@ -386,10 +466,10 @@ export function PipelineDetailPage() {
       <StageModalShell
         open={activeStage === "convert_deal"}
         onOpenChange={(o) => !o && closeModal()}
-        title={readOnlyModal ? "Deal submitted" : "Convert to client"}
+        title={activeStage === "convert_deal" ? activeModalTitle : "Convert to client"}
         footer={
           readOnlyModal ? (
-            <StageModalWaitingFooter />
+            readOnlyStageFooter
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -497,10 +577,18 @@ export function PipelineDetailPage() {
       <StageModalShell
         open={activeStage === "whatsapp_group"}
         onOpenChange={(o) => !o && closeModal()}
-        title="WhatsApp group"
+        title={activeStage === "whatsapp_group" ? activeModalTitle : "WhatsApp group"}
+        description={
+          readOnlyModal &&
+          activeStage === "whatsapp_group" &&
+          activeStageView &&
+          isRepAdminLockedVerified(activeStageView)
+            ? "This link was approved by admin."
+            : undefined
+        }
         footer={
           readOnlyModal ? (
-            <StageModalWaitingFooter />
+            readOnlyStageFooter
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -568,7 +656,7 @@ export function PipelineDetailPage() {
         title="Demo approved"
         footer={
           readOnlyModal ? (
-            <StageModalWaitingFooter />
+            readOnlyStageFooter
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -601,7 +689,7 @@ export function PipelineDetailPage() {
         title="Accounts ready"
         footer={
           readOnlyModal ? (
-            <StageModalWaitingFooter />
+            readOnlyStageFooter
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -709,7 +797,7 @@ export function PipelineDetailPage() {
         title="Due payment"
         footer={
           readOnlyModal ? (
-            <StageModalWaitingFooter />
+            readOnlyStageFooter
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"
@@ -772,7 +860,7 @@ export function PipelineDetailPage() {
         title="Live deployment"
         footer={
           readOnlyModal ? (
-            <StageModalWaitingFooter />
+            readOnlyStageFooter
           ) : (
             <Button
               className="min-h-11 w-full sm:w-auto"

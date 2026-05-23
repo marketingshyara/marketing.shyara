@@ -6,6 +6,7 @@ import type {
   PipelineStageView,
   StageUiState
 } from "../types";
+import { isRepAdminLockedVerified } from "./stageLockUi";
 
 export type PipelineActorMode = "rep" | "admin";
 
@@ -153,6 +154,9 @@ function primaryButtonLabel(stage: PipelineStageView, actorMode: PipelineActorMo
     if (stage.key === "commission") {
       return "Mark commission paid";
     }
+    if (stage.key === "lead_capture" && stage.state === "pending_admin") {
+      return "Verify client details";
+    }
     if (stage.key === "build_demo") {
       return stage.hint ? "Mark demo ready" : "Save preview link";
     }
@@ -162,9 +166,16 @@ function primaryButtonLabel(stage: PipelineStageView, actorMode: PipelineActorMo
     if (stage.key === "deployment_verify") return "Verify deployment";
     return `Review: ${short}`;
   }
+  if (actorMode === "rep" && isRepAdminLockedVerified(stage)) {
+    return "View verified step";
+  }
   switch (stage.key) {
     case "lead_capture":
-      return "Edit lead details";
+      return stage.state === "pending_admin"
+        ? "View submission"
+        : stage.adminActor
+          ? "Update client details"
+          : "Edit lead details";
     case "convert_deal":
       return "Submit for approval";
     case "whatsapp_group":
@@ -197,6 +208,12 @@ function focusDetail(stage: PipelineStageView, actorMode: PipelineActorMode): st
   }
   if (actorMode === "admin" && (stage.key === "advance_verify" || stage.key === "final_verify")) {
     return "Approve with provider reference.";
+  }
+  if (actorMode === "rep" && isRepAdminLockedVerified(stage)) {
+    return stage.hint ?? "Locked after admin approval.";
+  }
+  if (actorMode === "rep" && stage.key === "lead_capture" && stage.state === "pending_admin") {
+    return "Updated client details are waiting for admin approval.";
   }
   return null;
 }

@@ -41,6 +41,21 @@ describe("toastIfStageBlocked", () => {
     expect(toast.error).toHaveBeenCalledWith("Complete earlier steps first.");
   });
 
+  it("returns false when rep verified stage is view-only", () => {
+    const stages: PipelineStageView[] = [
+      {
+        key: "whatsapp_group",
+        title: "WhatsApp",
+        repActor: true,
+        adminActor: false,
+        state: "verified",
+        hint: "Locked after admin approval."
+      }
+    ];
+    expect(toastIfStageBlocked(stages, "whatsapp_group")).toBe(false);
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
   it("returns false when stage is actionable", () => {
     const stages: PipelineStageView[] = [
       {

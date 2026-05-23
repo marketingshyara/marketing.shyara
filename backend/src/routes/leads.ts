@@ -31,6 +31,10 @@ import { getPipelineStages, summarizePipelineStages } from "../services/pipeline
 import { notifyActiveAdmins } from "../services/notifications.js";
 import { stageDeclineNotesAfterClear } from "../services/stageDeclineNotes.js";
 import type { StageDeclineNoteKey } from "../services/stageDeclineNotes.js";
+import {
+  assertRepLeadPatchAllowed,
+  assertRepMarkPaymentAllowed
+} from "../services/stageLocks.js";
 import { PortalNotificationKind } from "@prisma/client";
 import {
   convertLeadBodySchema,
@@ -364,6 +368,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               },
               data: {
                 convertedAt: new Date(),
+                clientDetailsVerifiedAt: new Date(),
                 websiteTemplateId: body.websiteTemplateId,
                 agreedTotalCents: body.agreedTotalCents,
                 advanceAmountCents,
@@ -448,6 +453,11 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         const settings = await getPortalSettings(tx);
         assertLeadMutable(lead, settings);
         const commission = await tx.commission.findUnique({ where: { leadId: id } });
+
+        let resubmitClientDetails = false;
+        if (user.role === UserRole.SALES_REP) {
+          ({ resubmitClientDetails } = assertRepLeadPatchAllowed(lead, rawBody, body));
+        }
 
         if (wasPatchFieldSent(rawBody, "websiteTemplateId")) {
           await assertWebsiteTemplateExists(tx, body.websiteTemplateId);
@@ -587,7 +597,13 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           ...(wasPatchFieldSent(rawBody, "clientGithubEmail") && body.clientGithubEmail !== undefined
             ? { clientGithubEmail: body.clientGithubEmail }
             : {}),
-          ...(assignedToUserId !== undefined ? { assignedToUserId } : {})
+          ...(assignedToUserId !== undefined ? { assignedToUserId } : {}),
+          ...(resubmitClientDetails
+            ? {
+                clientDetailsSubmittedAt: new Date(),
+                clientDetailsVerifiedAt: null
+              }
+            : {})
         };
 
         const declineClearKeys: StageDeclineNoteKey[] = [];
@@ -737,6 +753,15 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               excludeUserId: user.id
             });
           }
+          if (resubmitClientDetails) {
+            await notifyActiveAdmins(tx, {
+              leadId: id,
+              kind: PortalNotificationKind.REP_SUBMITTED,
+              stageKey: "lead_capture",
+              message: `${updated.clientName}: updated client details submitted for admin review.`,
+              excludeUserId: user.id
+            });
+          }
         }
 
         return updated;
@@ -828,13 +853,17 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       try {
         const payment = await app.prisma.$transaction(
           async (tx) => {
-            const lead = await tx.lead.findUnique({ where: { id } });
+            const lead = await tx.lead.findUnique({
+              where: { id },
+              include: { payments: true }
+            });
             if (!lead) {
               throw new HttpError(404, "NOT_FOUND", "Lead not found.");
             }
             assertLeadAccess(lead, user);
             const settings = await getPortalSettings(tx);
             assertLeadMutable(lead, settings);
+            assertRepMarkPaymentAllowed(lead, body.kind);
 
             const requiredAdvance = getRequiredLeadStatusForPaymentKind(settings, "ADVANCE");
             const requiredFinal = getRequiredLeadStatusForPaymentKind(settings, "FINAL");

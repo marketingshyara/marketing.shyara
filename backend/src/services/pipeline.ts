@@ -259,13 +259,30 @@ export function getPipelineStages(
     !terminal &&
     lead.status === finalPaymentStatus;
 
+  const repVerifiedLockHint = (verified: boolean, repActor: boolean): string | undefined =>
+    verified && !isAdmin && repActor ? "Locked after admin approval." : undefined;
+
   const stages: PipelineStageView[] = [
     {
       key: "lead_capture",
       title: "Lead details",
       repActor: true,
-      adminActor: false,
-      state: lead.clientName.trim() ? "verified" : "actionable"
+      adminActor: converted,
+      state: !converted
+        ? lead.clientName.trim()
+          ? "verified"
+          : "actionable"
+        : lead.clientDetailsVerifiedAt
+          ? "verified"
+          : lead.clientDetailsSubmittedAt
+            ? "pending_admin"
+            : "actionable",
+      hint:
+        converted && lead.clientDetailsVerifiedAt
+          ? "Locked after admin approval."
+          : converted && lead.clientDetailsSubmittedAt
+            ? "Waiting for admin to verify updated client details."
+            : undefined
     },
     {
       key: "convert_deal",
@@ -279,6 +296,7 @@ export function getPipelineStages(
           : canConvert
             ? "actionable"
             : "locked",
+      hint: repVerifiedLockHint(advanceVerified, true),
       blockedReason:
         !converted && !canConvert && !advancePending
           ? `Convert is available when lead status is ${advancePaymentStatus}.`
@@ -312,7 +330,8 @@ export function getPipelineStages(
             ? isAdmin
               ? "actionable"
               : "pending_admin"
-            : "actionable"
+            : "actionable",
+      hint: repVerifiedLockHint(whatsappVerified, true)
     },
     {
       key: "build_demo",
@@ -347,7 +366,8 @@ export function getPipelineStages(
             ? isAdmin
               ? "actionable"
               : "pending_admin"
-            : "actionable"
+            : "actionable",
+      hint: repVerifiedLockHint(demoVerified, true)
     },
     {
       key: "accounts_ready",
@@ -362,7 +382,8 @@ export function getPipelineStages(
             ? isAdmin
               ? "actionable"
               : "pending_admin"
-            : "actionable"
+            : "actionable",
+      hint: repVerifiedLockHint(accountsVerified, true)
     },
     {
       key: "final_payment",
@@ -378,6 +399,7 @@ export function getPipelineStages(
             : canRecordFinalPayment
               ? "actionable"
               : "locked",
+      hint: repVerifiedLockHint(finalVerified, true),
       blockedReason:
         accountsVerified && !canRecordFinalPayment && !finalPending && !finalVerified
           ? `Record due payment when lead status is ${finalPaymentStatus}.`
@@ -422,7 +444,8 @@ export function getPipelineStages(
           ? "verified"
           : deploySubmitted
             ? "pending_admin"
-            : "actionable"
+            : "actionable",
+      hint: repVerifiedLockHint(deployVerified, true)
     },
     {
       key: "deployment_verify",
