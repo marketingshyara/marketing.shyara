@@ -1,11 +1,17 @@
 /** Limits concurrent sample iframe navigations so the main thread stays responsive. */
-const MAX_CONCURRENT = 3;
+let maxConcurrent = 3;
 
 let active = 0;
 const waiters: Array<() => void> = [];
 
+/** Adjust concurrency (e.g. 1 on mobile dialog-only loads). */
+export function setMaxConcurrentIframePreviews(n: number): void {
+  maxConcurrent = Math.max(1, Math.floor(n));
+  tryGrant();
+}
+
 function tryGrant() {
-  while (active < MAX_CONCURRENT && waiters.length > 0) {
+  while (active < maxConcurrent && waiters.length > 0) {
     const grant = waiters.shift()!;
     active += 1;
     grant();
@@ -32,4 +38,5 @@ export function getIframePreviewSlotMetrics(): { active: number; queued: number 
 export function __resetIframePreviewSlotForTests(): void {
   active = 0;
   waiters.length = 0;
+  maxConcurrent = 3;
 }

@@ -1,9 +1,25 @@
 {
   "categories": [
-    { "id": "restaurants", "name": "Restaurants", "icon": "UtensilsCrossed" },
-    { "id": "clinics", "name": "Clinics", "icon": "Stethoscope" },
-    { "id": "astrology", "name": "Astrology", "icon": "Stars" },
-    { "id": "coaching", "name": "Coaching", "icon": "GraduationCap" }
+    {
+      "id": "restaurants",
+      "name": "Restaurants",
+      "icon": "UtensilsCrossed"
+    },
+    {
+      "id": "clinics",
+      "name": "Clinics",
+      "icon": "Stethoscope"
+    },
+    {
+      "id": "astrology",
+      "name": "Astrology",
+      "icon": "Stars"
+    },
+    {
+      "id": "coaching",
+      "name": "Coaching",
+      "icon": "GraduationCap"
+    }
   ],
   "samples": [
     {
@@ -13,7 +29,8 @@
       "description": "A premium restaurant website with animated sections, gallery, menu, and contact form.",
       "folder": "restaurant-classic-website",
       "file": "index.html",
-      "category": "restaurants"
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/restaurant-classic-website/poster.jpg"
     },
     {
       "id": "astrology-consultant-website",
@@ -22,7 +39,8 @@
       "description": "A mystical astrology website with cosmic design, services showcase, and consultation booking.",
       "folder": "astrology-consultant-website",
       "file": "index.html",
-      "category": "astrology"
+      "category": "astrology",
+      "posterUrl": "/samples/websites/astrology-consultant-website/poster.jpg"
     },
     {
       "id": "restaurant-botanical-website",
@@ -31,7 +49,8 @@
       "description": "A nature-inspired restaurant website with botanical design, seasonal menu, and organic dining experience.",
       "folder": "restaurant-botanical-website",
       "file": "index.html",
-      "category": "restaurants"
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/restaurant-botanical-website/poster.jpg"
     },
     {
       "id": "restaurant-journey-of-taste-website",
@@ -40,7 +59,8 @@
       "description": "A cinematic restaurant website with immersive storytelling, signature dishes, and modern dining visuals.",
       "folder": "restaurant-journey-of-taste-website",
       "file": "index.html",
-      "category": "restaurants"
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/restaurant-journey-of-taste-website/poster.jpg"
     },
     {
       "id": "clinic-dental-waiting-room-classic",
@@ -52,7 +72,8 @@
       "category": "clinics",
       "clinicType": "Dental Clinic",
       "clinicExperience": "waiting-room",
-      "waitingRoomPath": "patient"
+      "waitingRoomPath": "patient",
+      "posterUrl": "/samples/websites/clinic-dental-waiting-room-classic/poster.jpg"
     },
     {
       "id": "clinic-multispeciality-waiting-room",
@@ -64,7 +85,8 @@
       "category": "clinics",
       "clinicType": "Multispeciality Clinic",
       "clinicExperience": "waiting-room",
-      "waitingRoomPath": "waiting"
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-multispeciality-waiting-room/poster.jpg"
     },
     {
       "id": "clinic-dental-waiting-room-modern",
@@ -76,7 +98,8 @@
       "category": "clinics",
       "clinicType": "Dental Clinic",
       "clinicExperience": "waiting-room",
-      "waitingRoomPath": "waiting"
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-dental-waiting-room-modern/poster.jpg"
     },
     {
       "id": "clinic-dermatology-waiting-room",
@@ -88,7 +111,8 @@
       "category": "clinics",
       "clinicType": "Dermatology Clinic",
       "clinicExperience": "waiting-room",
-      "waitingRoomPath": "waiting"
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-dermatology-waiting-room/poster.jpg"
     },
     {
       "id": "clinic-pathology-waiting-room",
@@ -100,7 +124,8 @@
       "category": "clinics",
       "clinicType": "Pathology Clinic",
       "clinicExperience": "waiting-room",
-      "waitingRoomPath": "waiting"
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-pathology-waiting-room/poster.jpg"
     },
     {
       "id": "clinic-physiotherapy-waiting-room",
@@ -112,7 +137,8 @@
       "category": "clinics",
       "clinicType": "Physiotherapy Clinic",
       "clinicExperience": "waiting-room",
-      "waitingRoomPath": "waiting"
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-physiotherapy-waiting-room/poster.jpg"
     },
     {
       "id": "clinic-psychological-waiting-room",
@@ -124,7 +150,8 @@
       "category": "clinics",
       "clinicType": "Psychological Clinic",
       "clinicExperience": "waiting-room",
-      "waitingRoomPath": "waiting"
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-psychological-waiting-room/poster.jpg"
     },
     {
       "id": "coaching-classes-website",
@@ -133,7 +160,8 @@
       "description": "A modern coaching institute website with courses, faculty profiles, results showcase, scholarship info, and test series.",
       "folder": "coaching-classes-website",
       "file": "index.html",
-      "category": "coaching"
+      "category": "coaching",
+      "posterUrl": "/samples/websites/coaching-classes-website/poster.jpg"
     }
   ]
 }

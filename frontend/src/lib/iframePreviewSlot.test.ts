@@ -3,11 +3,13 @@ import {
   acquireIframePreviewSlot,
   releaseIframePreviewSlot,
   getIframePreviewSlotMetrics,
+  setMaxConcurrentIframePreviews,
   __resetIframePreviewSlotForTests,
 } from "./iframePreviewSlot";
 
 describe("iframePreviewSlot", () => {
   afterEach(() => {
+    setMaxConcurrentIframePreviews(3);
     __resetIframePreviewSlotForTests();
   });
 
@@ -26,5 +28,15 @@ describe("iframePreviewSlot", () => {
 
     expect(getIframePreviewSlotMetrics().active).toBe(3);
     expect(getIframePreviewSlotMetrics().queued).toBe(0);
+  });
+
+  it("respects setMaxConcurrentIframePreviews", async () => {
+    setMaxConcurrentIframePreviews(1);
+    await acquireIframePreviewSlot();
+    const second = acquireIframePreviewSlot();
+    expect(getIframePreviewSlotMetrics()).toEqual({ active: 1, queued: 1 });
+    releaseIframePreviewSlot();
+    await second;
+    setMaxConcurrentIframePreviews(3);
   });
 });

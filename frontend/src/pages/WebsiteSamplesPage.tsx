@@ -4,6 +4,8 @@ import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { WebsiteSampleCard } from "@/components/samples/WebsiteSampleCard";
+import { usePreferPosterGrid } from "@/hooks/use-mobile";
+import { setMaxConcurrentIframePreviews } from "@/lib/iframePreviewSlot";
 import { Loader2, FolderOpen, Share2, Check, ArrowLeft } from "lucide-react";
 import { UtensilsCrossed, Stethoscope, Stars, LayoutGrid, GraduationCap } from "lucide-react";
 import type { WebsiteSample, SampleCategory, WebsitesManifest } from "@/types/samples";
@@ -102,7 +104,12 @@ function ShareButton({ category }: { category?: string }) {
 export default function WebsiteSamplesPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const preferPosterGrid = usePreferPosterGrid();
   const { categories, samples, loading } = useWebsiteManifest();
+
+  useEffect(() => {
+    setMaxConcurrentIframePreviews(preferPosterGrid ? 1 : 3);
+  }, [preferPosterGrid]);
 
   const activeCategory = searchParams.get("category") || null;
   const codeFilter = searchParams.get("code")?.trim().toUpperCase() ?? "";

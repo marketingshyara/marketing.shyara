@@ -14,15 +14,34 @@ test.describe("website samples page", () => {
     await expect(page.getByText("COA/001")).toBeVisible({ timeout: 60_000 });
   });
 
-  test("mobile viewport: last card gains iframe src after scroll into view", async ({ page }) => {
+  test("mobile viewport: no grid iframes until live preview opened", async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 390, height: 720 });
+    await page.goto("/samples/websites", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("website-sample-card").first()).toBeVisible({ timeout: 60_000 });
+
+    await page.waitForTimeout(500);
+    const gridIframes = page.locator('[data-testid="website-sample-card"] iframe[src^="/samples/websites"]');
+    await expect(gridIframes).toHaveCount(0);
+
+    const firstCard = page.getByTestId("website-sample-card").first();
+    await firstCard.getByRole("button", { name: /live preview/i }).first().click();
+    await expect(page.locator('[role="dialog"] iframe[src^="/samples/websites"]')).toHaveCount(1, {
+      timeout: 90_000,
+    });
+  });
+
+  test("desktop viewport: card gains iframe src after scroll into view", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto("/samples/websites", { waitUntil: "domcontentloaded" });
     const lastCard = page.getByTestId("website-sample-card").last();
     await expect(lastCard).toBeVisible({ timeout: 60_000 });
 
     await page.waitForTimeout(400);
-    const initial = await page.locator('iframe[src^="/samples/websites"]').count();
+    const initial = await page
+      .locator('[data-testid="website-sample-card"] iframe[src^="/samples/websites"]')
+      .count();
     expect(initial).toBeLessThanOrEqual(5);
 
     await lastCard.scrollIntoViewIfNeeded();
