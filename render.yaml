@@ -10,6 +10,8 @@ services:
     runtime: static
     buildCommand: npm install && npm run build --workspace frontend
     staticPublishPath: frontend/dist
+    # Static files under /samples/ (posters + sample SPAs) must be served as-is.
+    # Render serves matching files before rewrites; this documents the intent.
     routes:
       - type: rewrite
         source: /*
