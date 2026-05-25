@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Reveal } from "@/components/Reveal";
 import { MapPin, Mail, Phone, Clock } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -21,7 +22,12 @@ const INFO = [
   { icon: Clock, label: "Hours", value: "Mon–Fri 5:00 – 23:00 · Sat–Sun 7:00 – 21:00" },
 ] as const;
 
+const inputClass =
+  "mt-2 w-full bg-background border border-border px-4 py-3 text-foreground focus:border-primary outline-none transition focus-ring rounded-sm";
+
 function Contact() {
+  const [submitted, setSubmitted] = useState(false);
+
   return (
     <>
       <section className="pt-32 md:pt-40 pb-12 container-x">
@@ -38,37 +44,68 @@ function Contact() {
 
       <section className="container-x pb-24 grid lg:grid-cols-2 gap-10 lg:gap-16">
         <Reveal>
-          <form
-            onSubmit={(e) => { e.preventDefault(); alert("Thanks! We'll be in touch shortly."); }}
-            className="space-y-5 p-8 md:p-10 bg-card border border-border"
-          >
-            <div>
-              <label className="text-xs tracking-widest uppercase text-muted-foreground">Name</label>
-              <input required type="text" className="mt-2 w-full bg-background border border-border px-4 py-3 text-foreground focus:border-primary outline-none transition" />
+          {submitted ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="p-8 md:p-10 bg-card border border-primary/40 h-full flex flex-col justify-center"
+            >
+              <p className="text-display text-2xl text-primary">Message sent</p>
+              <p className="mt-4 text-muted-foreground">
+                Thanks for reaching out. A coach will reply within one business day. See you on the floor.
+              </p>
+              <button
+                type="button"
+                onClick={() => setSubmitted(false)}
+                className="btn-secondary mt-8 w-fit focus-ring"
+              >
+                Send another message
+              </button>
             </div>
-            <div>
-              <label className="text-xs tracking-widest uppercase text-muted-foreground">Email</label>
-              <input required type="email" className="mt-2 w-full bg-background border border-border px-4 py-3 text-foreground focus:border-primary outline-none transition" />
-            </div>
-            <div>
-              <label className="text-xs tracking-widest uppercase text-muted-foreground">Interested in</label>
-              <select className="mt-2 w-full bg-background border border-border px-4 py-3 text-foreground focus:border-primary outline-none transition">
-                <option>Free trial session</option>
-                <option>Strength program</option>
-                <option>Boxing</option>
-                <option>HIIT</option>
-                <option>Functional</option>
-                <option>Personal training</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs tracking-widest uppercase text-muted-foreground">Message</label>
-              <textarea rows={4} className="mt-2 w-full bg-background border border-border px-4 py-3 text-foreground focus:border-primary outline-none transition resize-none" />
-            </div>
-            <button type="submit" className="w-full text-display tracking-widest px-6 py-4 bg-primary text-primary-foreground shadow-ember hover:brightness-110 transition">
-              Send Message
-            </button>
-          </form>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSubmitted(true);
+              }}
+              className="space-y-5 p-8 md:p-10 bg-card border border-border"
+            >
+              <div>
+                <label htmlFor="contact-name" className="text-xs tracking-widest uppercase text-muted-foreground">
+                  Name
+                </label>
+                <input id="contact-name" name="name" required type="text" autoComplete="name" className={inputClass} />
+              </div>
+              <div>
+                <label htmlFor="contact-email" className="text-xs tracking-widest uppercase text-muted-foreground">
+                  Email
+                </label>
+                <input id="contact-email" name="email" required type="email" autoComplete="email" className={inputClass} />
+              </div>
+              <div>
+                <label htmlFor="contact-interest" className="text-xs tracking-widest uppercase text-muted-foreground">
+                  Interested in
+                </label>
+                <select id="contact-interest" name="interest" className={inputClass}>
+                  <option>Free trial session</option>
+                  <option>Strength program</option>
+                  <option>Boxing</option>
+                  <option>HIIT</option>
+                  <option>Functional</option>
+                  <option>Personal training</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="contact-message" className="text-xs tracking-widest uppercase text-muted-foreground">
+                  Message
+                </label>
+                <textarea id="contact-message" name="message" rows={4} className={`${inputClass} resize-none`} />
+              </div>
+              <button type="submit" className="btn-primary w-full focus-ring">
+                Send Message
+              </button>
+            </form>
+          )}
         </Reveal>
 
         <Reveal delay={0.1}>
@@ -82,7 +119,7 @@ function Contact() {
                   <div className="text-xs tracking-widest uppercase text-muted-foreground">{i.label}</div>
                   <div className="mt-1 text-foreground">
                     {"href" in i && i.href ? (
-                      <a href={i.href} className="hover:text-primary transition-colors">
+                      <a href={i.href} className="hover:text-primary transition-colors focus-ring rounded-sm">
                         {i.value}
                       </a>
                     ) : (
@@ -94,7 +131,7 @@ function Contact() {
             ))}
             <div className="aspect-[5/4] bg-card border border-border overflow-hidden">
               <iframe
-                title="map"
+                title="IronForge location map"
                 src="https://www.openstreetmap.org/export/embed.html?bbox=-74.012,40.706,-73.992,40.722&layer=mapnik"
                 className="w-full h-full grayscale contrast-125 opacity-90"
                 loading="lazy"

@@ -66,8 +66,9 @@ function Services() {
                 </ul>
                 <a
                   href={`https://wa.me/919584661610?text=Hi%20Shyara%2C%20I%27d%20like%20to%20book%20${encodeURIComponent(s.title)}.`}
-                  target="_blank" rel="noreferrer"
-                  className="mt-6 inline-flex items-center justify-center gap-2 bg-gradient-brand text-primary-foreground px-5 py-3 rounded-full text-sm font-medium hover:shadow-glow transition-shadow"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary mt-6 w-full text-sm focus-ring"
                 >
                   <MessageCircle className="size-4" /> Book on WhatsApp
                 </a>
@@ -83,7 +84,7 @@ function Services() {
           <p className="mt-3 text-muted-foreground max-w-lg mx-auto">
             Tell us about your car and we'll build a package that fits.
           </p>
-          <a href="tel:+919584661610" className="mt-6 inline-flex items-center gap-2 bg-gradient-brand text-primary-foreground px-6 py-3.5 rounded-full font-medium shadow-glow">
+          <a href="tel:+919584661610" className="btn-primary mt-6 focus-ring">
             <Phone className="size-4" /> Speak to an expert
           </a>
         </div>

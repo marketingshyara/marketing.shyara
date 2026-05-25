@@ -77,7 +77,7 @@ function About() {
       <section className="container-x pb-24 text-center">
         <Reveal>
           <h2 className="text-display text-4xl md:text-6xl">Come see it for yourself.</h2>
-          <Link to="/contact" className="mt-8 inline-flex items-center gap-2 text-display tracking-widest px-8 py-5 bg-primary text-primary-foreground shadow-ember">
+          <Link to="/contact" className="btn-primary mt-8 focus-ring">
             Book a Tour <ArrowRight className="size-4" />
           </Link>
         </Reveal>

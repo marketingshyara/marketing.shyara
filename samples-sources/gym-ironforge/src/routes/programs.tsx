@@ -98,7 +98,7 @@ function Programs() {
           <Reveal>
             <h2 className="text-display text-4xl md:text-6xl">Not sure where to start?</h2>
             <p className="mt-4 text-muted-foreground max-w-lg mx-auto">A 30-minute consult with one of our coaches will match you to the right program.</p>
-            <Link to="/contact" className="mt-8 inline-flex items-center gap-2 text-display tracking-widest px-8 py-5 bg-primary text-primary-foreground shadow-ember">
+            <Link to="/contact" className="btn-primary mt-8 focus-ring">
               Talk to a Coach <ArrowRight className="size-4" />
             </Link>
           </Reveal>

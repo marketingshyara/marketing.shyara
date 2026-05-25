@@ -113,6 +113,101 @@
     box-shadow: var(--shadow-card);
   }
 
+  .focus-ring {
+    outline: none;
+  }
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0.75rem;
+    z-index: 100;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    background: var(--gradient-brand);
+    color: var(--color-primary-foreground);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .skip-link:focus {
+    left: 0.75rem;
+  }
+
+  .nav-link {
+    position: relative;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: var(--color-muted-foreground);
+    transition: color 0.2s ease;
+  }
+  .nav-link:hover {
+    color: var(--color-foreground);
+  }
+  .nav-link-active {
+    color: var(--color-foreground);
+    font-weight: 500;
+  }
+  .nav-link-active::after {
+    content: "";
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.2rem;
+    height: 2px;
+    background: var(--color-primary);
+    border-radius: 1px;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background: var(--gradient-brand);
+    color: var(--color-primary-foreground);
+    box-shadow: var(--shadow-glow);
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+  }
+  .btn-primary:hover {
+    box-shadow: var(--shadow-glow);
+    filter: brightness(1.05);
+  }
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid var(--color-border);
+    background: oklch(0.14 0.02 250 / 0.3);
+    backdrop-filter: blur(4px);
+    color: var(--color-foreground);
+    transition: background-color 0.2s ease, transform 0.15s ease;
+  }
+  .btn-secondary:hover {
+    background: var(--color-secondary);
+  }
+  .btn-secondary:active {
+    transform: scale(0.98);
+  }
+
   .reveal {
     opacity: 0;
     transform: translateY(28px);
@@ -154,7 +249,8 @@
   .hover-lift {
     transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
   }
-  .hover-lift:hover {
+  .hover-lift:hover,
+  .hover-lift:focus-within {
     transform: translateY(-6px);
     box-shadow: var(--shadow-glow);
   }
@@ -168,7 +264,12 @@
       transform: none;
       transition: none;
     }
-    .hover-lift:hover {
+    .hover-lift:hover,
+    .hover-lift:focus-within {
+      transform: none;
+    }
+    .btn-primary:active,
+    .btn-secondary:active {
       transform: none;
     }
   }

@@ -53,28 +53,26 @@ function Home() {
             <div className="reveal reveal-delay-3 mt-8 flex flex-wrap gap-3">
               <a
                 href="https://wa.me/919584661610?text=Hi%20Shyara%20Auto%20Care%2C%20I%27d%20like%20to%20book%20a%20service."
-                target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-2 bg-gradient-brand text-primary-foreground px-6 py-3.5 rounded-full font-medium shadow-glow hover:scale-[1.02] transition-transform"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary focus-ring"
               >
                 <MessageCircle className="size-4" /> Book on WhatsApp
               </a>
-              <Link
-                to="/services"
-                className="inline-flex items-center gap-2 border border-border bg-background/30 backdrop-blur px-6 py-3.5 rounded-full font-medium hover:bg-secondary transition-colors"
-              >
+              <Link to="/services" className="btn-secondary focus-ring">
                 Explore Services <ArrowRight className="size-4" />
               </Link>
             </div>
 
-            <div className="reveal reveal-delay-4 mt-12 grid grid-cols-3 gap-3 sm:gap-4 max-w-lg">
+            <div className="reveal reveal-delay-4 mt-12 grid grid-cols-3 gap-2 sm:gap-4 max-w-lg">
               {[
                 { k: "12+", v: "Years experience" },
                 { k: "50+", v: "Cars / week" },
                 { k: "4.9★", v: "Customer rating" },
               ].map((s) => (
                 <div key={s.v}>
-                  <div className="text-2xl sm:text-3xl font-display font-bold text-gradient">{s.k}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{s.v}</div>
+                  <div className="text-xl sm:text-3xl font-display font-bold text-gradient">{s.k}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 leading-tight">{s.v}</div>
                 </div>
               ))}
             </div>
@@ -123,7 +121,10 @@ function Home() {
                 Care that covers every inch.
               </h2>
             </div>
-            <Link to="/services" className="reveal reveal-delay-2 text-sm text-primary inline-flex items-center gap-2 hover:gap-3 transition-all">
+            <Link
+              to="/services"
+              className="reveal reveal-delay-2 text-sm text-primary inline-flex items-center gap-2 hover:gap-3 transition-all focus-ring rounded-md"
+            >
               View all services <ArrowRight className="size-4" />
             </Link>
           </div>
@@ -220,13 +221,14 @@ function Home() {
               Talk to us today — we'll recommend the perfect package for your ride.
             </p>
             <div className="mt-7 flex flex-wrap gap-3 justify-center">
-              <a href="tel:+919584661610" className="inline-flex items-center gap-2 bg-background text-foreground px-6 py-3.5 rounded-full font-medium hover:scale-[1.02] transition-transform">
+              <a href="tel:+919584661610" className="btn-secondary bg-background text-foreground focus-ring">
                 <Phone className="size-4" /> Call 95846 61610
               </a>
               <a
                 href="https://wa.me/919584661610"
-                target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-2 bg-background/10 border border-primary-foreground/30 text-primary-foreground px-6 py-3.5 rounded-full font-medium hover:bg-background/20 transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary border-primary-foreground/30 text-primary-foreground bg-background/10 hover:bg-background/20 focus-ring"
               >
                 <MessageCircle className="size-4" /> WhatsApp Us
               </a>

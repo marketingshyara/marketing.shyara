@@ -53,7 +53,7 @@ function Trainers() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`${t.name} on Instagram`}
-                    className="absolute top-3 right-3 size-9 grid place-items-center bg-background/70 backdrop-blur opacity-100 md:opacity-0 md:group-hover:opacity-100 transition hover:text-primary"
+                    className="absolute top-3 right-3 size-9 grid place-items-center bg-background/70 backdrop-blur opacity-100 md:opacity-0 md:group-hover:opacity-100 transition hover:text-primary focus-ring rounded-sm"
                   >
                     <Instagram className="size-4" />
                   </a>
@@ -74,7 +74,7 @@ function Trainers() {
           <Reveal>
             <h2 className="text-display text-4xl md:text-6xl">Want to coach with us?</h2>
             <p className="mt-4 text-muted-foreground max-w-lg mx-auto">We're always looking for sharp, dedicated coaches to join the team.</p>
-            <Link to="/contact" className="mt-8 inline-flex items-center gap-2 text-display tracking-widest px-8 py-5 bg-primary text-primary-foreground shadow-ember">
+            <Link to="/contact" className="btn-primary mt-8 focus-ring">
               Get in Touch <ArrowRight className="size-4" />
             </Link>
           </Reveal>

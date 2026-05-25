@@ -16,7 +16,7 @@ export const Route = createFileRoute("/schedule")({
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
-const SCHEDULE: Record<typeof DAYS[number], { time: string; name: string; coach: string; level: string }[]> = {
+const SCHEDULE: Record<(typeof DAYS)[number], { time: string; name: string; coach: string; level: string }[]> = {
   Mon: [
     { time: "06:00", name: "Strength", coach: "Marcus", level: "All" },
     { time: "12:00", name: "HIIT 45", coach: "Lena", level: "All" },
@@ -57,8 +57,14 @@ const SCHEDULE: Record<typeof DAYS[number], { time: string; name: string; coach:
 };
 
 function Schedule() {
-  const [day, setDay] = useState<typeof DAYS[number]>("Mon");
+  const [day, setDay] = useState<(typeof DAYS)[number]>("Mon");
+  const [reserveMsg, setReserveMsg] = useState<string | null>(null);
   const classes = SCHEDULE[day];
+
+  const handleReserve = (className: string, time: string) => {
+    setReserveMsg(`Reserved ${className} at ${time} (demo)`);
+    window.setTimeout(() => setReserveMsg(null), 3000);
+  };
 
   return (
     <>
@@ -76,12 +82,21 @@ function Schedule() {
 
       <section className="container-x pb-24">
         <Reveal>
-          <div className="flex flex-wrap gap-2 border-b border-border pb-4 mb-8">
+          <div
+            role="tablist"
+            aria-label="Select day"
+            className="flex flex-wrap gap-2 border-b border-border pb-4 mb-8"
+          >
             {DAYS.map((d) => (
               <button
                 key={d}
+                type="button"
+                role="tab"
+                aria-selected={day === d}
+                aria-controls={`schedule-panel-${d}`}
+                id={`schedule-tab-${d}`}
                 onClick={() => setDay(d)}
-                className={`text-display tracking-widest text-sm px-5 py-3 transition ${
+                className={`text-display tracking-widest text-sm px-5 py-3 min-h-11 transition focus-ring rounded-sm ${
                   day === d
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-muted-foreground hover:text-foreground"
@@ -93,10 +108,21 @@ function Schedule() {
           </div>
         </Reveal>
 
-        <div className="divide-y divide-border border-y border-border">
+        {reserveMsg && (
+          <p role="status" aria-live="polite" className="mb-4 text-sm text-primary tracking-widest uppercase">
+            {reserveMsg}
+          </p>
+        )}
+
+        <div
+          role="tabpanel"
+          id={`schedule-panel-${day}`}
+          aria-labelledby={`schedule-tab-${day}`}
+          className="divide-y divide-border border-y border-border"
+        >
           {classes.map((c, i) => (
             <Reveal key={`${day}-${i}`} delay={i * 0.04}>
-              <div className="flex flex-col gap-3 py-5 px-2 md:px-6 md:grid md:grid-cols-12 md:gap-4 md:items-center hover:bg-card transition">
+              <div className="flex flex-col gap-3 py-5 px-2 md:px-6 md:grid md:grid-cols-12 md:gap-4 md:items-center hover:bg-card transition-colors">
                 <div className="md:col-span-2 text-display text-2xl md:text-3xl text-primary">{c.time}</div>
                 <div className="md:col-span-5">
                   <div className="text-display text-lg md:text-xl">{c.name}</div>
@@ -106,7 +132,8 @@ function Schedule() {
                 <div className="md:col-span-2 md:text-right">
                   <button
                     type="button"
-                    className="w-full md:w-auto text-display tracking-widest text-xs px-4 py-2 border border-border hover:border-primary hover:text-primary transition"
+                    onClick={() => handleReserve(c.name, c.time)}
+                    className="btn-ghost w-full md:w-auto focus-ring"
                   >
                     Reserve
                   </button>

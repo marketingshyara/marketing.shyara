@@ -32,7 +32,7 @@ function Contact() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-6">
           <a
             href="tel:+919584661610"
-            className="reveal-scale group p-8 sm:p-10 rounded-3xl bg-gradient-brand text-primary-foreground shadow-glow hover-lift relative overflow-hidden"
+            className="reveal-scale group p-8 sm:p-10 rounded-3xl bg-gradient-brand text-primary-foreground shadow-glow hover-lift relative overflow-hidden focus-ring rounded-3xl"
           >
             <Phone className="size-10" />
             <h2 className="mt-6 text-2xl font-semibold">Call us</h2>
@@ -43,8 +43,9 @@ function Contact() {
 
           <a
             href="https://wa.me/919584661610?text=Hi%20Shyara%20Auto%20Care%2C%20I%27d%20like%20to%20know%20more."
-            target="_blank" rel="noreferrer"
-            className="reveal-scale reveal-delay-1 group p-8 sm:p-10 rounded-3xl bg-card border border-border hover-lift relative overflow-hidden"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="reveal-scale reveal-delay-1 group p-8 sm:p-10 rounded-3xl bg-card border border-border hover-lift relative overflow-hidden focus-ring rounded-3xl"
           >
             <div className="size-12 rounded-2xl bg-[#25D366] grid place-items-center">
               <MessageCircle className="size-6 text-white" />
@@ -80,7 +81,7 @@ function Contact() {
                 href="https://www.instagram.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="size-10 grid place-items-center rounded-full border border-border hover:border-primary hover:text-primary transition-colors"
+                className="size-10 grid place-items-center rounded-full border border-border hover:border-primary hover:text-primary transition-colors focus-ring"
               >
                 <Instagram className="size-4" />
               </a>
@@ -89,7 +90,7 @@ function Contact() {
                 href="https://www.facebook.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="size-10 grid place-items-center rounded-full border border-border hover:border-primary hover:text-primary transition-colors"
+                className="size-10 grid place-items-center rounded-full border border-border hover:border-primary hover:text-primary transition-colors focus-ring"
               >
                 <Facebook className="size-4" />
               </a>

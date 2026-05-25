@@ -30,7 +30,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={label}
-                className="size-10 grid place-items-center border border-border hover:border-primary hover:text-primary transition"
+                className="size-10 grid place-items-center border border-border hover:border-primary hover:text-primary transition-colors focus-ring rounded-sm"
               >
                 <Icon className="size-4" />
               </a>
@@ -41,11 +41,11 @@ export function Footer() {
         <div>
           <h4 className="text-sm tracking-widest text-primary mb-4">Explore</h4>
           <ul className="space-y-2 text-sm">
-            <li><Link to="/about" className="text-muted-foreground hover:text-foreground">About</Link></li>
-            <li><Link to="/programs" className="text-muted-foreground hover:text-foreground">Programs</Link></li>
-            <li><Link to="/trainers" className="text-muted-foreground hover:text-foreground">Trainers</Link></li>
-            <li><Link to="/schedule" className="text-muted-foreground hover:text-foreground">Schedule</Link></li>
-            <li><Link to="/contact" className="text-muted-foreground hover:text-foreground">Contact</Link></li>
+            <li><Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors focus-ring rounded-sm">About</Link></li>
+            <li><Link to="/programs" className="text-muted-foreground hover:text-foreground transition-colors focus-ring rounded-sm">Programs</Link></li>
+            <li><Link to="/trainers" className="text-muted-foreground hover:text-foreground transition-colors focus-ring rounded-sm">Trainers</Link></li>
+            <li><Link to="/schedule" className="text-muted-foreground hover:text-foreground transition-colors focus-ring rounded-sm">Schedule</Link></li>
+            <li><Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors focus-ring rounded-sm">Contact</Link></li>
           </ul>
         </div>
 

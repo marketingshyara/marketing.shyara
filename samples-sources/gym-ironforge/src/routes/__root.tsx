@@ -21,10 +21,7 @@ function NotFoundComponent() {
         <p className="mt-2 text-sm text-muted-foreground">
           This route doesn't exist. Let's get you back to the gym floor.
         </p>
-        <Link
-          to="/"
-          className="mt-6 inline-flex items-center justify-center text-display tracking-widest px-5 py-3 bg-primary text-primary-foreground"
-        >
+        <Link to="/" className="btn-primary mt-6 focus-ring">
           Go home
         </Link>
       </div>
@@ -42,12 +39,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">Try again or head home.</p>
         <div className="mt-6 flex justify-center gap-2">
           <button
+            type="button"
             onClick={() => { router.invalidate(); reset(); }}
-            className="text-display tracking-widest px-5 py-3 bg-primary text-primary-foreground"
+            className="btn-primary focus-ring"
           >
             Try again
           </button>
-          <Link to="/" className="text-display tracking-widest px-5 py-3 border border-border">
+          <Link to="/" className="btn-secondary focus-ring">
             Home
           </Link>
         </div>
@@ -93,8 +91,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <>
+      <a href="#main-content" className="skip-link focus-ring">
+        Skip to main content
+      </a>
       <Header />
-      <main className="min-h-screen">
+      <main id="main-content" className="min-h-screen">
         <Outlet />
       </main>
       <Footer />

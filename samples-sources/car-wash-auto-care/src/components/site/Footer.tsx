@@ -27,7 +27,7 @@ export function Footer() {
               href="https://www.instagram.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="size-9 grid place-items-center rounded-full border border-border hover:border-primary hover:text-primary transition-colors"
+              className="size-9 grid place-items-center rounded-full border border-border hover:border-primary hover:text-primary transition-colors focus-ring"
             >
               <Instagram className="size-4" />
             </a>
@@ -36,7 +36,7 @@ export function Footer() {
               href="https://www.facebook.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="size-9 grid place-items-center rounded-full border border-border hover:border-primary hover:text-primary transition-colors"
+              className="size-9 grid place-items-center rounded-full border border-border hover:border-primary hover:text-primary transition-colors focus-ring"
             >
               <Facebook className="size-4" />
             </a>
@@ -46,11 +46,11 @@ export function Footer() {
         <div>
           <h4 className="text-sm font-semibold mb-4">Explore</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><Link to="/" className="hover:text-foreground">Home</Link></li>
-            <li><Link to="/services" className="hover:text-foreground">Services</Link></li>
-            <li><Link to="/about" className="hover:text-foreground">About</Link></li>
-            <li><Link to="/gallery" className="hover:text-foreground">Gallery</Link></li>
-            <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
+            <li><Link to="/" className="hover:text-foreground transition-colors focus-ring rounded-md">Home</Link></li>
+            <li><Link to="/services" className="hover:text-foreground transition-colors focus-ring rounded-md">Services</Link></li>
+            <li><Link to="/about" className="hover:text-foreground transition-colors focus-ring rounded-md">About</Link></li>
+            <li><Link to="/gallery" className="hover:text-foreground transition-colors focus-ring rounded-md">Gallery</Link></li>
+            <li><Link to="/contact" className="hover:text-foreground transition-colors focus-ring rounded-md">Contact</Link></li>
           </ul>
         </div>
 
@@ -58,21 +58,22 @@ export function Footer() {
           <h4 className="text-sm font-semibold mb-4">Reach Us</h4>
           <ul className="space-y-3 text-sm text-muted-foreground">
             <li>
-              <a href="tel:+919584661610" className="flex items-center gap-2 hover:text-foreground">
+              <a href="tel:+919584661610" className="flex items-center gap-2 hover:text-foreground transition-colors focus-ring rounded-md">
                 <Phone className="size-4 text-primary" /> +91 95846 61610
               </a>
             </li>
             <li>
               <a
                 href="https://wa.me/919584661610"
-                target="_blank" rel="noreferrer"
-                className="flex items-center gap-2 hover:text-foreground"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 hover:text-foreground transition-colors focus-ring rounded-md"
               >
                 <MessageCircle className="size-4 text-primary" /> WhatsApp Chat
               </a>
             </li>
             <li>
-              <a href="mailto:hello@shyaraautocare.in" className="flex items-center gap-2 hover:text-foreground">
+              <a href="mailto:hello@shyaraautocare.in" className="flex items-center gap-2 hover:text-foreground transition-colors focus-ring rounded-md">
                 <Mail className="size-4 text-primary" /> hello@shyaraautocare.in
               </a>
             </li>

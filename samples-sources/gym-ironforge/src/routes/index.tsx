@@ -32,7 +32,7 @@ function Hero() {
   return (
     <section ref={ref} className="relative h-[100svh] min-h-[640px] overflow-hidden">
       <motion.div style={{ y }} className="absolute inset-0">
-        <img src={hero} alt="" className="w-full h-full object-cover" />
+        <img src={hero} alt="Athletes training at IronForge gym" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-hero" />
       </motion.div>
 
@@ -60,10 +60,10 @@ function Hero() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mt-8 flex flex-wrap gap-4"
         >
-          <Link to="/programs" className="inline-flex items-center gap-2 text-display tracking-widest px-6 py-4 bg-primary text-primary-foreground shadow-ember hover:brightness-110 transition">
+          <Link to="/programs" className="btn-primary focus-ring">
             See Programs <ArrowRight className="size-4" />
           </Link>
-          <Link to="/contact" className="inline-flex items-center gap-2 text-display tracking-widest px-6 py-4 border border-border bg-background/40 backdrop-blur-sm hover:border-primary transition">
+          <Link to="/contact" className="btn-secondary focus-ring">
             Free Trial
           </Link>
         </motion.div>
@@ -231,7 +231,7 @@ function Home() {
       {/* CTA */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={community} alt="" className="w-full h-full object-cover opacity-30" loading="lazy" />
+          <img src={community} alt="" className="w-full h-full object-cover opacity-30" loading="lazy" aria-hidden="true" />
           <div className="absolute inset-0 bg-background/70" />
         </div>
         <div className="relative container-x py-24 md:py-36 text-center">
@@ -246,7 +246,7 @@ function Home() {
             </p>
           </Reveal>
           <Reveal delay={0.2}>
-            <Link to="/contact" className="mt-10 inline-flex items-center gap-2 text-display tracking-widest px-8 py-5 bg-primary text-primary-foreground shadow-ember hover:brightness-110 transition">
+            <Link to="/contact" className="btn-primary mt-10 focus-ring">
               Book Free Trial <ArrowRight className="size-4" />
             </Link>
           </Reveal>
