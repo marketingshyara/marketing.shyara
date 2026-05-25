@@ -19,6 +19,16 @@
       "id": "coaching",
       "name": "Coaching",
       "icon": "GraduationCap"
+    },
+    {
+      "id": "fitness",
+      "name": "Fitness",
+      "icon": "Dumbbell"
+    },
+    {
+      "id": "automotive",
+      "name": "Auto / Car Care",
+      "icon": "Car"
     }
   ],
   "samples": [
@@ -162,6 +172,26 @@
       "file": "index.html",
       "category": "coaching",
       "posterUrl": "/samples/websites/coaching-classes-website/poster.jpg"
+    },
+    {
+      "id": "gym-ironforge-website",
+      "displayCode": "GYM/001",
+      "name": "IronForge Gym Website",
+      "description": "A premium strength and conditioning gym website with programs, trainers, schedule, and membership CTAs.",
+      "folder": "gym-ironforge-website",
+      "file": "index.html",
+      "category": "fitness",
+      "posterUrl": "/samples/websites/gym-ironforge-website/poster.jpg"
+    },
+    {
+      "id": "car-wash-auto-care-website",
+      "displayCode": "CAR/001",
+      "name": "Car Wash & Auto Care Website",
+      "description": "An auto care website with wash packages, detailing services, gallery, and booking-focused contact flow.",
+      "folder": "car-wash-auto-care-website",
+      "file": "index.html",
+      "category": "automotive",
+      "posterUrl": "/samples/websites/car-wash-auto-care-website/poster.jpg"
     }
   ]
 }

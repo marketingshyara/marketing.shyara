@@ -1,0 +1,1 @@
+const s="/samples/websites/gym-ironforge-website/assets/program-strength-D3yLod_q.jpg",e="/samples/websites/gym-ironforge-website/assets/program-boxing-ii9B8fKP.jpg",t="/samples/websites/gym-ironforge-website/assets/program-hiit-D-b6RsN0.jpg",i="/samples/websites/gym-ironforge-website/assets/program-functional-BS8pOfNZ.jpg";export{e as b,i as f,t as h,s};

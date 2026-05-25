@@ -110,7 +110,11 @@ async function assertSampleLoaded(page, sample) {
     );
   }
 
-  await page.locator("#root *").first().waitFor({ state: "attached", timeout: 90_000 });
+  // Vite SPAs use #root; TanStack Start shells render header/main in body directly.
+  await page
+    .locator("#root *, main *, body > header")
+    .first()
+    .waitFor({ state: "attached", timeout: 90_000 });
 
   const title = await page.title();
   if (/page not found/i.test(title)) {

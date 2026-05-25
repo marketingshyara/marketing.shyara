@@ -12,6 +12,20 @@ test.describe("website samples page", () => {
     await page.goto("/samples/websites", { waitUntil: "domcontentloaded" });
     await expect(page.getByText("RES/001")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("COA/001")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("GYM/001")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("CAR/001")).toBeVisible({ timeout: 60_000 });
+  });
+
+  test("fitness and automotive category filters show new samples", async ({ page }) => {
+    await page.goto("/samples/websites", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("button", { name: "Fitness" })).toBeVisible({ timeout: 60_000 });
+    await page.getByRole("button", { name: "Fitness" }).click();
+    await expect(page.getByText("GYM/001")).toBeVisible();
+    await expect(page.getByText("CAR/001")).toHaveCount(0);
+
+    await page.getByRole("button", { name: /auto \/ car care/i }).click();
+    await expect(page.getByText("CAR/001")).toBeVisible();
+    await expect(page.getByText("GYM/001")).toHaveCount(0);
   });
 
   test("mobile viewport: no grid iframes until live preview opened", async ({ page }) => {

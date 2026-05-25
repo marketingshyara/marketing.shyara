@@ -7,7 +7,7 @@ import { WebsiteSampleCard } from "@/components/samples/WebsiteSampleCard";
 import { usePreferPosterGrid } from "@/hooks/use-mobile";
 import { setMaxConcurrentIframePreviews } from "@/lib/iframePreviewSlot";
 import { Loader2, FolderOpen, Share2, Check, ArrowLeft } from "lucide-react";
-import { UtensilsCrossed, Stethoscope, Stars, LayoutGrid, GraduationCap } from "lucide-react";
+import { UtensilsCrossed, Stethoscope, Stars, LayoutGrid, GraduationCap, Dumbbell, Car } from "lucide-react";
 import type { WebsiteSample, SampleCategory, WebsitesManifest } from "@/types/samples";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -15,6 +15,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Stethoscope,
   Stars,
   GraduationCap,
+  Dumbbell,
+  Car,
 };
 
 function useWebsiteManifest() {

@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "e2e": "playwright test e2e/website-samples.spec.ts",
+    "build:website-samples": "node scripts/build-website-samples.mjs",
     "capture-sample-posters": "node scripts/capture-sample-posters.mjs",
     "capture-sample-posters:dist": "npm run build && node scripts/capture-sample-posters.mjs",
     "e2e:portal": "playwright test e2e/portal-*.spec.ts",

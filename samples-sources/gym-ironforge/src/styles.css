@@ -1,0 +1,135 @@
+@import "tailwindcss" source(none);
+@source "../src/components";
+@source "../src/routes";
+@source "../src/lib";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-display: "Oswald", "Bebas Neue", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.25rem;
+
+  /* Dark gym palette - deep black, gunmetal, ember orange */
+  --background: oklch(0.13 0.005 240);
+  --foreground: oklch(0.97 0.005 240);
+  --card: oklch(0.17 0.005 240);
+  --card-foreground: oklch(0.97 0.005 240);
+  --popover: oklch(0.17 0.005 240);
+  --popover-foreground: oklch(0.97 0.005 240);
+  --primary: oklch(0.68 0.22 35);          /* ember orange */
+  --primary-foreground: oklch(0.13 0.005 240);
+  --secondary: oklch(0.22 0.005 240);
+  --secondary-foreground: oklch(0.97 0.005 240);
+  --muted: oklch(0.22 0.005 240);
+  --muted-foreground: oklch(0.65 0.01 240);
+  --accent: oklch(0.68 0.22 35);
+  --accent-foreground: oklch(0.13 0.005 240);
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(0.97 0.005 240);
+  --border: oklch(0.27 0.005 240);
+  --input: oklch(0.22 0.005 240);
+  --ring: oklch(0.68 0.22 35);
+
+  --surface-elevated: oklch(0.2 0.005 240);
+  --gradient-hero: linear-gradient(180deg, oklch(0.13 0.005 240 / 0.4) 0%, oklch(0.13 0.005 240 / 0.85) 60%, oklch(0.13 0.005 240) 100%);
+  --gradient-ember: linear-gradient(135deg, oklch(0.7 0.22 35) 0%, oklch(0.6 0.22 25) 100%);
+  --shadow-ember: 0 10px 40px -10px oklch(0.68 0.22 35 / 0.4);
+  --shadow-elevated: 0 20px 60px -20px oklch(0 0 0 / 0.6);
+}
+
+@layer base {
+  @font-face {
+    font-family: "Oswald";
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("https://fonts.gstatic.com/s/oswald/v53/TK3iWkUHHAIjg752Fz8Ghe4.woff2") format("woff2");
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    font-weight: 700;
+    line-height: 1;
+  }
+}
+
+@layer utilities {
+  .text-display {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .bg-gradient-hero { background: var(--gradient-hero); }
+  .bg-gradient-ember { background: var(--gradient-ember); }
+  .shadow-ember { box-shadow: var(--shadow-ember); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+
+  .container-x {
+    max-width: 1400px;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .container-x { padding-inline: 2rem; }
+  }
+
+  /* marquee */
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-marquee {
+      animation: none;
+    }
+  }
+}

@@ -7,7 +7,9 @@ export const TEMPLATE_CATEGORY_PREFIX: Record<string, string> = {
   restaurants: "RES",
   coaching: "COA",
   clinics: "CLI",
-  astrology: "AST"
+  astrology: "AST",
+  fitness: "GYM",
+  automotive: "CAR"
 };
 
 export type WebsiteTemplateCatalogEntry = {
@@ -57,7 +59,13 @@ const RAW_SAMPLES: { sampleSlug: string; name: string; categoryId: string }[] = 
     name: "Psychological Clinic Website",
     categoryId: "clinics"
   },
-  { sampleSlug: "coaching-classes-website", name: "Coaching Classes Website", categoryId: "coaching" }
+  { sampleSlug: "coaching-classes-website", name: "Coaching Classes Website", categoryId: "coaching" },
+  { sampleSlug: "gym-ironforge-website", name: "IronForge Gym Website", categoryId: "fitness" },
+  {
+    sampleSlug: "car-wash-auto-care-website",
+    name: "Car Wash & Auto Care Website",
+    categoryId: "automotive"
+  }
 ];
 
 function assignDisplayCodes(
