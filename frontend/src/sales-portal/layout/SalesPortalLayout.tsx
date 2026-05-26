@@ -186,32 +186,33 @@ export function SalesPortalLayout() {
       >
         Skip to main content
       </a>
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="flex min-w-0 items-center gap-2">
+      <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b bg-card/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:gap-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2 pr-1">
           <Shield className="h-6 w-6 shrink-0 text-accent" aria-hidden />
           <div className="min-w-0">
-            <Link to={homePath} className="truncate text-sm font-semibold tracking-tight">
+            <Link to={homePath} className="block truncate text-sm font-semibold tracking-tight">
               Shyara Sales
             </Link>
-            <p className="truncate text-xs text-muted-foreground">
+            <p className="hidden truncate text-xs text-muted-foreground sm:block">
               {user?.displayName ?? user?.email}
               {user?.role ? ` · ${userRoleLabel(user.role)}` : ""}
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-2">
           {user ? <PortalNotificationsBell user={user} /> : null}
-          <ThemeToggle />
+          <ThemeToggle compact className="md:hidden" />
+          <ThemeToggle className="hidden md:flex" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                size="sm"
-                className="min-h-11 shrink-0 gap-1.5 px-2 md:min-h-9"
+                size="icon"
+                className="min-h-11 min-w-11 shrink-0 touch-manipulation md:h-9 md:min-h-9 md:w-auto md:gap-1.5 md:px-2"
                 aria-label="Account menu"
               >
-                <UserCircle className="h-4 w-4 shrink-0" aria-hidden />
-                <span>Account</span>
+                <UserCircle className="h-5 w-5 shrink-0 md:h-4 md:w-4" aria-hidden />
+                <span className="sr-only md:not-sr-only md:inline">Account</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
