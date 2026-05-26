@@ -35,6 +35,8 @@ describe("getPipelineFocus", () => {
     expect(focus.kind).toBe("waiting");
     expect(focus.stageKey).toBe("convert_deal");
     expect(focus.showViewSubmission).toBe(true);
+    expect(focus.primaryLabel).toBe("View deal");
+    expect(focus.detail).toMatch(/template until WhatsApp/i);
     expect(focus.statusChip.kind).toBe("waiting");
   });
 

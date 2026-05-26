@@ -26,7 +26,17 @@ async function loginAs(
     return;
   }
   await page.goto("/portal/commission");
-  await expect(page.getByRole("heading", { name: /Your commission/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^Commission$/i })).toBeVisible();
+  await expect(page.getByText("Payout timing")).toBeVisible();
+});
+
+(run ? test : test.skip)("admin commission page loads", async ({ page, request }) => {
+  if (!(await loginAs(request, ADMIN_EMAIL, ADMIN_PASSWORD))) {
+    test.skip();
+    return;
+  }
+  await page.goto("/portal/commission");
+  await expect(page.getByRole("heading", { name: /Commissions/i })).toBeVisible();
 });
 
 (run ? test : test.skip)("admin activity page loads", async ({ page, request }) => {

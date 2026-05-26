@@ -14,7 +14,11 @@ describe("portalPaths", () => {
   it("admin cannot return to rep-only routes", () => {
     expect(resolvePortalDestination("ADMIN", "/portal/pipeline")).toBe("/portal/team");
     expect(resolvePortalDestination("ADMIN", "/portal/resources")).toBe("/portal/team");
-    expect(resolvePortalDestination("ADMIN", "/portal/commission")).toBe("/portal/team");
+  });
+
+  it("admin and rep can use shared commission route", () => {
+    expect(resolvePortalDestination("ADMIN", "/portal/commission")).toBe("/portal/commission");
+    expect(resolvePortalDestination("SALES_REP", "/portal/commission")).toBe("/portal/commission");
   });
 
   it("rep cannot return to admin-only routes", () => {

@@ -149,4 +149,54 @@ d("integration: stage locks", () => {
     expect(row.whatsappVerifiedAt).toBeNull();
     await app.close();
   });
+
+  it("rep can PATCH websiteTemplateId after convert until WhatsApp is verified", async () => {
+    const templates = await prisma.websiteTemplate.findMany({
+      take: 2,
+      orderBy: { sortOrder: "asc" }
+    });
+    if (templates.length < 2) return;
+
+    const templateLead = await prisma.lead.create({
+      data: {
+        clientName: "Template Patch Test",
+        status: LeadStatus.ADVANCE_PAID,
+        createdByUserId: repId,
+        assignedToUserId: repId,
+        convertedAt: new Date(),
+        clientDetailsVerifiedAt: new Date(),
+        websiteTemplateId: templates[0]!.id,
+        agreedTotalCents: 799_900,
+        advanceAmountCents: 399_950,
+        finalQuoteCents: 399_950
+      }
+    });
+
+    const app = await buildApp({ config });
+    const patch = await inject(app, {
+      method: "PATCH",
+      url: `/api/leads/${templateLead.id}`,
+      headers: { cookie: repCookie },
+      payload: { websiteTemplateId: templates[1]!.id }
+    });
+    expect(patch.statusCode).toBe(200);
+    expect(patch.json().lead.websiteTemplateId).toBe(templates[1]!.id);
+
+    await prisma.lead.update({
+      where: { id: templateLead.id },
+      data: { whatsappVerifiedAt: new Date() }
+    });
+
+    const blocked = await inject(app, {
+      method: "PATCH",
+      url: `/api/leads/${templateLead.id}`,
+      headers: { cookie: repCookie },
+      payload: { websiteTemplateId: templates[0]!.id }
+    });
+    expect(blocked.statusCode).toBe(403);
+    expect(blocked.json().code).toBe("STAGE_LOCKED");
+
+    await prisma.lead.delete({ where: { id: templateLead.id } });
+    await app.close();
+  });
 });

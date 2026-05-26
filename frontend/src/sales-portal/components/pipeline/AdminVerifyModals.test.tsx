@@ -425,6 +425,45 @@ describe("AdminVerifyModals commission", () => {
   });
 });
 
+describe("AdminVerifyModals convert_deal", () => {
+  it("shows readonly template card with sample preview", () => {
+    render(
+      <AdminVerifyModals
+        pipelineStages={[]}
+        lead={leadWithAdvance({
+          websiteTemplateId: "RES/001",
+          websiteTemplate: {
+            id: "RES/001",
+            slug: "res-001",
+            name: "Restaurant Demo",
+            displayCode: "RES/001",
+            categoryId: "restaurant",
+            sampleSlug: "restaurant-001",
+            samplePath: null,
+            sortOrder: 1
+          }
+        })}
+        activeStage="convert_deal"
+        onClose={vi.fn()}
+        previewUrl=""
+        onPreviewUrlChange={vi.fn()}
+        verify={verifyStub}
+        onSavePreview={vi.fn()}
+        savePreviewPending={false}
+        onMarkDemoReady={vi.fn()}
+        markDemoPending={false}
+      />
+    );
+
+    expect(screen.getByRole("heading", { name: /Deal submitted/i })).toBeInTheDocument();
+    expect(screen.getByText("RES/001")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Open sample/i })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/samples/websites/restaurant-001/")
+    );
+  });
+});
+
 describe("AdminVerifyModals whatsapp_group", () => {
   it("shows group link as clickable with copy action", () => {
     render(

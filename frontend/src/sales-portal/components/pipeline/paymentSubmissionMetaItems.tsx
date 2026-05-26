@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import type { Lead, LeadPayment, PaymentKind, PaymentShareMethodConfig } from "../../types";
+import type { Lead, LeadPayment, PaymentKind, PaymentShareMethodConfig, WebsiteTemplate } from "../../types";
+import { formatTemplateOption } from "../../lib/templateLabel";
+import { templateSamplePreviewUrl } from "../../lib/templateSampleUrl";
 import type { PortalMetaItem } from "../ui/PortalMetaGrid";
 import { formatMinorUnits } from "../../lib/money";
 import {
@@ -75,10 +77,35 @@ function amountUnderReviewLabel(kind: PaymentKind): string {
 
 export type PaymentSubmissionMetaOptions = {
   templateLabel?: string | null;
+  websiteTemplate?: Pick<WebsiteTemplate, "displayCode" | "name" | "sampleSlug"> | null;
   includeClient?: boolean;
   /** When false, only payment submission rows (amount, method, submitted at). Default true. */
   includeDealContext?: boolean;
 };
+
+function templateMetaValue(
+  options: Pick<PaymentSubmissionMetaOptions, "templateLabel" | "websiteTemplate">
+): ReactNode {
+  const t = options.websiteTemplate;
+  const label =
+    options.templateLabel ?? (t ? formatTemplateOption(t) : null);
+  if (!label) return "—";
+  const preview = templateSamplePreviewUrl(t);
+  if (!preview) return label;
+  return (
+    <span className="flex flex-col gap-1 items-start">
+      <span>{label}</span>
+      <a
+        href={preview}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-primary underline underline-offset-2 focus-ring rounded-sm"
+      >
+        Open template sample
+      </a>
+    </span>
+  );
+}
 
 /** Minimal rows when lead detail has not loaded yet (e.g. admin queue). */
 export function paymentFallbackMetaItems(payment: LeadPayment): PortalMetaItem[] {
@@ -110,8 +137,8 @@ export function paymentSubmissionMetaItems(
   if (includeDeal && options.includeClient) {
     items.push({ label: "Client", value: lead.clientName });
   }
-  if (includeDeal && options.templateLabel) {
-    items.push({ label: "Template", value: options.templateLabel });
+  if (includeDeal && (options.templateLabel || options.websiteTemplate)) {
+    items.push({ label: "Template", value: templateMetaValue(options) });
   }
 
   if (includeDeal) {

@@ -8,7 +8,10 @@ import {
 import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
 import { HttpError } from "../errors/httpError.js";
-import { commissionAmountCents } from "../services/leadFsm.js";
+import {
+  assertAgreedTotalMeetsMinimum,
+  computeCommissionAmountCents
+} from "../services/commissionRules.js";
 import { assertLeadMutable } from "../services/leadGuards.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
 import { logActivity } from "../services/activityLog.js";
@@ -226,16 +229,8 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
                 "Set the agreed project total on the lead before verifying deployment."
               );
             }
-            const verifiedFinal = freshLead.payments.find(
-              (p) =>
-                p.kind === "FINAL" &&
-                p.verificationStatus === PaymentVerificationStatus.VERIFIED
-            );
-            const amountCents = commissionAmountCents(
-              freshLead,
-              verifiedFinal?.amountCents ?? 0,
-              settings
-            );
+            assertAgreedTotalMeetsMinimum(freshLead.agreedTotalCents, settings);
+            const amountCents = computeCommissionAmountCents(freshLead, settings);
             const repId = getCommissionRepUserId(freshLead);
             await tx.commission.upsert({
               where: { leadId: id },

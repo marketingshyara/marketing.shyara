@@ -12,6 +12,7 @@ import {
   estimatedCommissionForLead
 } from "../../lib/commissionEstimate";
 import { formatTemplateOption } from "../../lib/templateLabel";
+import { WebsiteTemplateField } from "./WebsiteTemplateField";
 import { tryNormalizeHttpUrl } from "../../lib/httpUrl";
 import { tryNormalizeGithubRepoUrl } from "../../lib/githubRepoUrl";
 import { PortalMetaGrid } from "../ui/PortalMetaGrid";
@@ -259,9 +260,15 @@ export function AdminVerifyModals({
         onOpenChange={(o) => !o && onClose()}
         title="Deal submitted"
       >
+        <WebsiteTemplateField
+          templates={lead.websiteTemplate ? [lead.websiteTemplate] : []}
+          value={lead.websiteTemplateId ?? ""}
+          mode="readonly"
+          label="Website template chosen"
+        />
         <PortalMetaGrid
+          className="mt-4"
           items={[
-            { label: "Template", value: templateLabel },
             {
               label: "Agreed total",
               value: lead.agreedTotalCents != null ? formatMinorUnits(lead.agreedTotalCents) : "—"

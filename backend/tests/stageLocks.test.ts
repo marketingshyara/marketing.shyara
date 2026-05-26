@@ -57,6 +57,36 @@ describe("stageLocks", () => {
     ).toThrow(HttpError);
   });
 
+  it("allows websiteTemplateId patch after convert before WhatsApp verified", () => {
+    expect(() =>
+      assertRepLeadPatchAllowed(
+        lead({ convertedAt: new Date(), websiteTemplateId: "RES/001" }),
+        { websiteTemplateId: "GYM/001" },
+        { websiteTemplateId: "GYM/001" }
+      )
+    ).not.toThrow();
+  });
+
+  it("blocks websiteTemplateId patch after WhatsApp verified", () => {
+    expect(() =>
+      assertRepLeadPatchAllowed(
+        lead({ convertedAt: new Date(), whatsappVerifiedAt: new Date() }),
+        { websiteTemplateId: "GYM/001" },
+        { websiteTemplateId: "GYM/001" }
+      )
+    ).toThrow(HttpError);
+    try {
+      assertRepLeadPatchAllowed(
+        lead({ convertedAt: new Date(), whatsappVerifiedAt: new Date() }),
+        { websiteTemplateId: "GYM/001" },
+        { websiteTemplateId: "GYM/001" }
+      );
+    } catch (e) {
+      expect((e as HttpError).code).toBe("STAGE_LOCKED");
+      expect((e as HttpError).message).toContain("Website template");
+    }
+  });
+
   it("allows contact patch after convert and flags resubmit when values change", () => {
     const converted = lead({
       convertedAt: new Date(),

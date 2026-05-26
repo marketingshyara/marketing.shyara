@@ -30,7 +30,7 @@ export const PaymentSubmissionReviewSection = memo(function PaymentSubmissionRev
   leadLoading = false,
   className
 }: Props) {
-  const { includeClient, includeDealContext, templateLabel } = options ?? {};
+  const { includeClient, includeDealContext, templateLabel, websiteTemplate } = options ?? {};
 
   const mismatchMessage = useMemo(() => {
     if (!showMismatchAlert || !lead) return null;
@@ -43,10 +43,11 @@ export const PaymentSubmissionReviewSection = memo(function PaymentSubmissionRev
         ? paymentSubmissionMetaItems(lead, payment, {
             includeClient,
             includeDealContext,
-            templateLabel
+            templateLabel,
+            websiteTemplate
           })
         : paymentFallbackMetaItems(payment),
-    [lead, payment, includeClient, includeDealContext, templateLabel]
+    [lead, payment, includeClient, includeDealContext, templateLabel, websiteTemplate]
   );
 
   const sharePanel = useMemo(

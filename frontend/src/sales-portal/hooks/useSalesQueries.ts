@@ -92,6 +92,18 @@ export function errToast(e: unknown, qc?: QueryClient) {
       toast.error(e.message || "Commission is already marked paid.");
       return;
     }
+    if (e.code === "COMMISSION_INVALID") {
+      toast.error(
+        e.message ||
+          "Commission does not match portal settings. Refresh and fix the deal or payout before marking paid."
+      );
+      if (qc) invalidateQueryPrefixes(qc, ["lead", "leads", "commissions"]);
+      return;
+    }
+    if (e.code === "MIN_PRICE") {
+      toast.error(e.message || "Deal amount is below the portal minimum.");
+      return;
+    }
     if (e.code === "NOT_SALES_REP") {
       const session = qc?.getQueryData<{ user: SessionUser | null }>(qk.session);
       if (session?.user?.role === "ADMIN") {

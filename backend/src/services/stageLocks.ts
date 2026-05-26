@@ -37,8 +37,7 @@ function dealPricingLocked(lead: RepPatchLockLead): boolean {
 const DEAL_PRICING_FIELDS = [
   "agreedTotalCents",
   "advanceAmountCents",
-  "finalQuoteCents",
-  "websiteTemplateId"
+  "finalQuoteCents"
 ] as const;
 
 const CONTACT_FIELDS = ["clientName", "clientEmail", "clientPhone", "notes"] as const;
@@ -79,6 +78,17 @@ export function clientDetailsReviewPending(lead: Pick<Lead, "clientDetailsSubmit
   return !!lead.clientDetailsSubmittedAt && !lead.clientDetailsVerifiedAt;
 }
 
+/** Rep may change website template until WhatsApp group is admin-verified. */
+export function assertRepWebsiteTemplatePatchAllowed(
+  lead: RepPatchLockLead,
+  rawBody: Record<string, unknown>
+): void {
+  if (!wasPatchFieldSent(rawBody, "websiteTemplateId")) return;
+  if (lead.whatsappVerifiedAt) {
+    stageLocked("Website template");
+  }
+}
+
 /** Rep-only PATCH guards for admin-verified stages and deal pricing locks. */
 export function assertRepLeadPatchAllowed(
   lead: RepPatchLockLead,
@@ -100,6 +110,8 @@ export function assertRepLeadPatchAllowed(
   if (accountsGithubPatch && lead.accountsReadyVerifiedAt) {
     stageLocked("Accounts ready");
   }
+
+  assertRepWebsiteTemplatePatchAllowed(lead, rawBody);
 
   if (dealPricingLocked(lead)) {
     for (const key of DEAL_PRICING_FIELDS) {

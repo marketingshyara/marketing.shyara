@@ -22,7 +22,7 @@ import { AdminProjectPage } from "./pages/admin/AdminProjectPage";
 import { UsersPage } from "./pages/UsersPage";
 import { ActivityLogsPage } from "./pages/admin/ActivityLogsPage";
 import { PendingPaymentsPage } from "./pages/admin/PendingPaymentsPage";
-import { CommissionPage } from "./pages/rep/CommissionPage";
+import { CommissionPage } from "./pages/CommissionPage";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert, SearchX } from "lucide-react";
 import { useSessionQuery } from "./hooks/useSalesQueries";
@@ -94,12 +94,12 @@ export function PortalRoutes() {
             <Route index element={<PortalIndexRedirect />} />
 
             <Route path="pipeline/:id" element={<PipelineDetailGate />} />
+            <Route path="commission" element={<CommissionPage />} />
 
             <Route element={<RequireSalesRep />}>
               <Route path="pipeline" element={<PipelineListPage />} />
               <Route path="pipeline/new" element={<PipelineNewLeadPage />} />
               <Route path="resources" element={<ResourcesPage />} />
-              <Route path="commission" element={<CommissionPage />} />
             </Route>
 
             <Route
@@ -120,7 +120,7 @@ export function PortalRoutes() {
             />
             <Route
               path="commissions"
-              element={<RoleAwareRedirect repTo="/portal/commission" adminTo="/portal/team" />}
+              element={<LegacyRedirect to="/portal/commission" />}
             />
             <Route
               path="approvals"

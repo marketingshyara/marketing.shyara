@@ -7,6 +7,11 @@ import { HttpError } from "../errors/httpError.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings } from "../services/settings.js";
 import {
+  assertCommissionPayable,
+  commissionIntegrityIssues,
+  expectedCommissionAmountCents
+} from "../services/commissionRules.js";
+import {
   healLeadToCommissionPaidIfNeeded,
   loadLeadDetailForAdmin,
   promoteLeadToDeployedIfEligible,
@@ -33,9 +38,19 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
             };
 
       const total = await app.prisma.commission.count({ where });
+      const [siteLive, paid] = await Promise.all([
+        app.prisma.commission.count({
+          where: {
+            ...where,
+            lead: { project: { deploymentVerifiedAt: { not: null } } }
+          }
+        }),
+        app.prisma.commission.count({ where: { ...where, isPaid: true } })
+      ]);
       const page = clampPage(query.page, query.pageSize, total);
       const skip = (page - 1) * query.pageSize;
-      const items = await app.prisma.commission.findMany({
+      const settings = await getPortalSettings(app.prisma);
+      const rows = await app.prisma.commission.findMany({
         where,
         skip,
         take: query.pageSize,
@@ -45,13 +60,51 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
             select: {
               id: true,
               clientName: true,
-              status: true
+              status: true,
+              agreedTotalCents: true,
+              project: { select: { deploymentVerifiedAt: true } }
             }
-          }
+          },
+          rep: { select: { id: true, displayName: true } }
         }
       });
 
-      return reply.send({ items, total, page, pageSize: query.pageSize });
+      const items = [];
+      for (const row of rows) {
+        let current = row;
+        let issues = commissionIntegrityIssues(current.lead, current, settings);
+        const expected = expectedCommissionAmountCents(current.lead, settings);
+        const amountMismatch = issues.some((msg) =>
+          msg.includes("does not match")
+        );
+        if (!current.isPaid && amountMismatch) {
+          const healedAmount = await app.prisma.$transaction((tx) =>
+            syncUnpaidCommissionAmount(tx, current.leadId, settings)
+          );
+          if (healedAmount != null && healedAmount !== current.amountCents) {
+            current = { ...current, amountCents: healedAmount };
+            issues = commissionIntegrityIssues(current.lead, current, settings);
+          }
+        }
+        items.push({
+          ...current,
+          expectedAmountCents: expectedCommissionAmountCents(current.lead, settings),
+          integrityIssues: issues
+        });
+      }
+
+      return reply.send({
+        items,
+        total,
+        page,
+        pageSize: query.pageSize,
+        summary: {
+          total,
+          siteLive,
+          calculated: total,
+          paid
+        }
+      });
     }
   );
 
@@ -95,6 +148,16 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
 
           const settings = await getPortalSettings(tx);
           await syncUnpaidCommissionAmount(tx, commission.leadId, settings);
+
+          const refreshedCommission = await tx.commission.findUniqueOrThrow({
+            where: { id },
+            include: { lead: true }
+          });
+          assertCommissionPayable(
+            refreshedCommission.lead,
+            refreshedCommission,
+            settings
+          );
 
           const project = commission.lead.project;
           await promoteLeadToDeployedIfEligible(tx, commission.leadId, {

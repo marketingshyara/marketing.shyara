@@ -115,7 +115,30 @@ describe("PipelineDetailPage", () => {
       refetch: vi.fn()
     });
     useWebsiteTemplatesQuery.mockReturnValue({
-      data: { items: [{ id: "RES/001", name: "Test", category: "Restaurant" }] },
+      data: {
+        items: [
+          {
+            id: "RES/001",
+            slug: "res-001",
+            name: "Restaurant Demo",
+            displayCode: "RES/001",
+            categoryId: "restaurant",
+            sampleSlug: "restaurant-001",
+            samplePath: null,
+            sortOrder: 1
+          },
+          {
+            id: "GYM/001",
+            slug: "gym-001",
+            name: "Gym Demo",
+            displayCode: "GYM/001",
+            categoryId: "gym",
+            sampleSlug: "gym-001",
+            samplePath: null,
+            sortOrder: 2
+          }
+        ]
+      },
       isLoading: false
     });
   });
@@ -182,8 +205,28 @@ describe("PipelineDetailPage", () => {
     expect(screen.getByLabelText(/Payment method/i)).toBeInTheDocument();
   });
 
-  it("convert read-only modal shows server advance and due amounts", async () => {
+  it("pre-convert modal does not show a prominent catalog link at the top", async () => {
     const user = userEvent.setup();
+    useLeadQuery.mockReturnValue({
+      data: mockDetail,
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+
+    renderDetail();
+    await user.click(screen.getByRole("button", { name: /Submit for approval/i }));
+
+    expect(screen.queryByRole("link", { name: /View template samples/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Browse all samples/i })).toBeInTheDocument();
+  });
+
+  it("post-convert pending modal allows Save template PATCH", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: false });
+    const patchMutate = vi.fn();
+    usePatchLeadMutation.mockReturnValue({ mutate: patchMutate, isPending: false });
     useLeadQuery.mockReturnValue({
       data: {
         lead: {
@@ -192,7 +235,17 @@ describe("PipelineDetailPage", () => {
           agreedTotalCents: 799_900,
           advanceAmountCents: 399_950,
           finalQuoteCents: 399_950,
-          websiteTemplateId: "RES/001"
+          websiteTemplateId: "RES/001",
+          websiteTemplate: {
+            id: "RES/001",
+            slug: "res-001",
+            name: "Restaurant Demo",
+            displayCode: "RES/001",
+            categoryId: "restaurant",
+            sampleSlug: "restaurant-001",
+            samplePath: null,
+            sortOrder: 1
+          }
         },
         pipelineStages: [
           {
@@ -212,10 +265,73 @@ describe("PipelineDetailPage", () => {
     });
 
     renderDetail();
-    await user.click(screen.getByRole("button", { name: /View submission/i }));
+    await user.click(screen.getByRole("button", { name: /View deal/i }));
 
+    expect(screen.getByText(/until the WhatsApp group is verified/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Advance payment \(50%\)/i)).toHaveValue("₹3,999.50");
-    expect(screen.getByText(/Due after build: ₹3,999.50/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Save template/i })).toBeDisabled();
+
+    await user.click(screen.getByRole("combobox", { name: /Website template/i }));
+    await user.click(await screen.findByRole("option", { name: /GYM\/001 — Gym Demo/i }));
+
+    const save = screen.getByRole("button", { name: /Save template/i });
+    expect(save).toBeEnabled();
+    await user.click(save);
+
+    expect(patchMutate).toHaveBeenCalledWith(
+      { websiteTemplateId: "GYM/001" },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
+  });
+
+  it("locks template after WhatsApp verified", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: false });
+    useLeadQuery.mockReturnValue({
+      data: {
+        lead: {
+          ...mockLead,
+          convertedAt: "2026-01-02T00:00:00.000Z",
+          whatsappVerifiedAt: "2026-01-03T00:00:00.000Z",
+          agreedTotalCents: 799_900,
+          advanceAmountCents: 399_950,
+          finalQuoteCents: 399_950,
+          websiteTemplateId: "RES/001",
+          websiteTemplate: {
+            id: "RES/001",
+            slug: "res-001",
+            name: "Restaurant Demo",
+            displayCode: "RES/001",
+            categoryId: "restaurant",
+            sampleSlug: "restaurant-001",
+            samplePath: null,
+            sortOrder: 1
+          }
+        },
+        pipelineStages: [
+          {
+            key: "convert_deal",
+            title: "Convert",
+            repActor: true,
+            adminActor: false,
+            state: "verified",
+            hint: "Locked after admin approval."
+          }
+        ]
+      },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+
+    renderDetail();
+    await user.click(screen.getByRole("button", { name: /View all pipeline steps/i }));
+    await user.click(screen.getByRole("button", { name: /Convert, verified/i }));
+
+    expect(screen.getByText(/Locked after WhatsApp group was verified/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Save template/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
 
   it("due payment modal shows read-only amount from finalQuoteCents", async () => {

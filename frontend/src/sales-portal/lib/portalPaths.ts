@@ -7,11 +7,7 @@ export function defaultPortalHome(role: UserRole): string {
   return role === "ADMIN" ? "/portal/team" : "/portal/pipeline";
 }
 
-const REP_ONLY_PREFIXES = [
-  "/portal/pipeline",
-  "/portal/resources",
-  "/portal/commission"
-] as const;
+const REP_ONLY_PREFIXES = ["/portal/pipeline", "/portal/resources"] as const;
 
 const ADMIN_ONLY_PREFIXES = [
   "/portal/team",
@@ -22,6 +18,8 @@ const ADMIN_ONLY_PREFIXES = [
   "/portal/settings"
 ] as const;
 
+const SHARED_PREFIXES = ["/portal/commission"] as const;
+
 function pathMatchesPrefix(path: string, prefix: string): boolean {
   return path === prefix || path.startsWith(`${prefix}/`);
 }
@@ -29,6 +27,9 @@ function pathMatchesPrefix(path: string, prefix: string): boolean {
 export function resolvePortalDestination(role: UserRole, ...candidates: unknown[]): string {
   const fallback = defaultPortalHome(role);
   const path = getSafePortalReturnPath(fallback, ...candidates);
+  if (SHARED_PREFIXES.some((p) => pathMatchesPrefix(path, p))) {
+    return path;
+  }
   if (role === "ADMIN" && REP_ONLY_PREFIXES.some((p) => pathMatchesPrefix(path, p))) {
     return fallback;
   }

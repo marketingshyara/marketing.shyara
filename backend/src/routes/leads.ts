@@ -14,6 +14,10 @@ import { splitAgreedTotalCents } from "../lib/money.js";
 import { clampPage } from "../lib/pagination.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
 import { assertManualTransition, commissionAmountCents } from "../services/leadFsm.js";
+import {
+  assertAgreedTotalMeetsMinimum,
+  computeCommissionAmountCents
+} from "../services/commissionRules.js";
 import { assertLeadAccess } from "../services/leadAccess.js";
 import {
   assertAdminLeadPatchBody,
@@ -191,6 +195,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       let finalQuoteCents = body.finalQuoteCents ?? undefined;
       let agreedTotalCents: number | undefined = body.agreedTotalCents ?? undefined;
       if (body.agreedTotalCents != null) {
+        assertAgreedTotalMeetsMinimum(body.agreedTotalCents, portalSettings);
         const split = splitAgreedTotalCents(
           body.agreedTotalCents,
           portalSettings.advancePaymentShareBps
@@ -543,6 +548,13 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         } = {};
         if (wasPatchFieldSent(rawBody, "agreedTotalCents") && body.agreedTotalCents !== undefined) {
           if (body.agreedTotalCents === null) {
+            if (commission || lead.convertedAt) {
+              throw new HttpError(
+                400,
+                "VALIDATION_ERROR",
+                "Cannot clear agreed total on a converted client or while commission exists."
+              );
+            }
             agreedPatch = { agreedTotalCents: null };
           } else {
             const split = splitAgreedTotalCents(
@@ -655,13 +667,28 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         }
 
         const hasLeadFieldUpdates = Object.keys(data).length > 0;
+        const templateIdSent =
+          wasPatchFieldSent(rawBody, "websiteTemplateId") && body.websiteTemplateId !== undefined;
+        const templateIdChanging =
+          templateIdSent && body.websiteTemplateId !== lead.websiteTemplateId;
         let updated = lead;
         if (hasLeadFieldUpdates) {
+          const claimWhere: Prisma.LeadWhereInput = { id, updatedAt: lead.updatedAt };
+          if (templateIdChanging && lead.convertedAt) {
+            claimWhere.whatsappVerifiedAt = null;
+          }
           const claim = await tx.lead.updateMany({
-            where: { id, updatedAt: lead.updatedAt },
+            where: claimWhere,
             data
           });
           if (claim.count === 0) {
+            if (templateIdChanging && lead.convertedAt && lead.whatsappVerifiedAt) {
+              throw new HttpError(
+                403,
+                "STAGE_LOCKED",
+                "Website template was approved by admin. Ask admin to decline this step before making changes."
+              );
+            }
             throw new HttpError(
               409,
               "CONCURRENT_MODIFICATION",
@@ -670,7 +697,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
           }
           updated = await tx.lead.findUniqueOrThrow({
             where: { id },
-            include: { payments: true }
+            include: { payments: true, websiteTemplate: true }
           });
         }
 
@@ -686,7 +713,14 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
             wasPatchFieldSent(rawBody, "agreedTotalCents") &&
             body.agreedTotalCents !== undefined
           ) {
-            const amountCents = commissionAmountCents(updated, 0, settings);
+            const amountCents = computeCommissionAmountCents(updated, settings);
+            if (commission.isPaid && amountCents !== commission.amountCents) {
+              throw new HttpError(
+                400,
+                "COMMISSION_INVALID",
+                "Cannot change agreed total: paid commission no longer matches portal settings."
+              );
+            }
             if (amountCents !== commission.amountCents) {
               commissionUpdate.amountCents = amountCents;
             }
@@ -710,13 +744,15 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
             clientName: lead.clientName,
             clientEmail: lead.clientEmail,
             clientPhone: lead.clientPhone,
-            assignedToUserId: lead.assignedToUserId
+            assignedToUserId: lead.assignedToUserId,
+            ...(templateIdChanging ? { websiteTemplateId: lead.websiteTemplateId } : {})
           },
           after: {
             clientName: updated.clientName,
             clientEmail: updated.clientEmail,
             clientPhone: updated.clientPhone,
-            assignedToUserId: updated.assignedToUserId
+            assignedToUserId: updated.assignedToUserId,
+            ...(templateIdChanging ? { websiteTemplateId: updated.websiteTemplateId } : {})
           },
           request
         });
@@ -759,6 +795,17 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               kind: PortalNotificationKind.REP_SUBMITTED,
               stageKey: "lead_capture",
               message: `${updated.clientName}: updated client details submitted for admin review.`,
+              excludeUserId: user.id
+            });
+          }
+          if (templateIdChanging && lead.convertedAt) {
+            const code =
+              updated.websiteTemplate?.displayCode ?? updated.websiteTemplateId ?? "template";
+            await notifyActiveAdmins(tx, {
+              leadId: id,
+              kind: PortalNotificationKind.REP_SUBMITTED,
+              stageKey: "convert_deal",
+              message: `${updated.clientName}: website template updated to ${code}. Verify advance with the latest choice.`,
               excludeUserId: user.id
             });
           }

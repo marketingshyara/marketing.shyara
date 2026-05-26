@@ -7,7 +7,7 @@ import {
 } from "@prisma/client";
 import { getPortalSettings } from "./settings.js";
 import { getPipelineStages } from "./pipeline.js";
-import { commissionAmountCents } from "./leadFsm.js";
+import { computeCommissionAmountCents } from "./commissionRules.js";
 import type { PortalSettingsValues } from "../validators/schemas.js";
 
 const leadDetailInclude = {
@@ -91,14 +91,7 @@ export async function syncUnpaidCommissionAmount(
   });
   if (!commission || commission.isPaid) return null;
 
-  const verifiedFinal = commission.lead.payments.find(
-    (p) => p.kind === PaymentKind.FINAL && p.verificationStatus === PaymentVerificationStatus.VERIFIED
-  );
-  const amountCents = commissionAmountCents(
-    commission.lead,
-    verifiedFinal?.amountCents ?? 0,
-    settings
-  );
+  const amountCents = computeCommissionAmountCents(commission.lead, settings);
   if (amountCents !== commission.amountCents) {
     await tx.commission.update({
       where: { leadId },

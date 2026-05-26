@@ -177,7 +177,7 @@ function primaryButtonLabel(stage: PipelineStageView, actorMode: PipelineActorMo
           ? "Update client details"
           : "Edit lead details";
     case "convert_deal":
-      return "Submit for approval";
+      return stage.state === "pending_admin" ? "View deal" : "Submit for approval";
     case "whatsapp_group":
       return "Save group link";
     case "demo_finalized":
@@ -214,6 +214,9 @@ function focusDetail(stage: PipelineStageView, actorMode: PipelineActorMode): st
   }
   if (actorMode === "rep" && stage.key === "lead_capture" && stage.state === "pending_admin") {
     return "Updated client details are waiting for admin approval.";
+  }
+  if (actorMode === "rep" && stage.key === "convert_deal" && stage.state === "pending_admin") {
+    return "Advance payment is with admin. You can still change the website template until WhatsApp is verified.";
   }
   return null;
 }
@@ -265,7 +268,12 @@ export function getPipelineFocus(
       detail: focusDetail(waiting, actorMode),
       statusChip: focusStatusKind(kind, waiting, actorMode),
       expandReasons: focusExpandReasonsFixed(waiting, actorMode, kind),
-      primaryLabel: viewOnly ? "View submission" : primaryButtonLabel(waiting, actorMode),
+      primaryLabel:
+        viewOnly && waiting.key === "convert_deal"
+          ? "View deal"
+          : viewOnly
+            ? "View submission"
+            : primaryButtonLabel(waiting, actorMode),
       showViewSubmission: viewOnly
     };
   }

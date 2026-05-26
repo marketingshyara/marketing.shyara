@@ -2,6 +2,7 @@ import { apiBlob, apiJson, downloadBlob } from "./client";
 import type {
   ActivityLog,
   Commission,
+  CommissionsListResponse,
   Lead,
   LeadDetailResponse,
   PaymentShareMethodKey,
@@ -195,9 +196,7 @@ export const salesApi = {
     if (params.isPaid === true) q.set("isPaid", "true");
     if (params.isPaid === false) q.set("isPaid", "false");
     const qs = q.toString();
-    return apiJson<
-      Paginated<Commission & { lead: { id: string; clientName: string; status: LeadStatus } }>
-    >("GET", `/commissions${qs ? `?${qs}` : ""}`);
+    return apiJson<CommissionsListResponse>("GET", `/commissions${qs ? `?${qs}` : ""}`);
   },
 
   markCommissionPaid: (id: string) =>

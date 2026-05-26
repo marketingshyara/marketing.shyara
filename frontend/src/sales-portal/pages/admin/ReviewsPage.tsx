@@ -208,6 +208,7 @@ export function ReviewsPage() {
             ? formatTemplateOption(verifyLead.websiteTemplate)
             : null
         }
+        websiteTemplate={verifyLead?.websiteTemplate ?? null}
         paymentShareMethods={paymentShareMethods}
         leadLoading={verifyLeadLoading}
         onVerify={(paymentId, body: VerifyPaymentRequestBody) =>

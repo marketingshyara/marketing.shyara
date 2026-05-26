@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { DealAmountField } from "../../components/pipeline/DealAmountField";
 import { PaymentMethodField } from "../../components/pipeline/PaymentMethodField";
 import { StageModalShell } from "../../components/pipeline/StageModalShell";
@@ -72,9 +73,12 @@ import { IndianMobileField } from "../../components/IndianMobileField";
 import { isValidIndianMobile, normalizeIndianMobileInput } from "../../lib/indianMobilePhone";
 import {
   isRepAdminLockedVerified,
+  repConvertDealModalMode,
+  repConvertDealTermsReadOnly,
   repStageModalReadOnly,
   repStageModalTitle
 } from "../../lib/stageLockUi";
+import { WebsiteTemplateField } from "../../components/pipeline/WebsiteTemplateField";
 
 export function PipelineDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -265,9 +269,16 @@ export function PipelineDetailPage() {
   const pendingFinalPayment = pendingPaymentForKind(lead, "FINAL");
   const pendingAdvancePayment = pendingPaymentForKind(lead, "ADVANCE");
 
+  const convertDealMode = lead ? repConvertDealModalMode(lead) : "pre_convert";
+  const convertTermsReadOnly = lead ? repConvertDealTermsReadOnly(lead) : false;
+  const templateDirty =
+    !!lead && !!templateId && templateId !== (lead.websiteTemplateId ?? "");
+  const canSaveTemplate =
+    convertDealMode === "post_convert_editable" && templateDirty && !patch.isPending;
+
   const activeModalTitle =
     activeStage != null
-      ? repStageModalTitle(activeStage, readOnlyModal, activeStageView)
+      ? repStageModalTitle(activeStage, readOnlyModal, activeStageView, lead)
       : "";
 
   return (
@@ -468,7 +479,26 @@ export function PipelineDetailPage() {
         onOpenChange={(o) => !o && closeModal()}
         title={activeStage === "convert_deal" ? activeModalTitle : "Convert to client"}
         footer={
-          readOnlyModal ? (
+          convertDealMode === "post_convert_editable" ? (
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              disabled={!canSaveTemplate}
+              onClick={() => {
+                if (!templateId || templateId === lead.websiteTemplateId) return;
+                patch.mutate(
+                  { websiteTemplateId: templateId },
+                  {
+                    onSuccess: () => {
+                      toast.success("Template updated. Admins were notified.");
+                      closeModal();
+                    }
+                  }
+                );
+              }}
+            >
+              Save template
+            </Button>
+          ) : readOnlyModal ? (
             readOnlyStageFooter
           ) : (
             <Button
@@ -491,86 +521,129 @@ export function PipelineDetailPage() {
           )
         }
       >
-        {settings?.templatesCatalogUrl ? (
-          <Button variant="link" className="mb-3 h-auto px-0" asChild>
-            <a href={settings.templatesCatalogUrl} target="_blank" rel="noreferrer">
-              View template samples
-            </a>
-          </Button>
-        ) : null}
         {(() => {
           const note = declineNoteForStage(stages, "convert_deal");
           return note !== undefined ? (
             <DeclineFeedbackInline declineNote={note} className="mb-3" />
           ) : null;
         })()}
+        {convertDealMode === "post_convert_editable" ? (
+          <p className="mb-3 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
+            You can change the website template until the WhatsApp group is verified. Deal amount and
+            payment method stay locked.
+          </p>
+        ) : null}
         <div className="space-y-3">
-          <div className="space-y-2">
-            <Label>Template</Label>
-            <Select
-              value={templateId || "__none__"}
-              onValueChange={(v) => setTemplateId(v === "__none__" ? "" : v)}
-              disabled={readOnlyModal}
-            >
-              <SelectTrigger className="min-h-11">
-                <SelectValue placeholder="Choose template" />
-              </SelectTrigger>
-              <SelectContent>
-                {(tplQr.data?.items ?? []).map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {formatTemplateOption(t)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="agreed">Agreed total (₹)</Label>
-            <Input
-              id="agreed"
-              className="min-h-11"
-              inputMode="decimal"
-              value={agreedRupees}
-              onChange={(e) => setAgreedRupees(e.target.value)}
-              readOnly={readOnlyModal}
-              aria-readonly={readOnlyModal}
-            />
-            <p className="text-xs text-muted-foreground">Min ₹{minRupees}.</p>
-          </div>
-          <DealAmountField
-            id="advance-preview"
-            label={`Advance payment (${bpsToPercentLabel(advanceShareBps)})`}
-            amountCents={dealSplitDisplay.advanceCents}
-            hint={
-              dealSplitDisplay.dueCents != null
-                ? `Due after build: ${formatMinorUnits(dealSplitDisplay.dueCents)}${
-                    dealSplitDisplay.fromServer
-                      ? " · from agreed deal at convert"
-                      : " · updates as you type agreed total"
-                  }`
-                : dealSplitDisplay.fromServer
-                  ? "From agreed deal at convert"
-                  : undefined
+          <WebsiteTemplateField
+            templates={tplQr.data?.items ?? []}
+            value={templateId}
+            onChange={convertDealMode === "post_convert_locked" ? undefined : setTemplateId}
+            mode={
+              convertDealMode === "pre_convert"
+                ? templateId
+                  ? "selected"
+                  : "picker"
+                : convertDealMode === "post_convert_editable"
+                  ? "selected"
+                  : "readonly"
             }
+            disabled={convertDealMode === "post_convert_locked"}
+            lockedReason={
+              convertDealMode === "post_convert_locked"
+                ? "Locked after WhatsApp group was verified."
+                : null
+            }
+            catalogUrl={settings?.templatesCatalogUrl ?? null}
           />
-          <PaymentMethodField
-            id="convert-payment-method"
-            value={paymentMethodKey}
-            onChange={setPaymentMethodKey}
-            methods={paymentShareMethods}
-            disabled={readOnlyModal}
-          />
-          {readOnlyModal && pendingAdvancePayment ? (
-            <div className="min-w-0 space-y-3 border-t pt-3">
-              <p className="text-xs font-medium text-muted-foreground">Advance payment submitted</p>
-              <PaymentSubmissionReviewSection
-                lead={lead}
-                payment={pendingAdvancePayment}
-                methods={paymentShareMethods}
-                options={{ includeDealContext: false }}
+          {!convertTermsReadOnly ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="agreed">Agreed total (₹)</Label>
+                <Input
+                  id="agreed"
+                  className="min-h-11"
+                  inputMode="decimal"
+                  value={agreedRupees}
+                  onChange={(e) => setAgreedRupees(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Min ₹{minRupees}.</p>
+              </div>
+              <DealAmountField
+                id="advance-preview"
+                label={`Advance payment (${bpsToPercentLabel(advanceShareBps)})`}
+                amountCents={dealSplitDisplay.advanceCents}
+                hint={
+                  dealSplitDisplay.dueCents != null
+                    ? `Due after build: ${formatMinorUnits(dealSplitDisplay.dueCents)}${
+                        dealSplitDisplay.fromServer
+                          ? " · from agreed deal at convert"
+                          : " · updates as you type agreed total"
+                      }`
+                    : dealSplitDisplay.fromServer
+                      ? "From agreed deal at convert"
+                      : undefined
+                }
               />
-            </div>
-          ) : null}
+              <PaymentMethodField
+                id="convert-payment-method"
+                value={paymentMethodKey}
+                onChange={setPaymentMethodKey}
+                methods={paymentShareMethods}
+              />
+            </>
+          ) : (
+            <>
+              {templateLabel ? (
+                <PortalMetaGrid
+                  items={[
+                    {
+                      label: "Template on file",
+                      value: templateLabel
+                    },
+                    {
+                      label: "Agreed total",
+                      value:
+                        lead.agreedTotalCents != null
+                          ? formatMinorUnits(lead.agreedTotalCents)
+                          : "—"
+                    },
+                    {
+                      label: "Advance",
+                      value:
+                        lead.advanceAmountCents != null
+                          ? formatMinorUnits(lead.advanceAmountCents)
+                          : "—"
+                    }
+                  ]}
+                />
+              ) : null}
+              <DealAmountField
+                id="advance-preview"
+                label={`Advance payment (${bpsToPercentLabel(advanceShareBps)})`}
+                amountCents={dealSplitDisplay.advanceCents}
+                hint={
+                  dealSplitDisplay.dueCents != null
+                    ? `Due after build: ${formatMinorUnits(dealSplitDisplay.dueCents)} · from agreed deal at convert`
+                    : "From agreed deal at convert"
+                }
+              />
+              {convertTermsReadOnly && pendingAdvancePayment ? (
+                <div className="min-w-0 space-y-3 border-t pt-3">
+                  <p className="text-xs font-medium text-muted-foreground">Advance payment submitted</p>
+                  <PaymentSubmissionReviewSection
+                    lead={lead}
+                    payment={pendingAdvancePayment}
+                    methods={paymentShareMethods}
+                    options={{
+                      includeDealContext: true,
+                      templateLabel,
+                      websiteTemplate: lead.websiteTemplate ?? undefined
+                    }}
+                  />
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
       </StageModalShell>
 

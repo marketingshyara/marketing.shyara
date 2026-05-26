@@ -546,6 +546,7 @@ export function AdminProjectPage() {
         isPending={verifyPay.isPending}
         lead={lead}
         templateLabel={lead.websiteTemplate ? formatTemplateOption(lead.websiteTemplate) : null}
+        websiteTemplate={lead.websiteTemplate ?? null}
         paymentShareMethods={paymentShareMethods}
         onVerify={(paymentId, body) =>
           verifyPay.mutate(

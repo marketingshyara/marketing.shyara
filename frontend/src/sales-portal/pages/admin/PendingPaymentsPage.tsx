@@ -199,6 +199,7 @@ export function PendingPaymentsPage() {
             ? formatTemplateOption(verifyLead.websiteTemplate)
             : null
         }
+        websiteTemplate={verifyLead?.websiteTemplate ?? null}
         paymentShareMethods={paymentShareMethods}
         leadLoading={verifyLeadLoading}
         onVerify={(paymentId, body: VerifyPaymentRequestBody) =>

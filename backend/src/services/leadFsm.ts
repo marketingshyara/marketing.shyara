@@ -1,8 +1,8 @@
 import { LeadStatus, UserRole } from "@prisma/client";
 import type { Lead } from "@prisma/client";
 import { HttpError } from "../errors/httpError.js";
-import { divideCentsWithRounding } from "../lib/money.js";
 import type { PortalSettingsValues } from "../validators/schemas.js";
+import { computeCommissionAmountCents } from "./commissionRules.js";
 
 export function assertManualTransition(
   settings: PortalSettingsValues,
@@ -30,21 +30,11 @@ export function assertManualTransition(
   }
 }
 
+/** @deprecated Prefer computeCommissionAmountCents from commissionRules */
 export function commissionAmountCents(
   lead: Lead,
   _verifiedFinalPaymentCents: number,
   settings: PortalSettingsValues
 ): number {
-  const rate = settings.commissionRateBps;
-  const base = lead.agreedTotalCents ?? -1;
-
-  if (base === null || base === undefined || base < 0) {
-    throw new HttpError(
-      400,
-      "COMMISSION_BASE_MISSING",
-      "Lead is missing agreedTotalCents; set the agreed total before computing commission."
-    );
-  }
-
-  return divideCentsWithRounding(base * rate, 10000, settings.commissionRounding);
+  return computeCommissionAmountCents(lead, settings);
 }

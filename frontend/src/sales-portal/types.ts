@@ -74,6 +74,32 @@ export interface Commission {
   createdAt: string;
 }
 
+export interface CommissionListLead {
+  id: string;
+  clientName: string;
+  status: LeadStatus;
+  agreedTotalCents: number | null;
+  project: { deploymentVerifiedAt: string | null } | null;
+}
+
+export interface CommissionListItem extends Commission {
+  lead: CommissionListLead;
+  rep: Pick<SessionUser, "id" | "displayName">;
+  expectedAmountCents: number | null;
+  integrityIssues: string[];
+}
+
+export interface CommissionsListSummary {
+  total: number;
+  siteLive: number;
+  calculated: number;
+  paid: number;
+}
+
+export interface CommissionsListResponse extends Paginated<CommissionListItem> {
+  summary: CommissionsListSummary;
+}
+
 export interface WebsiteTemplate {
   id: string;
   slug: string;
@@ -222,6 +248,7 @@ export interface RepPortalSettings {
   minAgreedTotalCents: number;
   advancePaymentShareBps: number;
   commissionRateBps: number;
+  commissionRounding: "floor" | "round" | "bankers";
   templatesCatalogUrl: string;
   tutorialLinks: RepTutorialLink[];
   painPointsByCategory: RepPainPoint[];

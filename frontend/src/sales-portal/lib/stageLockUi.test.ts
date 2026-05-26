@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   isRepAdminLockedVerified,
+  repConvertDealModalMode,
+  repConvertDealTemplateEditable,
+  repConvertDealTermsReadOnly,
   repStageModalReadOnly,
   REP_ADMIN_LOCK_HINT
 } from "./stageLockUi";
@@ -50,6 +53,39 @@ describe("stageLockUi", () => {
         }),
         "lead_capture",
         { convertedAt: "2026-01-01T00:00:00.000Z" }
+      )
+    ).toBe(true);
+  });
+
+  it("convert_deal stays editable for template until WhatsApp verified", () => {
+    const lead = {
+      convertedAt: "2026-01-01T00:00:00.000Z",
+      whatsappVerifiedAt: null as string | null
+    };
+    expect(repConvertDealTemplateEditable(lead)).toBe(true);
+    expect(repConvertDealTermsReadOnly(lead)).toBe(true);
+    expect(repConvertDealModalMode(lead)).toBe("post_convert_editable");
+    expect(
+      repStageModalReadOnly(
+        stage({ key: "convert_deal", state: "pending_admin", repActor: true }),
+        "convert_deal",
+        lead
+      )
+    ).toBe(false);
+  });
+
+  it("convert_deal locks after WhatsApp verified", () => {
+    const lead = {
+      convertedAt: "2026-01-01T00:00:00.000Z",
+      whatsappVerifiedAt: "2026-01-02T00:00:00.000Z"
+    };
+    expect(repConvertDealTemplateEditable(lead)).toBe(false);
+    expect(repConvertDealModalMode(lead)).toBe("post_convert_locked");
+    expect(
+      repStageModalReadOnly(
+        stage({ key: "convert_deal", state: "pending_admin", repActor: true }),
+        "convert_deal",
+        lead
       )
     ).toBe(true);
   });

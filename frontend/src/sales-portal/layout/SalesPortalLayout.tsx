@@ -56,6 +56,7 @@ const REP_NAV: NavItem[] = [
 const ADMIN_NAV: NavItem[] = [
   { to: "/portal/team", label: "Team", icon: UsersRound, end: true },
   { to: "/portal/reviews", label: "Reviews", icon: FileCheck2, approvalsBadge: true },
+  { to: "/portal/commission", label: "Commission", icon: IndianRupee },
   { to: "/portal/payments", label: "Payments", icon: Wallet },
   { to: "/portal/activity", label: "Activity", icon: History },
   { to: "/portal/users", label: "Users", icon: Users },
@@ -256,7 +257,9 @@ export function SalesPortalLayout() {
                 <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Work
                 </p>
-                {ADMIN_NAV.filter((i) => i.to === "/portal/payments").map((item) => (
+                {ADMIN_NAV.filter((i) =>
+                  i.to === "/portal/commission" || i.to === "/portal/payments"
+                ).map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}

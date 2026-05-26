@@ -102,6 +102,28 @@ describe("PaymentVerifyDialog", () => {
 
   });
 
+  it("shows template sample preview link when websiteTemplate is provided", () => {
+    render(
+      <PaymentVerifyDialog
+        payment={basePayment}
+        open
+        onOpenChange={vi.fn()}
+        onVerify={vi.fn()}
+        isPending={false}
+        lead={lead}
+        templateLabel="RES/001 — Demo"
+        websiteTemplate={{
+          displayCode: "RES/001",
+          name: "Restaurant Demo",
+          sampleSlug: "restaurant-001"
+        }}
+      />
+    );
+
+    const preview = screen.getByRole("link", { name: /Open template sample/i });
+    expect(preview).toHaveAttribute("href", expect.stringContaining("/samples/websites/restaurant-001/"));
+  });
+
 
 
   it("shows legacy free-text rep note when key is unknown", () => {

@@ -11,15 +11,39 @@ export function isRepAdminLockedVerified(stage: PipelineStageView): boolean {
   );
 }
 
+/** Rep may change website template until WhatsApp group is admin-verified. */
+export function repConvertDealTemplateEditable(
+  lead: Pick<Lead, "convertedAt" | "whatsappVerifiedAt">
+): boolean {
+  return !!lead.convertedAt && !lead.whatsappVerifiedAt;
+}
+
+/** Deal pricing fields are fixed after convert. */
+export function repConvertDealTermsReadOnly(lead: Pick<Lead, "convertedAt">): boolean {
+  return !!lead.convertedAt;
+}
+
+export type RepConvertDealModalMode = "pre_convert" | "post_convert_editable" | "post_convert_locked";
+
+export function repConvertDealModalMode(
+  lead: Pick<Lead, "convertedAt" | "whatsappVerifiedAt">
+): RepConvertDealModalMode {
+  if (!lead.convertedAt) return "pre_convert";
+  if (repConvertDealTemplateEditable(lead)) return "post_convert_editable";
+  return "post_convert_locked";
+}
+
 /** Rep stage modal is view-only (no save / mark actions). */
 export function repStageModalReadOnly(
   stage: PipelineStageView | undefined,
   stageKey: PipelineStageKey,
-  lead: Pick<Lead, "convertedAt">
+  lead: Pick<Lead, "convertedAt" | "whatsappVerifiedAt">
 ): boolean {
   if (!stage) return false;
+  if (stageKey === "convert_deal") {
+    return repConvertDealModalMode(lead) === "post_convert_locked";
+  }
   if (stage.state === "pending_admin" && stage.repActor) return true;
-  if (stageKey === "convert_deal" && lead.convertedAt) return true;
   if (stageKey === "build_demo") return true;
   if (isRepAdminLockedVerified(stage)) return true;
   return false;
@@ -28,7 +52,8 @@ export function repStageModalReadOnly(
 export function repStageModalTitle(
   stageKey: PipelineStageKey,
   readOnly: boolean,
-  stage: PipelineStageView | undefined
+  stage: PipelineStageView | undefined,
+  lead?: Pick<Lead, "convertedAt">
 ): string {
   if (stageKey === "lead_capture") {
     if (readOnly && stage?.state === "pending_admin") return "Client details submitted";
@@ -36,6 +61,9 @@ export function repStageModalTitle(
     return leadCaptureEditTitle(stage);
   }
   if (stageKey === "convert_deal" && readOnly) return "Deal submitted";
+  if (stageKey === "convert_deal" && !readOnly && lead?.convertedAt) {
+    return "Update website template";
+  }
   if (stageKey === "whatsapp_group" && readOnly) return "WhatsApp group";
   if (stageKey === "demo_finalized" && readOnly) return "Demo approved";
   if (stageKey === "accounts_ready" && readOnly) return "Accounts ready";

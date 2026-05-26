@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { LeadPayment, PaymentShareMethodConfig } from "../../types";
+import type { LeadPayment, PaymentShareMethodConfig, WebsiteTemplate } from "../../types";
 import { formatMinorUnits } from "../../lib/money";
 import { paymentKindLabel } from "../../lib/copy";
 import { paymentReferenceFieldCopy } from "../../lib/paymentShareMethods";
@@ -22,6 +22,7 @@ type Props = {
   isPending: boolean;
   lead: PaymentSubmissionLead | null;
   templateLabel?: string | null;
+  websiteTemplate?: Pick<WebsiteTemplate, "displayCode" | "name" | "sampleSlug"> | null;
   paymentShareMethods?: PaymentShareMethodConfig[];
   leadLoading?: boolean;
 };
@@ -34,6 +35,7 @@ export function PaymentVerifyDialog({
   isPending,
   lead,
   templateLabel,
+  websiteTemplate = null,
   paymentShareMethods = [],
   leadLoading = false
 }: Props) {
@@ -137,7 +139,8 @@ export function PaymentVerifyDialog({
           methods={paymentShareMethods}
           options={{
             includeClient: true,
-            templateLabel: templateLabel ?? undefined
+            templateLabel: templateLabel ?? undefined,
+            websiteTemplate: websiteTemplate ?? undefined
           }}
           showMismatchAlert={isPaymentPending}
           leadLoading={leadLoading}
