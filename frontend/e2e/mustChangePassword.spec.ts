@@ -53,9 +53,8 @@ test("mustChangePassword forces a password change before /portal/pipeline access
 
   await page.getByLabel(/^New password$/i).fill(FINAL_PASSWORD);
   await page.getByLabel(/Confirm new password/i).fill(FINAL_PASSWORD);
-  await page.getByRole("button", { name: /Save Password/i }).click();
+  await page.getByRole("button", { name: /Save and continue/i }).click();
 
-  // After the change, the leads page should be reachable.
-  await page.waitForURL(/\/portal\/leads/);
-  await expect(page.getByRole("heading", { name: /Leads/i })).toBeVisible();
+  await page.waitForURL(/\/portal\/pipeline/);
+  await expect(page.getByRole("heading", { name: /Pipeline/i })).toBeVisible();
 });

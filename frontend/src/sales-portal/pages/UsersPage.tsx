@@ -42,6 +42,8 @@ import type { User } from "../types";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { userRoleLabel } from "../lib/copy";
+import { passwordCopy } from "../lib/passwordCopy";
+import { TemporaryPasswordDialog } from "../components/auth/TemporaryPasswordDialog";
 import { PortalPageHeader } from "../components/PortalPageHeader";
 
 export function UsersPage() {
@@ -79,7 +81,7 @@ export function UsersPage() {
 
   const [resetOpen, setResetOpen] = useState(false);
   const [resetUserId, setResetUserId] = useState<string | null>(null);
-  const [newUserTempPassword, setNewUserTempPassword] = useState<string | null>(null);
+  const [issuedTempPassword, setIssuedTempPassword] = useState<string | null>(null);
   const resetForm = useForm({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: { temporaryPassword: "" }
@@ -146,12 +148,10 @@ export function UsersPage() {
                         setCreateOpen(false);
                         const roleLabel = userRoleLabel(data.user.role);
                         if (data.temporaryPassword) {
-                          setNewUserTempPassword(data.temporaryPassword);
-                          toast.success(
-                            `${roleLabel} created. Share the temporary password — they must change it at first sign-in.`
-                          );
+                          setIssuedTempPassword(data.temporaryPassword);
+                          toast.success(passwordCopy.createUserGeneratedToast(roleLabel));
                         } else {
-                          toast.success(`${roleLabel} created. They can sign in with the password you set.`);
+                          toast.success(passwordCopy.createUserExplicitToast(roleLabel));
                         }
                       }
                     }
@@ -236,7 +236,7 @@ export function UsersPage() {
                   onCheckedChange={(c) => createForm.setValue("mustChangePassword", c)}
                 />
                 <Label htmlFor="create-user-must-change-password" className="leading-snug">
-                  Require password change on first login (only when you set a password above)
+                  {passwordCopy.createUserMustChangeHint}
                 </Label>
               </div>
               <Button type="submit" className="min-h-11 w-full touch-manipulation" disabled={createUser.isPending}>
@@ -270,7 +270,12 @@ export function UsersPage() {
             </div>
             <dl className="mt-3 space-y-1 text-sm text-muted-foreground">
               <div>Active: {u.isActive ? "Yes" : "No"}</div>
-              <div>Password reset required: {u.mustChangePassword ? "Yes" : "No"}</div>
+              <div>
+                {passwordCopy.mustSetNewPasswordColumn}:{" "}
+                {u.mustChangePassword
+                  ? passwordCopy.mustSetNewPasswordYes
+                  : passwordCopy.mustSetNewPasswordNo}
+              </div>
             </dl>
             <div className="mt-3 flex flex-col gap-2">
               <Button
@@ -292,7 +297,7 @@ export function UsersPage() {
                   resetForm.reset();
                 }}
               >
-                Reset password
+                {passwordCopy.issueTemporaryPassword}
               </Button>
             </div>
           </div>
@@ -307,7 +312,7 @@ export function UsersPage() {
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Active</TableHead>
-              <TableHead>Password Reset Required</TableHead>
+              <TableHead>{passwordCopy.mustSetNewPasswordColumn}</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -342,7 +347,7 @@ export function UsersPage() {
                       resetForm.reset();
                     }}
                   >
-                    Reset password
+                    {passwordCopy.issueTemporaryPassword}
                   </Button>
                 </TableCell>
               </TableRow>
@@ -450,72 +455,69 @@ export function UsersPage() {
       </Dialog>
 
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
-        <DialogContent aria-describedby={undefined} className="max-h-[90dvh] overflow-y-auto">
+        <DialogContent aria-describedby="issue-temp-password-desc" className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Set temporary password</DialogTitle>
-            <DialogDescription className="sr-only">
-              Set a one-time password the user must change at first login.
+            <DialogTitle>{passwordCopy.issueTemporaryPasswordTitle}</DialogTitle>
+            <DialogDescription id="issue-temp-password-desc">
+              {passwordCopy.issueTemporaryPasswordDescription}
             </DialogDescription>
           </DialogHeader>
           <form
             className="space-y-4"
             onSubmit={resetForm.handleSubmit((v) =>
               resetPw.mutate(
-                { id: resetUserId!, body: v },
                 {
-                  onSuccess: () => {
+                  id: resetUserId!,
+                  body: v.temporaryPassword?.trim()
+                    ? { temporaryPassword: v.temporaryPassword.trim() }
+                    : {}
+                },
+                {
+                  onSuccess: (data) => {
                     setResetOpen(false);
                     setResetUserId(null);
+                    resetForm.reset({ temporaryPassword: "" });
+                    if (data.temporaryPassword) {
+                      setIssuedTempPassword(data.temporaryPassword);
+                    }
+                    toast.success(passwordCopy.issueTemporaryPasswordSuccessToast);
                   }
                 }
               )
             )}
           >
             <div className="space-y-2">
-              <Label htmlFor="reset-user-password">New temporary password (8–128 chars)</Label>
-              <Input id="reset-user-password" type="password" className="min-h-11" {...resetForm.register("temporaryPassword")} />
+              <Label htmlFor="reset-user-password">
+                {passwordCopy.issueTemporaryPasswordFieldLabel}
+              </Label>
+              <Input
+                id="reset-user-password"
+                type="password"
+                autoComplete="new-password"
+                className="min-h-11"
+                {...resetForm.register("temporaryPassword")}
+              />
+              <p className="text-xs text-muted-foreground">
+                {passwordCopy.issueTemporaryPasswordFieldHint}
+              </p>
             </div>
-            <Button type="submit" className="min-h-11 w-full" disabled={resetPw.isPending || !resetUserId}>
-              Reset
+            <Button
+              type="submit"
+              className="min-h-11 w-full touch-manipulation"
+              disabled={resetPw.isPending || !resetUserId}
+            >
+              {resetPw.isPending ? "Issuing…" : passwordCopy.issueTemporaryPasswordSubmit}
             </Button>
           </form>
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={newUserTempPassword !== null}
+      <TemporaryPasswordDialog
+        password={issuedTempPassword}
         onOpenChange={(open) => {
-          if (!open) setNewUserTempPassword(null);
+          if (!open) setIssuedTempPassword(null);
         }}
-      >
-        <DialogContent aria-describedby={undefined} className="max-h-[90dvh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Temporary password</DialogTitle>
-            <DialogDescription>
-              Share this password once. The user must set a new password at first sign-in.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Input readOnly className="min-h-11 font-mono text-sm" value={newUserTempPassword ?? ""} />
-            <Button
-              type="button"
-              variant="secondary"
-              className="min-h-11 shrink-0"
-              onClick={() => {
-                if (newUserTempPassword) {
-                  void navigator.clipboard.writeText(newUserTempPassword);
-                  toast.success("Copied to clipboard");
-                }
-              }}
-            >
-              Copy
-            </Button>
-          </div>
-          <Button type="button" className="min-h-11 w-full" onClick={() => setNewUserTempPassword(null)}>
-            Done
-          </Button>
-        </DialogContent>
-      </Dialog>
+      />
     </div>
   );
 }

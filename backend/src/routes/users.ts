@@ -212,7 +212,12 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
         throw new HttpError(404, "NOT_FOUND", "User not found.");
       }
 
-      const passwordHash = await bcrypt.hash(body.temporaryPassword, app.appConfig.bcryptRounds);
+      const usedExplicitPassword =
+        body.temporaryPassword != null && body.temporaryPassword.length > 0;
+      const passwordPlain = usedExplicitPassword
+        ? body.temporaryPassword!
+        : `Temp-${randomBytes(8).toString("base64url")}!1`;
+      const passwordHash = await bcrypt.hash(passwordPlain, app.appConfig.bcryptRounds);
       const claim = await app.prisma.user.updateMany({
         where: { id, updatedAt: existing.updatedAt },
         data: {
@@ -251,7 +256,10 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
         request
       });
 
-      return reply.send({ user: updated });
+      return reply.send({
+        user: updated,
+        ...(usedExplicitPassword ? {} : { temporaryPassword: passwordPlain })
+      });
     }
   );
 }

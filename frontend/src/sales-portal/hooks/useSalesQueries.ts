@@ -58,6 +58,10 @@ export function errToast(e: unknown, qc?: QueryClient) {
       return;
     }
     if (e.code === "VALIDATION_ERROR") {
+      if (/password/i.test(e.message)) {
+        toast.error(e.message);
+        return;
+      }
       toast.error("Enter a valid link (e.g. https://example.com or example.com).");
       return;
     }
@@ -197,8 +201,7 @@ export function useChangePasswordMutation() {
     mutationFn: salesApi.changePassword,
     onSuccess: (data) => {
       qc.setQueryData(qk.session, data);
-    },
-    onError: (e) => errToast(e, qc)
+    }
   });
 }
 
@@ -263,12 +266,16 @@ export function usePatchUserMutation() {
 export function useResetPasswordMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: { temporaryPassword: string } }) =>
-      salesApi.resetUserPassword(id, body),
+    mutationFn: ({
+      id,
+      body
+    }: {
+      id: string;
+      body: { temporaryPassword?: string };
+    }) => salesApi.resetUserPassword(id, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] });
       invalidateQueryPrefixes(qc, ["activity-logs"]);
-      toast.success("Password reset; user must change password on next login.");
     },
     onError: (e) => errToast(e, qc)
   });

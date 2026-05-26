@@ -10,4 +10,5 @@ alwaysApply: false
 - **Stage language**: user-facing copy must map clearly to machine state (`LeadStatus`, payment verification, project deployment flags). Show **who acts next** (rep vs admin) when a step is blocked.
 - **Progressive disclosure**: portal FSM / JSON settings remain admin-advanced; reps get guided flows (steppers, banners, short explanations), not raw settings.
 - **Payments**: verifying a payment requires a **provider reference** (e.g. Razorpay id); surface it read-only after verification.
+- **Password recovery (admin-assisted)**: there is no email forgot-password flow. Locked-out users get a **temporary password** from an admin, then **set your own password** on first sign-in. Use canonical copy from `frontend/src/sales-portal/lib/passwordCopy.ts` — avoid “Forgot password”, “Reset password” (user-facing), and “Password reset required” for the `mustChangePassword` flag.
 - **Contract + tests**: any API shape change updates `salesApi`, shared types, and Zod schemas in the same change, with regression coverage per `api-contract-and-testing.mdc`.

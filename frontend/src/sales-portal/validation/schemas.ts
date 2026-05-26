@@ -78,7 +78,12 @@ export const patchUserSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  temporaryPassword: z.string().min(8).max(128)
+  temporaryPassword: z
+    .string()
+    .optional()
+    .refine((s) => !s || s.length === 0 || (s.length >= 8 && s.length <= 128), {
+      message: "Password must be 8–128 characters or empty to generate"
+    })
 });
 
 export const createLeadSchema = z.object({

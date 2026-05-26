@@ -18,6 +18,10 @@
 - Protect role/security invariants (e.g., last-active-admin) inside transaction boundaries.
 - Use DB constraints/indexes as canonical protection for uniqueness/business rules under concurrency.
 
+## Portal password recovery
+- No self-service email reset. Recovery path: admin **issues temporary password** → user signs in → forced **set your password** (`mustChangePassword`).
+- User-facing strings live in `frontend/src/sales-portal/lib/passwordCopy.ts`; do not duplicate or contradict them in pages or toasts.
+
 ## API Contract Consistency
 - When backend request/response schemas change, update frontend API types and validators in the same PR.
 - Prefer stable machine-readable error codes and handle them explicitly in frontend UX.

@@ -38,6 +38,7 @@ import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { userRoleLabel } from "../lib/copy";
 import { defaultPortalHome } from "../lib/portalPaths";
+import { passwordCopy } from "../lib/passwordCopy";
 
 type NavItem = {
   to: string;
@@ -215,7 +216,12 @@ export function SalesPortalLayout() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuItem asChild>
-                <Link to="/portal/change-password">Change password</Link>
+                <Link to="/portal/change-password" className="flex flex-col items-start gap-0.5">
+                  <span>{passwordCopy.changePassword}</span>
+                  <span className="hidden text-xs font-normal text-muted-foreground md:inline">
+                    {passwordCopy.changePasswordMenuHint}
+                  </span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} disabled={logout.isPending}>
@@ -289,7 +295,7 @@ export function SalesPortalLayout() {
                 <Separator className="my-2" />
                 <Button variant="ghost" className="min-h-11 justify-start" asChild>
                   <Link to="/portal/change-password" onClick={() => setMoreOpen(false)}>
-                    Change password
+                    {passwordCopy.changePassword}
                   </Link>
                 </Button>
                 <Button

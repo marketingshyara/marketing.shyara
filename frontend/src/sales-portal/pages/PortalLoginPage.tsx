@@ -18,6 +18,7 @@ import {
 import { salesApi } from "../api/salesApi";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SignInHelpCard } from "../components/auth/SignInHelpCard";
 import { cn } from "@/lib/utils";
 import {
   getRememberDevicePreference,
@@ -358,8 +359,9 @@ export function PortalLoginPage() {
               <Link to="/privacy-policy" className="hover:text-foreground underline underline-offset-4">
                 Privacy policy
               </Link>
-              <p>If you cannot sign in, ask an administrator to reset your password.</p>
             </div>
+
+            <SignInHelpCard className="mt-4" />
 
             <p className="mt-4 text-center text-sm text-muted-foreground">
               <Link

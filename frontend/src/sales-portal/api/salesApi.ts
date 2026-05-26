@@ -58,8 +58,8 @@ export const salesApi = {
   patchUser: (id: string, body: Record<string, unknown>) =>
     apiJson<{ user: User }>("PATCH", `/users/${id}`, body),
 
-  resetUserPassword: (id: string, body: { temporaryPassword: string }) =>
-    apiJson<{ user: User }>("POST", `/users/${id}/reset-password`, body),
+  resetUserPassword: (id: string, body: { temporaryPassword?: string }) =>
+    apiJson<{ user: User; temporaryPassword?: string }>("POST", `/users/${id}/reset-password`, body),
 
   leads: (params: {
     page?: number;

@@ -56,7 +56,12 @@ export const patchUserBodySchema = z.object({
 });
 
 export const resetPasswordBodySchema = z.object({
-  temporaryPassword: z.string().min(8).max(128)
+  temporaryPassword: z
+    .string()
+    .optional()
+    .refine((s) => s === undefined || s.length === 0 || (s.length >= 8 && s.length <= 128), {
+      message: "Temporary password must be 8–128 characters or empty to generate."
+    })
 });
 
 export const pipelineStageKeySchema = z.enum([

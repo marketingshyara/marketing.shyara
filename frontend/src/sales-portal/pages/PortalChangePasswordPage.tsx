@@ -7,11 +7,12 @@ import {
   forcedChangePasswordSchema,
   voluntaryChangePasswordSchema
 } from "../validation/schemas";
-import { useChangePasswordMutation, useSessionQuery } from "../hooks/useSalesQueries";
+import { errToast, useChangePasswordMutation, useSessionQuery } from "../hooks/useSalesQueries";
 import { PasswordField } from "../components/PasswordField";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "../api/client";
 import { resolvePortalDestination } from "../lib/portalPaths";
+import { passwordCopy } from "../lib/passwordCopy";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -44,13 +45,19 @@ function ChangePasswordForm({
 
     change.mutate(body, {
       onSuccess: () => {
-        toast.success("Password updated. Welcome to the portal.");
+        toast.success(
+          forced ? passwordCopy.forcedSuccessToast : passwordCopy.voluntarySuccessToast
+        );
         navigate(intendedDestination, { replace: true });
       },
       onError: (e) => {
         if (e instanceof ApiError && e.code === "INVALID_PASSWORD" && !forced) {
-          form.setError("currentPassword", { message: "Current password is incorrect." });
+          form.setError("currentPassword", {
+            message: passwordCopy.currentPasswordIncorrect
+          });
+          return;
         }
+        errToast(e);
       }
     });
   };
@@ -74,6 +81,15 @@ function ChangePasswordForm({
         void form.handleSubmit(onSubmit, () => focusFirstError())(ev);
       }}
     >
+      {forced ? (
+        <div
+          className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm text-foreground"
+          role="status"
+        >
+          {passwordCopy.forcedBanner}
+        </div>
+      ) : null}
+
       {!forced && (
         <PasswordField
           id="change-current-password"
@@ -103,14 +119,16 @@ function ChangePasswordForm({
         error={form.formState.errors.confirmPassword}
       />
 
-      <Button type="submit" className="min-h-11 w-full" disabled={change.isPending}>
+      <Button type="submit" className="min-h-11 w-full touch-manipulation" disabled={change.isPending}>
         {change.isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-            Saving…
+            {passwordCopy.savePasswordPending}
           </>
+        ) : forced ? (
+          passwordCopy.forcedSubmit
         ) : (
-          "Save Password"
+          passwordCopy.voluntarySubmit
         )}
       </Button>
 
@@ -118,7 +136,7 @@ function ChangePasswordForm({
         <Button
           type="button"
           variant="ghost"
-          className="min-h-11 w-full"
+          className="min-h-11 w-full touch-manipulation"
           onClick={() => navigate(intendedDestination, { replace: true })}
         >
           Cancel
@@ -169,12 +187,10 @@ export function PortalChangePasswordPage() {
         <div className="relative z-10 space-y-3">
           <p className="text-sm font-medium uppercase tracking-wide text-primary-foreground/80">Shyara</p>
           <h1 className="text-balance text-3xl font-semibold tracking-tight text-primary-foreground">
-            {forced ? "Secure your account" : "Update your password"}
+            {forced ? passwordCopy.forcedHeroTitle : passwordCopy.voluntaryHeroTitle}
           </h1>
           <p className="max-w-sm text-sm text-primary-foreground/85">
-            {forced
-              ? "Choose a personal password you have not shared with anyone. You will use it for every future sign-in."
-              : "Pick a strong password you do not use elsewhere."}
+            {forced ? passwordCopy.forcedHeroBody : passwordCopy.voluntaryHeroBody}
           </p>
         </div>
         <ul className="relative z-10 max-w-sm space-y-2 text-xs text-primary-foreground/80">
@@ -193,7 +209,9 @@ export function PortalChangePasswordPage() {
         <header className="flex flex-wrap items-center justify-end gap-2 border-b border-border/60 px-3 py-2 md:px-4">
           <div className="mr-auto flex items-center gap-2 md:hidden">
             <KeyRound className="h-4 w-4 text-muted-foreground" aria-hidden />
-            <span className="text-sm font-semibold">Change password</span>
+            <span className="text-sm font-semibold">
+              {forced ? passwordCopy.setYourPassword : passwordCopy.changePassword}
+            </span>
           </div>
           <ThemeToggle />
         </header>
@@ -207,12 +225,10 @@ export function PortalChangePasswordPage() {
           >
             <div className="mb-6 space-y-1">
               <h2 className="text-balance text-2xl font-semibold tracking-tight">
-                {forced ? "Set a new password" : "Change password"}
+                {forced ? passwordCopy.forcedFormTitle : passwordCopy.voluntaryFormTitle}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {forced
-                  ? "Set a new password to continue into the portal."
-                  : "Enter your current password, then choose a new one."}
+                {forced ? passwordCopy.forcedFormSubtitle : passwordCopy.voluntaryFormSubtitle}
               </p>
             </div>
 

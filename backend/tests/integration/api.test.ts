@@ -371,6 +371,38 @@ d("integration: auth and RBAC", () => {
     expect(body.user).toBeDefined();
     expect(body.user.id).toBe(repId);
     expect(body.user.mustChangePassword).toBe(true);
+    expect(body.temporaryPassword).toBeUndefined();
+
+    await app.close();
+  });
+
+  it("reset-password with empty body generates temporaryPassword", async () => {
+    const config = loadConfig();
+    const app = await buildApp({ config });
+
+    const login = await inject(app, {
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "it-admin@test.local", password: "AdminPass123!" }
+    });
+    expect(login.statusCode).toBe(200);
+    const cookie = login.cookies.find((c) => c.name === config.cookieName);
+    expect(cookie).toBeDefined();
+
+    const reset = await inject(app, {
+      method: "POST",
+      url: `/api/users/${repId}/reset-password`,
+      headers: {
+        cookie: `${config.cookieName}=${cookie!.value}`,
+        "content-type": "application/json"
+      },
+      payload: {}
+    });
+    expect(reset.statusCode).toBe(200);
+    const body = JSON.parse(reset.body);
+    expect(body.user.mustChangePassword).toBe(true);
+    expect(typeof body.temporaryPassword).toBe("string");
+    expect(body.temporaryPassword.length).toBeGreaterThanOrEqual(8);
 
     await app.close();
   });
