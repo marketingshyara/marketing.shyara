@@ -449,7 +449,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       const result = await app.prisma.$transaction(async (tx) => {
         const lead = await tx.lead.findUnique({
           where: { id },
-          include: { payments: true }
+          include: { payments: true, websiteTemplate: true }
         });
         if (!lead) {
           throw new HttpError(404, "NOT_FOUND", "Lead not found.");
