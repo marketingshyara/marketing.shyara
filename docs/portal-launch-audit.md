@@ -196,11 +196,50 @@ Run on **staging or production** after deploy. Check when verified:
 
 
 
+- [ ] **Postgres password rotated** if credentials were ever shared outside Render (Dashboard → database → reset password → update backend `DATABASE_URL` → redeploy)
+
 - [ ] `npm run db:migrate:deploy --workspace backend` (`portal_sessions` migration applied)
 
 - [ ] `BOOTSTRAP_ADMIN_ON_START=false` after first admin login
 
 - [ ] Bootstrap admin password rotated
+
+### Pre-launch data wipe (QA cleanup)
+
+
+
+Removes all leads, payments, projects, commissions, notifications, activity logs, and sessions. **Keeps** all `ADMIN` users by default; deletes all `SALES_REP` users. Does not touch `WebsiteTemplate` catalog.
+
+**Render Shell** (preferred — uses internal `DATABASE_URL` already on the service):
+
+```bash
+cd backend
+npm run portal:prepare-launch                    # dry-run: counts only
+npm run portal:prepare-launch -- --confirm       # execute wipe
+npm run portal:prepare-launch -- --confirm --reset-settings   # also reset PortalSettings to {}
+```
+
+**Local** (external `DATABASE_URL` in env only; never commit):
+
+```bash
+npm run backend:portal:prepare-launch
+npm run backend:portal:prepare-launch -- --confirm
+```
+
+Flags: `--keep=admins` (default) | `--keep=bootstrap` (requires `BOOTSTRAP_ADMIN_EMAIL`; deletes every other user). `--allow-local` for localhost dev DBs.
+
+**Verify after `--confirm`:**
+
+```sql
+SELECT COUNT(*) AS leads FROM "Lead";
+SELECT COUNT(*) AS reps FROM "User" WHERE role = 'SALES_REP';
+SELECT COUNT(*) AS admins FROM "User" WHERE role = 'ADMIN';
+SELECT COUNT(*) AS notifications FROM "PortalNotification";
+SELECT COUNT(*) AS activity FROM "ActivityLog";
+SELECT COUNT(*) AS sessions FROM portal_sessions;
+```
+
+Expected: `leads = 0`, `reps = 0`, `admins >= 1`, others `0`. Portal smoke: admin Team/Reviews empty; `/portal/activity` empty; no rep accounts until you create them in Users.
 
 - [ ] Rep: full funnel (create lead → due payment) without engineer help
 

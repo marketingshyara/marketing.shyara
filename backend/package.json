@@ -13,7 +13,8 @@
     "db:migrate:baseline-existing": "prisma migrate resolve --applied 20260210150000_init --schema prisma/schema.prisma && prisma migrate resolve --applied 20260211120000_hardening --schema prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
-    "seed:bootstrap": "tsx src/seed/bootstrapAdmin.ts"
+    "seed:bootstrap": "tsx src/seed/bootstrapAdmin.ts",
+    "portal:prepare-launch": "tsx src/scripts/preparePortalForLaunch.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

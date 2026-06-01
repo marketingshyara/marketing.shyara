@@ -14,6 +14,7 @@
     "frontend:dev": "npm run dev --workspace frontend",
     "backend:dev": "npm run dev --workspace backend",
     "backend:seed": "npm run seed:bootstrap --workspace backend",
+    "backend:portal:prepare-launch": "npm run portal:prepare-launch --workspace backend",
     "backend:db:push": "npm run db:push --workspace backend",
     "backend:prisma:generate": "npm run prisma:generate --workspace backend",
     "backend:db:migrate:baseline": "npm run db:migrate:baseline-existing --workspace backend"
