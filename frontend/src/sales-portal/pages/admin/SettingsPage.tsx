@@ -242,13 +242,28 @@ export function SettingsPage() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="settings-bonus-amount">Performance bonus (paise, 50000 = ₹500)</Label>
+              <Label htmlFor="settings-bonus-percent">Performance bonus (%)</Label>
               <Input
-                id="settings-bonus-amount"
+                id="settings-bonus-percent"
                 type="number"
                 className="min-h-11"
-                {...form.register("performanceBonusAmountCents", { valueAsNumber: true })}
+                min={0}
+                max={100}
+                value={Math.round(Number(form.watch("performanceBonusBps") ?? 0) / 100)}
+                onChange={(e) => {
+                  const pct = Number.parseInt(e.target.value, 10);
+                  form.setValue(
+                    "performanceBonusBps",
+                    Number.isFinite(pct) ? pct * 100 : 0,
+                    { shouldDirty: true }
+                  );
+                }}
               />
+              <p className="text-xs text-muted-foreground">
+                Extra payout as {bpsToPercentLabel(Number(form.watch("performanceBonusBps") ?? 0))}{" "}
+                of agreed project total when a rep hits the sales threshold (e.g. 5% on ₹10,000 =
+                ₹500).
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="settings-bonus-threshold">

@@ -221,4 +221,75 @@ d("integration: auto commission from agreed total", () => {
     await prisma.lead.delete({ where: { id: lead.id } });
     await app.close();
   });
+
+  it("applies performance bonus as percent of agreed total on mark-paid", async () => {
+    const bonusValues = portalSettingsSchema.parse({
+      commissionRateBps: 2000,
+      performanceBonusBps: 500,
+      performanceBonusAfterCompletedSales: 0
+    });
+    await prisma.portalSettings.upsert({
+      where: { id: "default" },
+      create: { id: "default", values: bonusValues as object },
+      update: { values: bonusValues as object }
+    });
+    invalidatePortalSettingsCache();
+
+    const agreedTotalCents = 1_000_000;
+    const lead = await prisma.lead.create({
+      data: {
+        createdByUserId: adminId,
+        assignedToUserId: repId,
+        clientName: "Bonus percent",
+        status: LeadStatus.DEPLOYED,
+        agreedTotalCents,
+        advanceAmountCents: 500_000,
+        finalQuoteCents: 500_000,
+        payments: {
+          create: {
+            kind: PaymentKind.FINAL,
+            amountCents: 500_000,
+            verificationStatus: PaymentVerificationStatus.VERIFIED,
+            markedByUserId: repId,
+            verifiedByUserId: adminId,
+            verifiedAt: new Date()
+          }
+        }
+      }
+    });
+    await prisma.project.create({
+      data: {
+        leadId: lead.id,
+        title: "Site",
+        deployedUrl: "https://example.com/bonus",
+        deploymentSubmittedAt: new Date(),
+        deploymentVerifiedAt: new Date()
+      }
+    });
+    const commission = await prisma.commission.create({
+      data: {
+        leadId: lead.id,
+        repUserId: repId,
+        amountCents: 200_000,
+        isPaid: false
+      }
+    });
+
+    const { app, cookieHeader } = await loginAs();
+    const res = await inject(app, {
+      method: "POST",
+      url: `/api/commissions/${commission.id}/mark-paid`,
+      headers: { cookie: cookieHeader, "content-type": "application/json" },
+      payload: {}
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as { commission: { bonusCents: number; isPaid: boolean } };
+    expect(body.commission.isPaid).toBe(true);
+    expect(body.commission.bonusCents).toBe(50_000);
+
+    await prisma.commission.delete({ where: { id: commission.id } });
+    await prisma.project.deleteMany({ where: { leadId: lead.id } });
+    await prisma.lead.delete({ where: { id: lead.id } });
+    await app.close();
+  });
 });

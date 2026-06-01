@@ -11,7 +11,8 @@ import {
 const settings = {
   minAgreedTotalCents: 799_900,
   commissionRateBps: 50,
-  commissionRounding: "bankers" as const
+  commissionRounding: "bankers" as const,
+  performanceBonusBps: 0
 };
 
 function row(overrides: Partial<CommissionListItem> = {}): CommissionListItem {

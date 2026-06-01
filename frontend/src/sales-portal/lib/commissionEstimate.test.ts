@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Lead } from "../types";
 import { defaultPaymentShareMethods } from "./paymentShareMethods";
-import { estimatedCommissionForLead } from "./commissionEstimate";
+import {
+  estimatedCommissionForLead,
+  estimatedPerformanceBonusCents,
+  performanceBonusProgramHint
+} from "./commissionEstimate";
 
 const lead: Lead = {
   id: "lead-1",
@@ -63,7 +67,7 @@ describe("estimatedCommissionForLead", () => {
       terminalNoMutationStatuses: ["COMMISSION_PAID"],
       enforcePaymentQuoteToleranceBps: null,
       exportMaxRows: 5000,
-      performanceBonusAmountCents: 0,
+      performanceBonusBps: 0,
       performanceBonusAfterCompletedSales: 3,
       templatesCatalogUrl: "https://example.com",
       tutorialLinks: [],
@@ -71,5 +75,38 @@ describe("estimatedCommissionForLead", () => {
       paymentShareMethods: defaultPaymentShareMethods()
     });
     expect(cents).toBe(159_980);
+  });
+});
+
+describe("estimatedPerformanceBonusCents", () => {
+  const settings = {
+    commissionRateBps: 2000,
+    commissionRounding: "round" as const,
+    commissionBasis: "AGREED_TOTAL" as const,
+    minAgreedTotalCents: 0,
+    advancePaymentShareBps: 5000,
+    manualTransitions: [],
+    advancePaymentRequiredLeadStatus: "NEW" as const,
+    finalPaymentRequiredLeadStatus: "BUILDING" as const,
+    advanceVerifyRequiredLeadStatus: "NEW" as const,
+    finalVerifyRequiredLeadStatus: "BUILDING" as const,
+    terminalNoMutationStatuses: ["COMMISSION_PAID" as const],
+    enforcePaymentQuoteToleranceBps: null,
+    exportMaxRows: 5000,
+    performanceBonusBps: 500,
+    performanceBonusAfterCompletedSales: 10,
+    templatesCatalogUrl: "https://example.com",
+    tutorialLinks: [],
+    painPointsByCategory: [],
+    paymentShareMethods: defaultPaymentShareMethods()
+  };
+
+  it("is 5% of agreed total", () => {
+    expect(estimatedPerformanceBonusCents(lead, settings)).toBe(39_995);
+  });
+
+  it("program hint describes percent of agreed total", () => {
+    expect(performanceBonusProgramHint(settings)).toContain("5%");
+    expect(performanceBonusProgramHint(settings)).toContain("sale #11");
   });
 });

@@ -20,7 +20,7 @@ const adminSettingsStub: PortalSettingsValues = {
   terminalNoMutationStatuses: ["COMMISSION_PAID"],
   enforcePaymentQuoteToleranceBps: null,
   exportMaxRows: 5000,
-  performanceBonusAmountCents: 0,
+  performanceBonusBps: 0,
   performanceBonusAfterCompletedSales: 3,
   templatesCatalogUrl: "https://example.com/templates",
   tutorialLinks: [],

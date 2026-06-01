@@ -28,12 +28,23 @@ import {
   useRejectLeadStageMutation,
   useTeamRepsQuery,
   useVerifyLeadStageMutation,
+  useAdminSettingsQuery,
   useVerifyPaymentMutation
 } from "../../hooks/useSalesQueries";
+import {
+  formatPerformanceBonusSuffix,
+  performanceBonusPayoutHint
+} from "../../lib/commissionEstimate";
 import { usePaymentShareMethods } from "../../hooks/usePaymentShareMethods";
 import { prepareHttpUrlForMutation, tryNormalizeHttpUrl } from "../../lib/httpUrl";
 import { prepareGithubRepoUrlForMutation } from "../../lib/githubRepoUrl";
-import type { LeadPayment, PipelineStageKey, PipelineStageVerifyKey, PipelineStageView } from "../../types";
+import type {
+  Lead,
+  LeadPayment,
+  PipelineStageKey,
+  PipelineStageVerifyKey,
+  PipelineStageView
+} from "../../types";
 import { formatMinorUnits } from "../../lib/money";
 import { paymentReferenceFieldCopy } from "../../lib/paymentShareMethods";
 import { leadStatusLabel } from "../../lib/copy";
@@ -60,6 +71,33 @@ const STAGE_REJECTABLE: Partial<Record<PipelineStageKey, PipelineStageVerifyKey>
   accounts_ready: "accounts_ready",
   deployment_verify: "deployment"
 };
+
+function AdminCommissionSummary({ lead }: { lead: Lead }) {
+  const settingsQr = useAdminSettingsQuery(Boolean(lead.commission));
+  const portalSettings = settingsQr.data?.settings;
+  const commission = lead.commission!;
+  const bonusHint =
+    portalSettings && !commission.isPaid
+      ? performanceBonusPayoutHint(lead, portalSettings)
+      : null;
+
+  return (
+    <div className="rounded-lg border p-4 text-sm space-y-2">
+      <p>
+        Commission: {formatMinorUnits(commission.amountCents)}
+        {formatPerformanceBonusSuffix(commission.bonusCents, portalSettings)}
+      </p>
+      {bonusHint ? (
+        <p className="text-xs text-muted-foreground" role="status">
+          {bonusHint}
+        </p>
+      ) : null}
+      <p className="text-muted-foreground">
+        {commission.isPaid ? "Paid" : "Pending payout after you verify deployment"}
+      </p>
+    </div>
+  );
+}
 
 export function AdminProjectPage() {
   const { repId, leadId } = useParams<{ repId: string; leadId: string }>();
@@ -495,17 +533,7 @@ export function AdminProjectPage() {
       )}
 
       {lead.commission ? (
-        <div className="rounded-lg border p-4 text-sm">
-          <p>
-            Commission: {formatMinorUnits(lead.commission.amountCents)}
-            {lead.commission.bonusCents > 0
-              ? ` + ${formatMinorUnits(lead.commission.bonusCents)} bonus`
-              : ""}
-          </p>
-          <p className="text-muted-foreground">
-            {lead.commission.isPaid ? "Paid" : "Pending payout after you verify deployment"}
-          </p>
-        </div>
+        <AdminCommissionSummary lead={lead} />
       ) : null}
 
       <AdminVerifyModals

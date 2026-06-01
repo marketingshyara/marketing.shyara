@@ -8,7 +8,10 @@ import { estimateCommissionCents, formatMinorUnits } from "./money";
 
 export type CommissionValidationSettings = Pick<
   PortalSettingsValues,
-  "minAgreedTotalCents" | "commissionRateBps" | "commissionRounding"
+  | "minAgreedTotalCents"
+  | "commissionRateBps"
+  | "commissionRounding"
+  | "performanceBonusBps"
 >;
 
 export type CommissionRowStage = {
@@ -39,7 +42,9 @@ export function commissionValidationSettings(
   return {
     minAgreedTotalCents: repSettings.minAgreedTotalCents,
     commissionRateBps: repSettings.commissionRateBps,
-    commissionRounding: rounding
+    commissionRounding: rounding,
+    performanceBonusBps:
+      repSettings.performanceBonusBps ?? adminSettings?.performanceBonusBps ?? 0
   };
 }
 

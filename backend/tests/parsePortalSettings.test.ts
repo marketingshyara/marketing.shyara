@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { LeadStatus } from "@prisma/client";
+import { toRepPortalSettings } from "../src/services/settings.js";
 import {
   parsePortalSettings,
   patchPortalSettingsSchema,
-  pickPortalSettingsPatchInput
+  pickPortalSettingsPatchInput,
+  portalSettingsSchema
 } from "../src/validators/schemas.js";
 
 describe("parsePortalSettings", () => {
@@ -21,8 +23,21 @@ describe("parsePortalSettings", () => {
   it("parses empty object to defaults", () => {
     const settings = parsePortalSettings({});
     expect(settings.commissionRateBps).toBe(2000);
+    expect(settings.performanceBonusBps).toBe(500);
     expect(settings.advancePaymentShareBps).toBe(5000);
     expect(settings.paymentShareMethods).toHaveLength(5);
+  });
+
+  it("ignores legacy performanceBonusAmountCents flat-paise key", () => {
+    const settings = parsePortalSettings({ performanceBonusAmountCents: 50_000 });
+    expect(settings.performanceBonusBps).toBe(500);
+  });
+
+  it("toRepPortalSettings exposes performance bonus fields for reps", () => {
+    const values = portalSettingsSchema.parse({});
+    const rep = toRepPortalSettings(values);
+    expect(rep.performanceBonusBps).toBe(500);
+    expect(rep.performanceBonusAfterCompletedSales).toBe(10);
   });
 
   it("patch input ignores unknown keys before partial parse", () => {

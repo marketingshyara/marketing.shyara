@@ -17,6 +17,13 @@ vi.mock("../../hooks/useSalesQueries", () => ({
       settings: {
         minAgreedTotalCents: 799_900,
         advancePaymentShareBps: 5000,
+        commissionRateBps: 2000,
+        commissionRounding: "bankers",
+        performanceBonusBps: 500,
+        performanceBonusAfterCompletedSales: 10,
+        templatesCatalogUrl: "https://example.com",
+        tutorialLinks: [],
+        painPointsByCategory: [],
         paymentShareMethods: defaultPaymentShareMethods()
       }
     },

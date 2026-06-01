@@ -9,7 +9,9 @@ import { getPortalSettings } from "../services/settings.js";
 import {
   assertCommissionPayable,
   commissionIntegrityIssues,
-  expectedCommissionAmountCents
+  computePerformanceBonusCents,
+  expectedCommissionAmountCents,
+  repQualifiesForPerformanceBonus
 } from "../services/commissionRules.js";
 import {
   healLeadToCommissionPaidIfNeeded,
@@ -167,10 +169,9 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
           const paidCount = await tx.commission.count({
             where: { repUserId: commission.repUserId, isPaid: true }
           });
-          const bonusCents =
-            paidCount >= settings.performanceBonusAfterCompletedSales
-              ? settings.performanceBonusAmountCents
-              : 0;
+          const bonusCents = repQualifiesForPerformanceBonus(paidCount, settings)
+            ? computePerformanceBonusCents(refreshedCommission.lead, settings)
+            : 0;
 
           const commClaim = await tx.commission.updateMany({
             where: { id, isPaid: false },

@@ -107,6 +107,8 @@ export function toRepPortalSettings(values: PortalSettingsValues) {
     advancePaymentShareBps: values.advancePaymentShareBps,
     commissionRateBps: values.commissionRateBps,
     commissionRounding: values.commissionRounding,
+    performanceBonusBps: values.performanceBonusBps,
+    performanceBonusAfterCompletedSales: values.performanceBonusAfterCompletedSales,
     templatesCatalogUrl: values.templatesCatalogUrl,
     tutorialLinks: values.tutorialLinks,
     painPointsByCategory: values.painPointsByCategory,

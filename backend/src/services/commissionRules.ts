@@ -16,6 +16,35 @@ export function assertAgreedTotalMeetsMinimum(
   }
 }
 
+export function repQualifiesForPerformanceBonus(
+  paidCommissionCount: number,
+  settings: PortalSettingsValues
+): boolean {
+  return paidCommissionCount >= settings.performanceBonusAfterCompletedSales;
+}
+
+export function computePerformanceBonusCents(
+  lead: Pick<Lead, "agreedTotalCents">,
+  settings: PortalSettingsValues
+): number {
+  const base = lead.agreedTotalCents;
+  if (base == null || base < 0) {
+    throw new HttpError(
+      400,
+      "COMMISSION_BASE_MISSING",
+      "Lead is missing agreedTotalCents; set the agreed total before computing performance bonus."
+    );
+  }
+  if (settings.performanceBonusBps === 0) {
+    return 0;
+  }
+  return divideCentsWithRounding(
+    base * settings.performanceBonusBps,
+    10000,
+    settings.commissionRounding
+  );
+}
+
 export function computeCommissionAmountCents(
   lead: Pick<Lead, "agreedTotalCents">,
   settings: PortalSettingsValues

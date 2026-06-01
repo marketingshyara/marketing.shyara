@@ -58,6 +58,8 @@ describe("CommissionPage", () => {
           minAgreedTotalCents: 799_900,
           commissionRateBps: 50,
           commissionRounding: "bankers",
+          performanceBonusBps: 500,
+          performanceBonusAfterCompletedSales: 10,
           advancePaymentShareBps: 5000,
           templatesCatalogUrl: "",
           tutorialLinks: [],
@@ -119,7 +121,7 @@ describe("CommissionPage", () => {
           terminalNoMutationStatuses: [],
           enforcePaymentQuoteToleranceBps: null,
           exportMaxRows: 5000,
-          performanceBonusAmountCents: 0,
+          performanceBonusBps: 0,
           performanceBonusAfterCompletedSales: 3
         }
       },

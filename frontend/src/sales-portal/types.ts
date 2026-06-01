@@ -249,6 +249,9 @@ export interface RepPortalSettings {
   advancePaymentShareBps: number;
   commissionRateBps: number;
   commissionRounding: "floor" | "round" | "bankers";
+  /** Extra payout rate (% of agreed total) after rep hits paid-sale threshold. */
+  performanceBonusBps: number;
+  performanceBonusAfterCompletedSales: number;
   templatesCatalogUrl: string;
   tutorialLinks: RepTutorialLink[];
   painPointsByCategory: RepPainPoint[];
@@ -266,8 +269,6 @@ export interface PortalSettingsValues extends RepPortalSettings {
   terminalNoMutationStatuses: LeadStatus[];
   enforcePaymentQuoteToleranceBps: number | null;
   exportMaxRows: number;
-  performanceBonusAmountCents: number;
-  performanceBonusAfterCompletedSales: number;
 }
 
 export type PipelineStageKey =

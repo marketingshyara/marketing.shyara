@@ -5,7 +5,9 @@ import {
   assertAgreedTotalMeetsMinimum,
   assertCommissionPayable,
   commissionIntegrityIssues,
-  computeCommissionAmountCents
+  computeCommissionAmountCents,
+  computePerformanceBonusCents,
+  repQualifiesForPerformanceBonus
 } from "../src/services/commissionRules.js";
 import { portalSettingsSchema } from "../src/validators/schemas.js";
 
@@ -74,6 +76,27 @@ describe("commissionRules", () => {
     } catch (e) {
       expect((e as HttpError).code).toBe("COMMISSION_INVALID");
     }
+  });
+
+  it("computePerformanceBonusCents is 5% of agreed total with bankers rounding", () => {
+    const bonusSettings = portalSettingsSchema.parse({
+      minAgreedTotalCents: 799_900,
+      commissionRateBps: 2000,
+      commissionRounding: "bankers",
+      performanceBonusBps: 500
+    });
+    expect(
+      computePerformanceBonusCents(lead({ agreedTotalCents: 1_000_000 }), bonusSettings)
+    ).toBe(50_000);
+  });
+
+  it("repQualifiesForPerformanceBonus when paid count meets threshold", () => {
+    const bonusSettings = portalSettingsSchema.parse({
+      performanceBonusAfterCompletedSales: 10,
+      performanceBonusBps: 500
+    });
+    expect(repQualifiesForPerformanceBonus(9, bonusSettings)).toBe(false);
+    expect(repQualifiesForPerformanceBonus(10, bonusSettings)).toBe(true);
   });
 
   it("passes for valid unpaid commission", () => {

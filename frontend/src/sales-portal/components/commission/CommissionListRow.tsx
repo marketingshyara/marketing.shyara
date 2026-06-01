@@ -4,7 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PortalStatusChip } from "../ui/PortalStatusChip";
 import { cn } from "@/lib/utils";
 import type { CommissionListItem } from "../../types";
-import { commissionRateLabel } from "../../lib/commissionEstimate";
+import {
+  commissionRateLabel,
+  formatPerformanceBonusSuffix
+} from "../../lib/commissionEstimate";
 import type { CommissionValidationSettings } from "../../lib/commissionList";
 import {
   commissionDetailHref,
@@ -94,9 +97,7 @@ export function CommissionListRow({ row, settings, actorMode, rateLabel }: Props
               <dt className="text-xs text-muted-foreground">Commission</dt>
               <dd className="font-semibold tabular-nums">
                 {formatMinorUnits(row.amountCents)}
-                {row.bonusCents > 0
-                  ? ` + ${formatMinorUnits(row.bonusCents)} bonus`
-                  : ""}
+                {formatPerformanceBonusSuffix(row.bonusCents, settings)}
               </dd>
             </div>
             <div>

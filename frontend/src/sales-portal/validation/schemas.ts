@@ -177,7 +177,7 @@ export const portalSettingsSchema = z
     exportMaxRows: z.number().int().min(100).max(500000),
     advancePaymentShareBps: z.number().int().min(0).max(10000),
     minAgreedTotalCents: z.number().int().min(0),
-    performanceBonusAmountCents: z.number().int().min(0),
+    performanceBonusBps: z.number().int().min(0).max(10000),
     performanceBonusAfterCompletedSales: z.number().int().min(0),
     templatesCatalogUrl: z.string().url().max(2000),
     tutorialLinks: z.array(repTutorialLinkSchema),

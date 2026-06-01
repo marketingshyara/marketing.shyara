@@ -43,7 +43,7 @@ describe("getPipelineStages", () => {
 
   it("defaults min agreed total to 799900 paise", () => {
     expect(settings.minAgreedTotalCents).toBe(799_900);
-    expect(settings.performanceBonusAmountCents).toBe(50_000);
+    expect(settings.performanceBonusBps).toBe(500);
     expect(settings.performanceBonusAfterCompletedSales).toBe(10);
   });
 

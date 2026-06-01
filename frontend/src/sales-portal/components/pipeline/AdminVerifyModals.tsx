@@ -9,7 +9,9 @@ import { useAdminSettingsQuery } from "../../hooks/useSalesQueries";
 import { DealAmountField } from "./DealAmountField";
 import {
   commissionRateLabel,
-  estimatedCommissionForLead
+  estimatedCommissionForLead,
+  formatPerformanceBonusSuffix,
+  performanceBonusPayoutHint
 } from "../../lib/commissionEstimate";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { WebsiteTemplateField } from "./WebsiteTemplateField";
@@ -198,6 +200,10 @@ export function AdminVerifyModals({
 
   const estimatedCents =
     portalSettings != null ? estimatedCommissionForLead(lead, portalSettings) : null;
+  const performanceBonusHint =
+    portalSettings != null && lead.commission && !lead.commission.isPaid
+      ? performanceBonusPayoutHint(lead, portalSettings)
+      : null;
 
   return (
     <>
@@ -732,13 +738,16 @@ export function AdminVerifyModals({
                     commission paid.
                   </p>
                 ) : null}
+                {performanceBonusHint ? (
+                  <p className="text-xs text-muted-foreground" role="status">
+                    {performanceBonusHint}
+                  </p>
+                ) : null}
               </>
             ) : (
               <p>
                 Payout: {formatMinorUnits(lead.commission.amountCents)}
-                {lead.commission.bonusCents > 0
-                  ? ` + ${formatMinorUnits(lead.commission.bonusCents)} bonus`
-                  : ""}
+                {formatPerformanceBonusSuffix(lead.commission.bonusCents, portalSettings)}
               </p>
             )}
           </div>

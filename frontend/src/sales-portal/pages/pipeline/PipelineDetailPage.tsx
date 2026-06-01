@@ -65,7 +65,11 @@ import {
   splitAgreedTotalCents
 } from "../../lib/money";
 import { repPaymentMethodFromLead } from "../../lib/repPaymentMethod";
-import { commissionBreakdownHint } from "../../lib/commissionEstimate";
+import {
+  commissionBreakdownHint,
+  formatPerformanceBonusSuffix,
+  performanceBonusProgramHint
+} from "../../lib/commissionEstimate";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { Badge } from "@/components/ui/badge";
 import { leadStatusLabel } from "../../lib/copy";
@@ -136,6 +140,7 @@ export function PipelineDetailPage() {
   const paymentShareMethods = usePaymentShareMethods();
   const commissionHint =
     lead && settings ? commissionBreakdownHint(lead, settings) : null;
+  const performanceBonusHint = settings ? performanceBonusProgramHint(settings) : null;
   const agreedTotalCents = parseRupeeInputToCents(agreedRupees);
   const convertSplit = useMemo(() => {
     if (lead?.convertedAt) return null;
@@ -351,9 +356,7 @@ export function PipelineDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium">
               Commission: {formatMinorUnits(lead.commission.amountCents)}
-              {lead.commission.bonusCents > 0
-                ? ` + ${formatMinorUnits(lead.commission.bonusCents)} bonus`
-                : ""}
+              {formatPerformanceBonusSuffix(lead.commission.bonusCents, settings)}
             </p>
             <Badge variant={lead.commission.isPaid ? "default" : "secondary"}>
               {lead.commission.isPaid ? "Paid" : "Pending payout"}
@@ -361,6 +364,9 @@ export function PipelineDetailPage() {
           </div>
           {commissionHint ? (
             <p className="text-xs text-muted-foreground">{commissionHint}</p>
+          ) : null}
+          {!lead.commission.isPaid && performanceBonusHint ? (
+            <p className="text-xs text-muted-foreground">{performanceBonusHint}</p>
           ) : null}
           <Button variant="link" className="h-auto min-h-11 px-0 text-sm" asChild>
             <Link to="/portal/commission">View all commission</Link>
