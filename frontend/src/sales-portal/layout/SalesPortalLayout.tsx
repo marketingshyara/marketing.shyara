@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   BookOpen,
+  Briefcase,
   ClipboardList,
   FileCheck2,
   History,
@@ -56,6 +57,7 @@ const REP_NAV: NavItem[] = [
 
 const ADMIN_NAV: NavItem[] = [
   { to: "/portal/team", label: "Team", icon: UsersRound, end: true },
+  { to: "/portal/projects", label: "All clients", icon: Briefcase },
   { to: "/portal/reviews", label: "Reviews", icon: FileCheck2, approvalsBadge: true },
   { to: "/portal/commission", label: "Commission", icon: IndianRupee },
   { to: "/portal/payments", label: "Payments", icon: Wallet },

@@ -1,5 +1,6 @@
 import type { FastifyRequest } from "fastify";
 import { HttpError } from "../errors/httpError.js";
+import { isUserAuthenticatable } from "../services/userAuth.js";
 
 type RequireUserOptions = {
   allowPasswordChangeRequired?: boolean;
@@ -15,7 +16,7 @@ async function requireUserImpl(request: FastifyRequest, options: RequireUserOpti
     where: { id: userId }
   });
 
-  if (!user || !user.isActive) {
+  if (!user || !isUserAuthenticatable(user)) {
     await request.session.destroy();
     throw new HttpError(401, "UNAUTHORIZED", "Session invalid or user inactive.");
   }

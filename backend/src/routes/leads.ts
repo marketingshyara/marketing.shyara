@@ -8,7 +8,9 @@ import {
   UserRole
 } from "@prisma/client";
 import type { User } from "@prisma/client";
+import { requireSalesRep } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
+import { isUserAuthenticatable } from "../services/userAuth.js";
 import { HttpError } from "../errors/httpError.js";
 import { splitAgreedTotalCents } from "../lib/money.js";
 import { clampPage } from "../lib/pagination.js";
@@ -280,6 +282,7 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
     "/api/leads/:id",
     { preHandler: [requireUser] },
     async (request, reply) => {
+      requireSalesRep(request);
       const user = request.currentUser!;
       const { id } = request.params as { id: string };
 
@@ -484,8 +487,16 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
             assignedToUserId = null;
           } else {
             const assignee = await tx.user.findUnique({ where: { id: body.assignedToUserId } });
-            if (!assignee?.isActive || assignee.role !== UserRole.SALES_REP) {
-              throw new HttpError(400, "INVALID_ASSIGNEE", "Assignee must be an active sales rep.");
+            if (
+              !assignee ||
+              assignee.role !== UserRole.SALES_REP ||
+              !isUserAuthenticatable(assignee)
+            ) {
+              throw new HttpError(
+                400,
+                "INVALID_ASSIGNEE",
+                "Assignee must be an active, non-removed sales rep."
+              );
             }
             assignedToUserId = assignee.id;
           }

@@ -12,6 +12,7 @@ import {
   remainingLockSeconds
 } from "../lib/loginLockout.js";
 import { logActivity } from "../services/activityLog.js";
+import { isUserAuthenticatable } from "../services/userAuth.js";
 import {
   changePasswordBodySchema,
   loginBodySchema
@@ -40,7 +41,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         const hash = user?.passwordHash ?? DUMMY_BCRYPT_HASH;
         const passwordOk = await safeBcryptCompare(body.password, hash, request);
 
-        if (!user || !user.isActive) {
+        if (!user || !isUserAuthenticatable(user)) {
           throw new HttpError(401, "INVALID_CREDENTIALS", "Invalid email or password.");
         }
 
@@ -125,10 +126,11 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         displayName: true,
         role: true,
         mustChangePassword: true,
-        isActive: true
+        isActive: true,
+        archivedAt: true
       }
     });
-    if (!user || !user.isActive) {
+    if (!user || !isUserAuthenticatable(user)) {
       await request.session.destroy();
       return reply.send({ user: null });
     }

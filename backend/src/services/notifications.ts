@@ -47,7 +47,12 @@ export async function notifyActiveAdmins(
   }
 ): Promise<void> {
   const admins = await tx.user.findMany({
-    where: { role: UserRole.ADMIN, isActive: true, ...(params.excludeUserId ? { id: { not: params.excludeUserId } } : {}) },
+    where: {
+      role: UserRole.ADMIN,
+      isActive: true,
+      archivedAt: null,
+      ...(params.excludeUserId ? { id: { not: params.excludeUserId } } : {})
+    },
     select: { id: true }
   });
   if (admins.length === 0) return;

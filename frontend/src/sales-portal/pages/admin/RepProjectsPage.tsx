@@ -60,6 +60,16 @@ export function RepProjectsPage() {
         }
       />
 
+      {rep.archivedAt ? (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
+          This rep was removed from the active team. Their converted clients remain here and on{" "}
+          <Link to="/portal/projects" className="font-medium underline">
+            All clients
+          </Link>
+          .
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap gap-2 text-xs">
         <StatPill label="Leads" value={rep.totalLeads} />
         <StatPill label="Clients" value={rep.activeClients} />

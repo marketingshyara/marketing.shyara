@@ -19,7 +19,7 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       requireAdmin(request);
       const reps = await app.prisma.user.findMany({
-        where: { role: UserRole.SALES_REP, isActive: true },
+        where: { role: UserRole.SALES_REP, isActive: true, archivedAt: null },
         orderBy: [{ displayName: "asc" }, { email: "asc" }],
         select: { id: true, email: true, displayName: true }
       });
@@ -48,9 +48,16 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
       const { userId } = request.params as { userId: string };
       const query = repProjectsQuerySchema.parse(request.query);
 
+      // Include archived reps so admins can open historical projects (Team list stays active-only).
       const rep = await app.prisma.user.findFirst({
-        where: { id: userId, role: UserRole.SALES_REP, isActive: true },
-        select: { id: true, email: true, displayName: true }
+        where: { id: userId, role: UserRole.SALES_REP },
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          archivedAt: true,
+          isActive: true
+        }
       });
       if (!rep) {
         throw new HttpError(404, "NOT_FOUND", "Sales rep not found.");

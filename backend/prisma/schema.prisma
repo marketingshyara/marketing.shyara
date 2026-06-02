@@ -67,6 +67,7 @@ model User {
   displayName          String?
   role                 UserRole
   isActive             Boolean   @default(true)
+  archivedAt           DateTime?
   mustChangePassword   Boolean   @default(false)
   failedLoginAttempts  Int       @default(0)
   lockedUntil          DateTime?
@@ -84,6 +85,7 @@ model User {
 
   @@index([role])
   @@index([role, isActive])
+  @@index([archivedAt])
   @@index([email])
   @@index([lockedUntil])
 }

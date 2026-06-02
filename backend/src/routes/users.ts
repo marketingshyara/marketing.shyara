@@ -8,6 +8,7 @@ import { HttpError } from "../errors/httpError.js";
 import { clampPage } from "../lib/pagination.js";
 import { mapUserCreateError } from "../lib/prismaErrors.js";
 import { logActivity } from "../services/activityLog.js";
+import { destroyPortalSessionsForUser } from "../services/userSessions.js";
 import {
   createUserBodySchema,
   patchUserBodySchema,
@@ -23,13 +24,23 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       requireAdmin(request);
       const query = usersListQuerySchema.parse(request.query);
 
-      const total = await app.prisma.user.count();
+      const where =
+        query.status === "past"
+          ? { archivedAt: { not: null } }
+          : { archivedAt: null };
+
+      const total = await app.prisma.user.count({ where });
       const page = clampPage(query.page, query.pageSize, total);
       const skip = (page - 1) * query.pageSize;
+      const orderBy =
+        query.status === "past"
+          ? { archivedAt: "desc" as const }
+          : { createdAt: "desc" as const };
       const items = await app.prisma.user.findMany({
+        where,
         skip,
         take: query.pageSize,
-        orderBy: { createdAt: "desc" },
+        orderBy,
         select: {
           id: true,
           email: true,
@@ -37,6 +48,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
           role: true,
           isActive: true,
           mustChangePassword: true,
+          archivedAt: true,
           createdAt: true,
           updatedAt: true
         }
@@ -117,6 +129,9 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
           if (!existing) {
             throw new HttpError(404, "NOT_FOUND", "User not found.");
           }
+          if (existing.archivedAt != null) {
+            throw new HttpError(409, "USER_ARCHIVED", "This user was removed and cannot be edited.");
+          }
 
           if (body.isActive === false && id === request.currentUser!.id) {
             throw new HttpError(400, "SELF_DEACTIVATE", "You cannot deactivate your own account.");
@@ -127,7 +142,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
             ((body.role !== undefined && body.role !== UserRole.ADMIN) || body.isActive === false);
           if (wouldLoseAdmin) {
             const adminCount = await tx.user.count({
-              where: { role: UserRole.ADMIN, isActive: true }
+              where: { role: UserRole.ADMIN, isActive: true, archivedAt: null }
             });
             if (adminCount <= 1) {
               throw new HttpError(
@@ -211,6 +226,9 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       if (!existing) {
         throw new HttpError(404, "NOT_FOUND", "User not found.");
       }
+      if (existing.archivedAt != null) {
+        throw new HttpError(409, "USER_ARCHIVED", "This user was removed and cannot receive a new password.");
+      }
 
       const usedExplicitPassword =
         body.temporaryPassword != null && body.temporaryPassword.length > 0;
@@ -260,6 +278,101 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
         user: updated,
         ...(usedExplicitPassword ? {} : { temporaryPassword: passwordPlain })
       });
+    }
+  );
+
+  app.post(
+    "/api/users/:id/archive",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      requireAdmin(request);
+      const { id } = request.params as { id: string };
+
+      if (id === request.currentUser!.id) {
+        throw new HttpError(400, "SELF_ARCHIVE", "You cannot remove your own account.");
+      }
+
+      const { existing, updated } = await app.prisma.$transaction(
+        async (tx) => {
+          const existing = await tx.user.findUnique({ where: { id } });
+          if (!existing) {
+            throw new HttpError(404, "NOT_FOUND", "User not found.");
+          }
+          if (existing.archivedAt != null) {
+            throw new HttpError(409, "ALREADY_ARCHIVED", "This user is already in Past users.");
+          }
+
+          if (existing.role === UserRole.ADMIN) {
+            const adminCount = await tx.user.count({
+              where: { role: UserRole.ADMIN, isActive: true, archivedAt: null }
+            });
+            if (adminCount <= 1) {
+              throw new HttpError(
+                400,
+                "LAST_ADMIN",
+                "Cannot remove the last active admin."
+              );
+            }
+          }
+
+          const claim = await tx.user.updateMany({
+            where: {
+              id,
+              updatedAt: existing.updatedAt,
+              archivedAt: null
+            },
+            data: {
+              archivedAt: new Date(),
+              isActive: false
+            }
+          });
+          if (claim.count === 0) {
+            throw new HttpError(
+              409,
+              "CONCURRENT_MODIFICATION",
+              "User was modified concurrently; refresh and retry."
+            );
+          }
+
+          const updated = await tx.user.findUniqueOrThrow({
+            where: { id },
+            select: {
+              id: true,
+              email: true,
+              displayName: true,
+              role: true,
+              isActive: true,
+              mustChangePassword: true,
+              archivedAt: true,
+              updatedAt: true
+            }
+          });
+          return { existing, updated };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+      );
+
+      await destroyPortalSessionsForUser(app.prisma, id);
+
+      await logActivity({
+        prisma: app.prisma,
+        userId: request.currentUser!.id,
+        action: ActivityAction.UPDATE,
+        entityType: "User",
+        entityId: id,
+        before: {
+          isActive: existing.isActive,
+          archivedAt: existing.archivedAt
+        },
+        after: {
+          isActive: updated.isActive,
+          archived: true,
+          archivedAt: updated.archivedAt
+        },
+        request
+      });
+
+      return reply.send({ user: updated });
     }
   );
 }

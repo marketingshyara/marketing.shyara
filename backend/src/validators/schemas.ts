@@ -30,7 +30,9 @@ export const paginationQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20)
 });
 
-export const usersListQuerySchema = paginationQuerySchema;
+export const usersListQuerySchema = paginationQuerySchema.extend({
+  status: z.enum(["active", "past"]).optional().default("active")
+});
 
 const emptyToUndefined = (v: unknown) =>
   v === "" || v === null || v === undefined ? undefined : v;

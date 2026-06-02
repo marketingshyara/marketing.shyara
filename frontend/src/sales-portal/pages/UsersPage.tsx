@@ -6,8 +6,11 @@ import {
   useCreateUserMutation,
   usePatchUserMutation,
   useResetPasswordMutation,
+  useSessionQuery,
   useUsersQuery
 } from "../hooks/useSalesQueries";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RemoveUserButton } from "../components/users/RemoveUserButton";
 import { createUserSchema, patchUserSchema, resetPasswordSchema } from "../validation/schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,10 +49,26 @@ import { passwordCopy } from "../lib/passwordCopy";
 import { TemporaryPasswordDialog } from "../components/auth/TemporaryPasswordDialog";
 import { PortalPageHeader } from "../components/PortalPageHeader";
 
+function formatRemovedOn(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
 export function UsersPage() {
+  const [userTab, setUserTab] = useState<"active" | "past">("active");
   const [page, setPage] = useState(1);
   const pageSize = 20;
-  const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useUsersQuery(page, pageSize, true);
+  const sessionQr = useSessionQuery();
+  const currentUserId = sessionQr.data?.user?.id;
+  const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useUsersQuery(
+    page,
+    pageSize,
+    true,
+    userTab
+  );
   const createUser = useCreateUserMutation();
   const patchUser = usePatchUserMutation();
   const resetPw = useResetPasswordMutation();
@@ -94,6 +113,10 @@ export function UsersPage() {
     const tp = Math.max(1, Math.ceil(data.total / pageSize));
     setPage((p) => Math.min(p, tp));
   }, [data, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [userTab]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
@@ -258,104 +281,151 @@ export function UsersPage() {
 
       {isLoading && <Skeleton className="h-64 w-full" />}
 
-      <div className="space-y-3 md:hidden">
-        {data?.items.map((u) => (
-          <div
-            key={u.id}
-            className="rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm"
-          >
-            <p className="break-words font-medium">{u.email}</p>
-            <div className="mt-2">
-              <Badge variant="outline">{userRoleLabel(u.role)}</Badge>
-            </div>
-            <dl className="mt-3 space-y-1 text-sm text-muted-foreground">
-              <div>Active: {u.isActive ? "Yes" : "No"}</div>
-              <div>
-                {passwordCopy.mustSetNewPasswordColumn}:{" "}
-                {u.mustChangePassword
-                  ? passwordCopy.mustSetNewPasswordYes
-                  : passwordCopy.mustSetNewPasswordNo}
-              </div>
-            </dl>
-            <div className="mt-3 flex flex-col gap-2">
-              <Button
-                variant="outline"
-                className="min-h-11 w-full"
-                onClick={() => {
+      <Tabs
+        value={userTab}
+        onValueChange={(v) => setUserTab(v as "active" | "past")}
+        className="space-y-4"
+      >
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 p-1 sm:w-auto sm:inline-flex">
+          <TabsTrigger value="active" className="min-h-11">
+            Active users
+          </TabsTrigger>
+          <TabsTrigger value="past" className="min-h-11">
+            Past users
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="mt-0 space-y-4">
+          <div className="space-y-3 md:hidden">
+            {data?.items.map((u) => (
+              <ActiveUserCard
+                key={u.id}
+                user={u}
+                currentUserId={currentUserId}
+                onEdit={() => {
                   setEditing(u);
                   setEditOpen(true);
                 }}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="ghost"
-                className="min-h-11 w-full"
-                onClick={() => {
+                onReset={() => {
                   setResetUserId(u.id);
                   setResetOpen(true);
                   resetForm.reset();
                 }}
-              >
-                {passwordCopy.issueTemporaryPassword}
-              </Button>
+              />
+            ))}
+          </div>
+          <div className="hidden md:block">
+            <div className="-mx-1 overflow-x-auto rounded-md border px-1">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Active</TableHead>
+                    <TableHead>{passwordCopy.mustSetNewPasswordColumn}</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data?.items.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{userRoleLabel(u.role)}</Badge>
+                      </TableCell>
+                      <TableCell>{u.isActive ? "Yes" : "No"}</TableCell>
+                      <TableCell>{u.mustChangePassword ? "Yes" : "No"}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="min-h-11"
+                            onClick={() => {
+                              setEditing(u);
+                              setEditOpen(true);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="min-h-11"
+                            onClick={() => {
+                              setResetUserId(u.id);
+                              setResetOpen(true);
+                              resetForm.reset();
+                            }}
+                          >
+                            {passwordCopy.issueTemporaryPassword}
+                          </Button>
+                          <RemoveUserButton
+                            userId={u.id}
+                            email={u.email}
+                            disabled={u.id === currentUserId}
+                            disabledReason="You cannot remove your own account"
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </div>
-        ))}
-      </div>
+        </TabsContent>
 
-      <div className="hidden md:block">
-        <div className="-mx-1 overflow-x-auto rounded-md border px-1">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Active</TableHead>
-              <TableHead>{passwordCopy.mustSetNewPasswordColumn}</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+        <TabsContent value="past" className="mt-0 space-y-4">
+          {data?.items.length === 0 && !isLoading ? (
+            <p className="text-sm text-muted-foreground">No removed users yet.</p>
+          ) : null}
+          <div className="space-y-3 md:hidden">
             {data?.items.map((u) => (
-              <TableRow key={u.id}>
-                <TableCell className="font-medium">{u.email}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{userRoleLabel(u.role)}</Badge>
-                </TableCell>
-                <TableCell>{u.isActive ? "Yes" : "No"}</TableCell>
-                <TableCell>{u.mustChangePassword ? "Yes" : "No"}</TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="min-h-11"
-                    onClick={() => {
-                      setEditing(u);
-                      setEditOpen(true);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="min-h-11"
-                    onClick={() => {
-                      setResetUserId(u.id);
-                      setResetOpen(true);
-                      resetForm.reset();
-                    }}
-                  >
-                    {passwordCopy.issueTemporaryPassword}
-                  </Button>
-                </TableCell>
-              </TableRow>
+              <PastUserCard key={u.id} user={u} />
             ))}
-          </TableBody>
-        </Table>
-        </div>
-      </div>
+          </div>
+          <div className="hidden md:block">
+            <div className="-mx-1 overflow-x-auto rounded-md border px-1">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Removed on</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data?.items.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">
+                        {u.displayName ? (
+                          <>
+                            <span className="block">{u.displayName}</span>
+                            <span className="text-xs text-muted-foreground">{u.email}</span>
+                          </>
+                        ) : (
+                          u.email
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{userRoleLabel(u.role)}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {u.archivedAt ? formatRemovedOn(u.archivedAt) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">Removed · Cannot sign in</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {data && totalPages > 1 && (
         <nav
@@ -518,6 +588,68 @@ export function UsersPage() {
           if (!open) setIssuedTempPassword(null);
         }}
       />
+    </div>
+  );
+}
+
+function ActiveUserCard({
+  user,
+  currentUserId,
+  onEdit,
+  onReset
+}: {
+  user: User;
+  currentUserId?: string;
+  onEdit: () => void;
+  onReset: () => void;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
+      <p className="break-words font-medium">{user.email}</p>
+      <div className="mt-2">
+        <Badge variant="outline">{userRoleLabel(user.role)}</Badge>
+      </div>
+      <dl className="mt-3 space-y-1 text-sm text-muted-foreground">
+        <div>Active: {user.isActive ? "Yes" : "No"}</div>
+        <div>
+          {passwordCopy.mustSetNewPasswordColumn}:{" "}
+          {user.mustChangePassword
+            ? passwordCopy.mustSetNewPasswordYes
+            : passwordCopy.mustSetNewPasswordNo}
+        </div>
+      </dl>
+      <div className="mt-3 flex flex-col gap-2">
+        <Button variant="outline" className="min-h-11 w-full" onClick={onEdit}>
+          Edit
+        </Button>
+        <Button variant="ghost" className="min-h-11 w-full" onClick={onReset}>
+          {passwordCopy.issueTemporaryPassword}
+        </Button>
+        <RemoveUserButton
+          userId={user.id}
+          email={user.email}
+          disabled={user.id === currentUserId}
+          disabledReason="You cannot remove your own account"
+        />
+      </div>
+    </div>
+  );
+}
+
+function PastUserCard({ user }: { user: User }) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
+      <p className="break-words font-medium">{user.email}</p>
+      {user.displayName ? (
+        <p className="text-sm text-muted-foreground">{user.displayName}</p>
+      ) : null}
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Badge variant="outline">{userRoleLabel(user.role)}</Badge>
+        <Badge variant="secondary">Removed · Cannot sign in</Badge>
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Removed on: {user.archivedAt ? formatRemovedOn(user.archivedAt) : "—"}
+      </p>
     </div>
   );
 }

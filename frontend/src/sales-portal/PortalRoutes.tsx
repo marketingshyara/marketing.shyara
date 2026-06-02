@@ -20,6 +20,7 @@ import { TeamHubPage } from "./pages/admin/TeamHubPage";
 import { RepProjectsPage } from "./pages/admin/RepProjectsPage";
 import { AdminProjectPage } from "./pages/admin/AdminProjectPage";
 import { UsersPage } from "./pages/UsersPage";
+import { AllProjectsPage } from "./pages/admin/AllProjectsPage";
 import { ActivityLogsPage } from "./pages/admin/ActivityLogsPage";
 import { PendingPaymentsPage } from "./pages/admin/PendingPaymentsPage";
 import { CommissionPage } from "./pages/CommissionPage";
@@ -135,6 +136,7 @@ export function PortalRoutes() {
             <Route path="not-found" element={<NotFoundPage />} />
 
             <Route element={<RequireAdmin />}>
+              <Route path="projects" element={<AllProjectsPage />} />
               <Route path="team" element={<TeamHubPage />} />
               <Route path="team/:repId" element={<RepProjectsPage />} />
               <Route path="team/:repId/projects/:leadId" element={<AdminProjectPage />} />

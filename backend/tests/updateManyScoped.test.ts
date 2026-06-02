@@ -31,7 +31,11 @@ describe("updateMany/deleteMany are scoped by primary key", () => {
           /\bwhere:\s*\{[\s\S]*?leadId\b/.test(block);
         // Bulk updates that spread a `where` built above (list filters + rep scope) stay scoped.
         const spreadsScopedWhere = /\bwhere:\s*\{[\s\S]*?\.\.\.\s*where\b/.test(block);
-        if (!hasPrimaryKey && !spreadsScopedWhere) {
+        // CAS updates build `claimWhere` with `id` (and optional fields) in the same file.
+        const usesClaimWhereWithId =
+          /\bwhere:\s*claimWhere\b/.test(block) &&
+          /claimWhere[\s\S]*?\bid\b/.test(text);
+        if (!hasPrimaryKey && !spreadsScopedWhere && !usesClaimWhereWithId) {
           offenders.push(`${file}: ${block.slice(0, 80)}…`);
         }
       }

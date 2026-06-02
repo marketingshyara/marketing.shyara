@@ -319,7 +319,9 @@ export function PipelineDetailPage() {
             variant="destructive"
             onDeleted={() => navigate("/portal/pipeline", { replace: true })}
           />
-        ) : null}
+        ) : !lead.convertedAt ? null : (
+          <p className="text-xs text-muted-foreground">Converted clients cannot be deleted.</p>
+        )}
       </div>
 
       {settingsQr.isError ? (

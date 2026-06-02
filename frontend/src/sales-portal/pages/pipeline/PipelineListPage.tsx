@@ -185,6 +185,7 @@ export function PipelineListPage() {
                       <DeleteProspectButton
                         leadId={lead.id}
                         clientName={lead.clientName}
+                        variant="listRow"
                         onDeleted={() => void refetch()}
                       />
                     ) : null

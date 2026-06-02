@@ -13,6 +13,8 @@ type Props = {
   href: string;
   statusChip: { kind: PortalStatusChipKind; label: string };
   trailingAction?: ReactNode;
+  /** Optional second line (e.g. rep name on admin all-clients list). */
+  detailLine?: ReactNode;
 };
 
 export function PipelineListSummary({
@@ -21,7 +23,8 @@ export function PipelineListSummary({
   agreedTotalCents,
   href,
   statusChip,
-  trailingAction
+  trailingAction,
+  detailLine
 }: Props) {
   const stepLine = stageShortTitle(summary.currentStageKey, summary.currentStageTitle);
 
@@ -43,6 +46,7 @@ export function PipelineListSummary({
             <span className="text-muted-foreground"> · {formatMinorUnits(agreedTotalCents)}</span>
           ) : null}
         </p>
+        {detailLine ? <p className="text-xs text-muted-foreground">{detailLine}</p> : null}
       </div>
       <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
     </Link>

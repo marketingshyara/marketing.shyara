@@ -76,6 +76,47 @@ d("integration: delete prospect", () => {
     await app.close();
   });
 
+  it("admin cannot delete prospect via API", async () => {
+    const lead = await prisma.lead.create({
+      data: {
+        clientName: "Admin blocked",
+        status: LeadStatus.NEW,
+        createdByUserId: repId,
+        assignedToUserId: repId
+      }
+    });
+
+    await prisma.user.deleteMany({ where: { email: "it-del-admin@test.local" } });
+    const admin = await prisma.user.create({
+      data: {
+        email: "it-del-admin@test.local",
+        passwordHash: await bcrypt.hash("AdminPass123!", 10),
+        role: UserRole.ADMIN
+      }
+    });
+
+    const app = await buildApp({ config });
+    const login = await inject(app, {
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "it-del-admin@test.local", password: "AdminPass123!" }
+    });
+    const cookie = login.cookies.find((c) => c.name === config.cookieName)!;
+
+    const del = await inject(app, {
+      method: "DELETE",
+      url: `/api/leads/${lead.id}`,
+      headers: { cookie: `${config.cookieName}=${cookie.value}` }
+    });
+    expect(del.statusCode).toBe(403);
+    const body = del.json() as { error: { code: string } };
+    expect(body.error.code).toBe("NOT_SALES_REP");
+
+    await prisma.lead.delete({ where: { id: lead.id } });
+    await prisma.user.delete({ where: { id: admin.id } });
+    await app.close();
+  });
+
   it("other rep cannot delete foreign prospect", async () => {
     const lead = await prisma.lead.create({
       data: {

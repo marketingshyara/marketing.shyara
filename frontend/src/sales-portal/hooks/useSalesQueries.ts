@@ -134,6 +134,22 @@ export function errToast(e: unknown, qc?: QueryClient) {
       toast.error(e.message || "Cannot delete a prospect that already has a project.");
       return;
     }
+    if (e.code === "LAST_ADMIN") {
+      toast.error(e.message || "Cannot remove or change the last active admin.");
+      return;
+    }
+    if (e.code === "SELF_ARCHIVE") {
+      toast.error(e.message || "You cannot remove your own account.");
+      return;
+    }
+    if (e.code === "ALREADY_ARCHIVED") {
+      toast.error(e.message || "This user is already in Past users.");
+      return;
+    }
+    if (e.code === "USER_ARCHIVED") {
+      toast.error(e.message || "This user was removed and cannot be edited.");
+      return;
+    }
     if (e.code === "STAGE_LOCKED") {
       toast.error(
         e.message ||
@@ -228,10 +244,44 @@ export function usePatchSettingsMutation() {
   });
 }
 
-export function useUsersQuery(page: number, pageSize: number, enabled: boolean) {
+export function useUsersQuery(
+  page: number,
+  pageSize: number,
+  enabled: boolean,
+  status: "active" | "past" = "active"
+) {
   return useQuery({
-    queryKey: qk.users(page, pageSize),
-    queryFn: () => salesApi.users({ page, pageSize }),
+    queryKey: qk.users(page, pageSize, status),
+    queryFn: () => salesApi.users({ page, pageSize, status }),
+    enabled
+  });
+}
+
+export function useArchiveUserMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => salesApi.archiveUser(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      qc.invalidateQueries({ queryKey: qk.teamReps });
+      invalidateQueryPrefixes(qc, ["activity-logs", "team-rep", "admin-projects"]);
+      toast.success("User moved to Past users. They can no longer sign in.");
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+export function useAdminProjectsQuery(params: {
+  page: number;
+  pageSize: number;
+  search?: string;
+  status?: "active" | "completed" | "all";
+  enabled?: boolean;
+}) {
+  const { enabled = true, ...rest } = params;
+  return useQuery({
+    queryKey: qk.adminProjects(rest),
+    queryFn: () => salesApi.adminProjects(rest),
     enabled
   });
 }
@@ -316,7 +366,7 @@ export function useDeleteLeadMutation() {
       qc.invalidateQueries({ queryKey: ["leads"] });
       void qc.invalidateQueries({ queryKey: ["team-reps"] });
       void qc.invalidateQueries({ queryKey: ["team-rep"] });
-      invalidateQueryPrefixes(qc, ["commissions", "activity-logs"]);
+      invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "admin-projects"]);
       toast.success("Prospect deleted");
     },
     onError: (e) => errToast(e, qc)

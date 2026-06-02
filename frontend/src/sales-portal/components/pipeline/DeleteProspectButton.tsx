@@ -17,7 +17,7 @@ import { useDeleteLeadMutation } from "../../hooks/useSalesQueries";
 type Props = {
   leadId: string;
   clientName: string;
-  variant?: "icon" | "destructive";
+  variant?: "icon" | "destructive" | "listRow";
   onDeleted?: () => void;
 };
 
@@ -52,6 +52,15 @@ export function DeleteProspectButton({
             disabled={del.isPending}
           >
             <Trash2 className="h-4 w-4" aria-hidden />
+          </Button>
+        ) : variant === "listRow" ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            disabled={del.isPending}
+          >
+            Delete
           </Button>
         ) : (
           <Button

@@ -1,6 +1,7 @@
 import { apiBlob, apiJson, downloadBlob } from "./client";
 import type {
   ActivityLog,
+  AdminProjectListItem,
   Commission,
   CommissionsListResponse,
   Lead,
@@ -44,12 +45,33 @@ export const salesApi = {
   patchAdminSettings: (body: Partial<PortalSettingsValues>) =>
     apiJson<{ settings: PortalSettingsValues }>("PATCH", "/admin/settings", body),
 
-  users: (params: { page?: number; pageSize?: number }) => {
+  users: (params: { page?: number; pageSize?: number; status?: "active" | "past" }) => {
     const q = new URLSearchParams();
     if (params.page != null) q.set("page", String(params.page));
     if (params.pageSize != null) q.set("pageSize", String(params.pageSize));
+    if (params.status) q.set("status", params.status);
     const qs = q.toString();
     return apiJson<Paginated<User>>("GET", `/users${qs ? `?${qs}` : ""}`);
+  },
+
+  archiveUser: (id: string) => apiJson<{ user: User }>("POST", `/users/${id}/archive`),
+
+  adminProjects: (params: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    status?: "active" | "completed" | "all";
+  }) => {
+    const q = new URLSearchParams();
+    if (params.page != null) q.set("page", String(params.page));
+    if (params.pageSize != null) q.set("pageSize", String(params.pageSize));
+    if (params.search) q.set("search", params.search);
+    if (params.status) q.set("status", params.status);
+    const qs = q.toString();
+    return apiJson<Paginated<AdminProjectListItem>>(
+      "GET",
+      `/admin/projects${qs ? `?${qs}` : ""}`
+    );
   },
 
   createUser: (body: Record<string, unknown>) =>

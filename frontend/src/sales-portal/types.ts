@@ -42,8 +42,28 @@ export interface User {
   role: UserRole;
   isActive: boolean;
   mustChangePassword: boolean;
+  archivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AdminProjectListItem {
+  id: string;
+  clientName: string;
+  status: LeadStatus;
+  agreedTotalCents: number | null;
+  convertedAt: string | null;
+  updatedAt: string;
+  assignedToUserId: string;
+  rep: {
+    id: string;
+    email: string;
+    displayName: string | null;
+    archivedAt: string | null;
+  } | null;
+  currentStageKey: string;
+  currentStageTitle: string;
+  pendingAdmin: boolean;
 }
 
 export interface LeadPayment {
@@ -222,6 +242,8 @@ export interface TeamRepSummary {
   id: string;
   email: string;
   displayName: string | null;
+  archivedAt?: string | null;
+  isActive?: boolean;
   totalLeads: number;
   activeClients: number;
   ongoingProjects: number;

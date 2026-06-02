@@ -2,7 +2,9 @@ export const qk = {
   session: ["session"] as const,
   settings: ["portal-settings"] as const,
   adminSettings: ["admin-settings"] as const,
-  users: (page: number, pageSize: number) => ["users", page, pageSize] as const,
+  users: (page: number, pageSize: number, status: "active" | "past") =>
+    ["users", status, page, pageSize] as const,
+  adminProjects: (params: Record<string, unknown>) => ["admin-projects", params] as const,
   leads: (params: Record<string, unknown>) => ["leads", params] as const,
   lead: (id: string) => ["lead", id] as const,
   commissions: (params: Record<string, unknown>) => ["commissions", params] as const,

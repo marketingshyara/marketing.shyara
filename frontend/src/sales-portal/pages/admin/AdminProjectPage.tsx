@@ -26,6 +26,7 @@ import {
   useMarkCommissionPaidMutation,
   usePatchLeadMutation,
   useRejectLeadStageMutation,
+  useTeamRepQuery,
   useTeamRepsQuery,
   useVerifyLeadStageMutation,
   useAdminSettingsQuery,
@@ -105,6 +106,7 @@ export function AdminProjectPage() {
   const qc = useQueryClient();
   const leadQr = useLeadQuery(leadId);
   const repsQr = useTeamRepsQuery(true);
+  const teamRepQr = useTeamRepQuery(repId, !!repId, "all");
   const [activeStage, setActiveStage] = useState<PipelineStageKey | null>(null);
   const [verifyPayment, setVerifyPayment] = useState<LeadPayment | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -414,17 +416,27 @@ export function AdminProjectPage() {
           message="Could not load this project."
           onRetry={() => void leadQr.refetch()}
         />
-        <Button asChild variant="link" className="min-h-11">
-          <Link to={repId ? `/portal/team/${repId}` : "/portal/team"}>Back to rep</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="link" className="min-h-11">
+            <Link to={repId ? `/portal/team/${repId}` : "/portal/team"}>Back to rep</Link>
+          </Button>
+          <Button asChild variant="link" className="min-h-11">
+            <Link to="/portal/projects">All clients</Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
+  const repFromTeam = teamRepQr.data?.rep;
+  const repFromList = repsQr.data?.items.find((r) => r.id === repId);
   const repName =
-    repsQr.data?.items.find((r) => r.id === repId)?.displayName ??
-    repsQr.data?.items.find((r) => r.id === repId)?.email ??
+    repFromTeam?.displayName?.trim() ||
+    repFromTeam?.email ||
+    repFromList?.displayName?.trim() ||
+    repFromList?.email ||
     "Rep";
+  const repRemoved = Boolean(repFromTeam?.archivedAt);
   const rejectable = activeStage ? STAGE_REJECTABLE[activeStage] : undefined;
   const declineFeedback = findDeclineFeedbackStage(stages);
 
@@ -444,6 +456,7 @@ export function AdminProjectPage() {
         <span className="mx-2">/</span>
         <Link to={`/portal/team/${repId}`} className="hover:underline">
           {repName}
+          {repRemoved ? " (removed)" : ""}
         </Link>
         <span className="mx-2">/</span>
         <span className="text-foreground">{lead.clientName}</span>
