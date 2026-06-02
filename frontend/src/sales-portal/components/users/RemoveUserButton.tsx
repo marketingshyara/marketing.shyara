@@ -1,17 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 import { useArchiveUserMutation } from "../../hooks/useSalesQueries";
+import {
+  portalDestructiveButtonClass,
+  TwoStepDestructiveDialog
+} from "../ui/TwoStepDestructiveDialog";
 
 type Props = {
   userId: string;
@@ -25,40 +19,48 @@ export function RemoveUserButton({ userId, email, disabled, disabledReason }: Pr
   const archive = useArchiveUserMutation();
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
+    <TwoStepDestructiveDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
         <Button
           type="button"
-          variant="outline"
-          className="min-h-11 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          variant="destructive"
+          className={cn("min-h-11", portalDestructiveButtonClass)}
           disabled={disabled || archive.isPending}
           title={disabled ? disabledReason : undefined}
         >
           Remove
         </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Remove user?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This moves <span className="font-medium text-foreground">{email}</span> to Past users.
-            They cannot sign in. Their clients and commissions stay in the system.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-          <AlertDialogCancel className="min-h-11 w-full sm:w-auto">Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            className="min-h-11 w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:w-auto"
-            disabled={archive.isPending}
-            onClick={(e) => {
-              e.preventDefault();
-              archive.mutate(userId, { onSuccess: () => setOpen(false) });
-            }}
-          >
-            {archive.isPending ? "Removing…" : "Remove user"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      }
+      step1={{
+        title: "Remove this user?",
+        description: (
+          <>
+            You are about to remove{" "}
+            <span className="font-semibold text-foreground">{email}</span>. They will move to Past
+            users and will no longer be able to sign in.
+          </>
+        )
+      }}
+      step2={{
+        title: "Confirm user removal?",
+        description: (
+          <>
+            Last chance: remove{" "}
+            <span className="font-semibold text-foreground">{email}</span>? Their clients,
+            commissions, and project history stay in the system.
+          </>
+        )
+      }}
+      confirmLabel="Yes, remove user"
+      pendingLabel="Removing…"
+      onConfirm={() =>
+        archive.mutate(userId, {
+          onSuccess: () => setOpen(false)
+        })
+      }
+      isPending={archive.isPending}
+    />
   );
 }

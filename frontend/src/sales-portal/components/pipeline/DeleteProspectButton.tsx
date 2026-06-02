@@ -1,18 +1,13 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 import { useDeleteLeadMutation } from "../../hooks/useSalesQueries";
+import {
+  portalDestructiveButtonClass,
+  portalDestructiveIconButtonClass,
+  TwoStepDestructiveDialog
+} from "../ui/TwoStepDestructiveDialog";
 
 type Props = {
   leadId: string;
@@ -39,62 +34,67 @@ export function DeleteProspectButton({
     });
   };
 
+  const trigger =
+    variant === "icon" ? (
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className={cn("min-h-11 min-w-11", portalDestructiveIconButtonClass)}
+        aria-label={`Delete prospect ${clientName}`}
+        disabled={del.isPending}
+      >
+        <Trash2 className="h-4 w-4" aria-hidden />
+      </Button>
+    ) : variant === "listRow" ? (
+      <Button
+        type="button"
+        variant="destructive"
+        className={cn("min-h-11", portalDestructiveButtonClass)}
+        disabled={del.isPending}
+      >
+        Delete
+      </Button>
+    ) : (
+      <Button
+        type="button"
+        variant="destructive"
+        className={cn("min-h-11 w-full sm:w-auto", portalDestructiveButtonClass)}
+        disabled={del.isPending}
+      >
+        Delete prospect
+      </Button>
+    );
+
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        {variant === "icon" ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="min-h-11 min-w-11 text-muted-foreground hover:text-destructive"
-            aria-label={`Delete prospect ${clientName}`}
-            disabled={del.isPending}
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-          </Button>
-        ) : variant === "listRow" ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            disabled={del.isPending}
-          >
-            Delete
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="destructive"
-            className="min-h-11 w-full sm:w-auto"
-            disabled={del.isPending}
-          >
-            Delete prospect
-          </Button>
-        )}
-      </AlertDialogTrigger>
-      <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-lg">
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete prospect?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This permanently removes <span className="font-medium text-foreground">{clientName}</span>{" "}
-            and any pending payment records. You cannot undo this.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-          <AlertDialogCancel className="min-h-11 w-full sm:w-auto">Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            className="min-h-11 w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:w-auto"
-            disabled={del.isPending}
-            onClick={(e) => {
-              e.preventDefault();
-              handleConfirm();
-            }}
-          >
-            {del.isPending ? "Deleting…" : "Delete"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <TwoStepDestructiveDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={trigger}
+      step1={{
+        title: "Delete this prospect?",
+        description: (
+          <>
+            You are about to delete{" "}
+            <span className="font-semibold text-foreground">{clientName}</span>. This removes the
+            prospect and any pending payment records from your pipeline.
+          </>
+        )
+      }}
+      step2={{
+        title: "Permanently delete prospect?",
+        description: (
+          <>
+            Last chance: delete{" "}
+            <span className="font-semibold text-foreground">{clientName}</span> forever? No admin
+            approval is required, and you cannot restore this prospect afterward.
+          </>
+        )
+      }}
+      confirmLabel="Yes, delete permanently"
+      pendingLabel="Deleting…"
+      onConfirm={handleConfirm}
+      isPending={del.isPending}
+    />
   );
 }
