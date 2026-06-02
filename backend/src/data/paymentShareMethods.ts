@@ -21,10 +21,26 @@ export const PAYMENT_SHARE_METHOD_LABELS: Record<PaymentShareMethodKey, string> 
   razorpay_payment_page: "Razorpay Payment pages"
 };
 
+/** Code-owned Razorpay QR asset; update via deploy, not Portal Settings. */
+export const RAZORPAY_QR_ASSET_PATH = "/portal-assets/shyara-razorpay-qr.png";
+
+export const RAZORPAY_QR_DEFAULT_INSTRUCTIONS =
+  "Scan and pay with any UPI app. Share this QR on WhatsApp with the client.";
+
+const CODE_OWNED_QR_METHOD_KEYS = new Set<PaymentShareMethodKey>(["razorpay_qr", "sbi_qr"]);
+
 export const paymentShareMethodConfigSchema = z.object({
   key: paymentShareMethodKeySchema,
   shareValue: z.string().max(2000).default(""),
-  qrImageUrl: z.union([z.string().url().max(2000), z.literal(""), z.null()]).optional().nullable(),
+  qrImageUrl: z
+    .union([
+      z.string().url().max(2000),
+      z.string().regex(/^\/portal-assets\/.+\.(png|jpg|jpeg|webp|svg)$/i).max(2000),
+      z.literal(""),
+      z.null()
+    ])
+    .optional()
+    .nullable(),
   instructions: z.string().max(500).optional().nullable()
 });
 
@@ -39,6 +55,27 @@ export function defaultPaymentShareMethods(): PaymentShareMethodConfig[] {
   }));
 }
 
+/** QR image URLs are code-owned; never persist admin-supplied values for QR methods. */
+export function sanitizePaymentShareMethodForStorage(
+  config: PaymentShareMethodConfig
+): PaymentShareMethodConfig {
+  if (CODE_OWNED_QR_METHOD_KEYS.has(config.key)) {
+    return { ...config, qrImageUrl: null };
+  }
+  return config;
+}
+
+function applyCodeOwnedQrConfig(config: PaymentShareMethodConfig): PaymentShareMethodConfig {
+  if (config.key === "razorpay_qr") {
+    return {
+      ...config,
+      qrImageUrl: RAZORPAY_QR_ASSET_PATH,
+      instructions: config.instructions?.trim() || RAZORPAY_QR_DEFAULT_INSTRUCTIONS
+    };
+  }
+  return config;
+}
+
 export function mergePaymentShareMethods(
   stored: PaymentShareMethodConfig[] | undefined
 ): PaymentShareMethodConfig[] {
@@ -48,13 +85,24 @@ export function mergePaymentShareMethods(
   return PAYMENT_SHARE_METHOD_KEYS.map((key) => {
     const existing = byKey.get(key);
     if (!existing) return defaults.find((d) => d.key === key)!;
-    return paymentShareMethodConfigSchema.parse({
-      key,
-      shareValue: existing.shareValue ?? "",
-      qrImageUrl: existing.qrImageUrl ?? null,
-      instructions: existing.instructions ?? null
-    });
+    return sanitizePaymentShareMethodForStorage(
+      paymentShareMethodConfigSchema.parse({
+        key,
+        shareValue: existing.shareValue ?? "",
+        qrImageUrl: existing.qrImageUrl ?? null,
+        instructions: existing.instructions ?? null
+      })
+    );
   });
+}
+
+export function resolvePaymentShareConfig(
+  methods: PaymentShareMethodConfig[],
+  key: PaymentShareMethodKey
+): PaymentShareMethodConfig {
+  const found = methods.find((m) => m.key === key);
+  const base = found ?? { key, shareValue: "", qrImageUrl: null, instructions: null };
+  return applyCodeOwnedQrConfig(base);
 }
 
 export function paymentShareMethodLabel(key: string): string {

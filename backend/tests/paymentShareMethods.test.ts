@@ -6,7 +6,10 @@ import {
 } from "../src/validators/schemas.js";
 import {
   PAYMENT_SHARE_METHOD_KEYS,
-  defaultPaymentShareMethods
+  RAZORPAY_QR_ASSET_PATH,
+  defaultPaymentShareMethods,
+  mergePaymentShareMethods,
+  resolvePaymentShareConfig
 } from "../src/data/paymentShareMethods.js";
 
 describe("payment share method validation", () => {
@@ -71,5 +74,26 @@ describe("parsePortalSettings paymentShareMethods", () => {
     expect(settings.paymentShareMethods[0].shareValue).toBe("pay@shyara");
     expect(settings.paymentShareMethods[0].instructions).toBe("Use GPay");
     expect(settings.paymentShareMethods[1].key).toBe(defaults[1].key);
+  });
+
+  it("strips stored qrImageUrl for code-owned QR methods", () => {
+    const settings = parsePortalSettings({
+      paymentShareMethods: [
+        {
+          key: "razorpay_qr",
+          shareValue: "Shyara UPI",
+          qrImageUrl: "https://evil.example/qr.png",
+          instructions: null
+        }
+      ]
+    });
+    expect(settings.paymentShareMethods[1].qrImageUrl).toBeNull();
+  });
+
+  it("resolvePaymentShareConfig injects code-owned Razorpay QR path", () => {
+    const methods = mergePaymentShareMethods([]);
+    const config = resolvePaymentShareConfig(methods, "razorpay_qr");
+    expect(config.qrImageUrl).toBe(RAZORPAY_QR_ASSET_PATH);
+    expect(config.instructions).toMatch(/Scan and pay/i);
   });
 });

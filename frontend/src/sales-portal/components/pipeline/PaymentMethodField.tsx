@@ -1,6 +1,7 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import {
   Copy,
+  Download,
   ExternalLink,
   Globe,
   Link2,
@@ -25,8 +26,8 @@ import {
   PAYMENT_SHARE_METHOD_KEYS,
   PAYMENT_SHARE_METHOD_LABELS,
   paymentShareMethodKind,
-  paymentShareMethodsByKey,
-  resolvePaymentShareConfig
+  resolvePaymentShareConfig,
+  resolveQrImageSrc
 } from "../../lib/paymentShareMethods";
 
 type Props = {
@@ -58,11 +59,10 @@ export const PaymentMethodSharePanel = memo(function PaymentMethodSharePanel({
 }: SharePanelProps) {
   const kind = paymentShareMethodKind(config.key);
   const shareValue = config.shareValue.trim();
-  const qrUrl = config.qrImageUrl?.trim() || "";
+  const qrSrc = resolveQrImageSrc(config.qrImageUrl);
   const linkHref = kind === "url" ? safeOpenHref(shareValue) : null;
-  const qrHref = qrUrl ? safeOpenHref(qrUrl) : null;
   const hasShareValue = shareValue.length > 0;
-  const hasQr = qrHref != null;
+  const hasQr = qrSrc != null;
 
   if (!hasShareValue && !hasQr) {
     return (
@@ -101,18 +101,26 @@ export const PaymentMethodSharePanel = memo(function PaymentMethodSharePanel({
           {hasQr ? (
             <div className="flex w-full max-w-full flex-col items-start gap-2">
               <img
-                src={qrHref}
+                src={qrSrc}
                 alt={`${PAYMENT_SHARE_METHOD_LABELS[config.key]} QR code`}
                 loading="lazy"
                 decoding="async"
                 className="h-auto max-h-48 w-full max-w-[12rem] rounded-md border object-contain"
               />
-              <Button type="button" variant="outline" size="sm" className="min-h-11 w-full sm:w-auto" asChild>
-                <a href={qrHref} target="_blank" rel="noreferrer noopener">
-                  <ExternalLink className="mr-2 h-4 w-4" aria-hidden />
-                  Open QR
-                </a>
-              </Button>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <Button type="button" variant="outline" size="sm" className="min-h-11 w-full sm:w-auto" asChild>
+                  <a href={qrSrc} download="shyara-razorpay-qr.png">
+                    <Download className="mr-2 h-4 w-4" aria-hidden />
+                    Download QR
+                  </a>
+                </Button>
+                <Button type="button" variant="outline" size="sm" className="min-h-11 w-full sm:w-auto" asChild>
+                  <a href={qrSrc} target="_blank" rel="noreferrer noopener">
+                    <ExternalLink className="mr-2 h-4 w-4" aria-hidden />
+                    Open QR
+                  </a>
+                </Button>
+              </div>
             </div>
           ) : null}
           {hasShareValue ? (
@@ -205,12 +213,10 @@ export function PaymentMethodField({
 
 /** Resources page: one card per configured method. */
 export function PaymentMethodsResourceList({ methods }: { methods: PaymentShareMethodConfig[] }) {
-  const methodsByKey = useMemo(() => paymentShareMethodsByKey(methods), [methods]);
-
   return (
     <div className="space-y-3">
       {PAYMENT_SHARE_METHOD_KEYS.map((key) => {
-        const config = methodsByKey.get(key) ?? resolvePaymentShareConfig(methods, key);
+        const config = resolvePaymentShareConfig(methods, key);
         const Icon = METHOD_ICONS[key];
         return (
           <div key={key} className="space-y-2 rounded-lg border p-3">

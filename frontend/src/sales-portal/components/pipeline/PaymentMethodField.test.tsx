@@ -2,6 +2,10 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { PaymentMethodField, PaymentMethodSharePanel } from "./PaymentMethodField";
 import type { PaymentShareMethodConfig } from "../../types";
+import {
+  RAZORPAY_QR_ASSET_PATH,
+  resolvePaymentShareConfig
+} from "../../lib/paymentShareMethods";
 
 const methods: PaymentShareMethodConfig[] = [
   {
@@ -41,6 +45,23 @@ describe("PaymentMethodSharePanel", () => {
       />
     );
     expect(screen.getByText(/Ask admin to configure/i)).toBeInTheDocument();
+  });
+
+  it("shows Razorpay QR image and download link without admin configuration", () => {
+    const config = resolvePaymentShareConfig([], "razorpay_qr");
+    render(<PaymentMethodSharePanel config={config} />);
+    expect(screen.getByRole("img", { name: /Razorpay QR Code QR code/i })).toHaveAttribute(
+      "src",
+      RAZORPAY_QR_ASSET_PATH
+    );
+    expect(screen.getByRole("link", { name: /Download QR/i })).toHaveAttribute(
+      "href",
+      RAZORPAY_QR_ASSET_PATH
+    );
+    expect(screen.getByRole("link", { name: /Open QR/i })).toHaveAttribute(
+      "href",
+      RAZORPAY_QR_ASSET_PATH
+    );
   });
 });
 

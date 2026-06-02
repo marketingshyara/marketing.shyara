@@ -1,5 +1,6 @@
 import type { LeadStatus, Prisma, PrismaClient } from "@prisma/client";
 import { HttpError } from "../errors/httpError.js";
+import { resolvePaymentShareConfig } from "../data/paymentShareMethods.js";
 import {
   parsePortalSettings,
   patchPortalSettingsSchema,
@@ -112,7 +113,9 @@ export function toRepPortalSettings(values: PortalSettingsValues) {
     templatesCatalogUrl: values.templatesCatalogUrl,
     tutorialLinks: values.tutorialLinks,
     painPointsByCategory: values.painPointsByCategory,
-    paymentShareMethods: values.paymentShareMethods
+    paymentShareMethods: values.paymentShareMethods.map((method) =>
+      resolvePaymentShareConfig(values.paymentShareMethods, method.key)
+    )
   };
 }
 

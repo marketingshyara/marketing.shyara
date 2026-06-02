@@ -419,14 +419,11 @@ export function SettingsPage() {
                   />
                 </div>
                 {(key === "razorpay_qr" || key === "sbi_qr") && (
-                  <div className="space-y-2">
-                    <Label className="text-xs">QR image URL</Label>
-                    <Input
-                      className="min-h-11"
-                      placeholder="https://…/qr.png"
-                      {...form.register(`paymentShareMethods.${i}.qrImageUrl`)}
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {key === "razorpay_qr"
+                      ? "QR image is managed in code and shown to reps on Resources automatically."
+                      : "SBI QR is not configured yet; add a code-owned asset in a future deploy."}
+                  </p>
                 )}
                 <div className="space-y-2">
                   <Label className="text-xs">Instructions for reps (optional)</Label>
