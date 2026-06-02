@@ -9,8 +9,19 @@ export const TEMPLATE_CATEGORY_PREFIX: Record<string, string> = {
   clinics: "CLI",
   astrology: "AST",
   fitness: "GYM",
-  automotive: "CAR"
+  automotive: "CAR",
+  custom: "CUS"
 };
+
+/** Portal-only template for bespoke client builds (no catalog sample). */
+export const CUSTOM_WEBSITE_TEMPLATE_ID = "wt-custom-website";
+
+export function isCustomWebsiteTemplate(
+  row: { id?: string; categoryId?: string } | null | undefined
+): boolean {
+  if (!row) return false;
+  return row.categoryId === "custom" || row.id === CUSTOM_WEBSITE_TEMPLATE_ID;
+}
 
 export type WebsiteTemplateCatalogEntry = {
   id: string;

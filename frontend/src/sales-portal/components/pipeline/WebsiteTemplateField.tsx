@@ -14,6 +14,10 @@ import {
   templatePosterUrl,
   templateSamplePreviewUrl
 } from "../../lib/templateSampleUrl";
+import {
+  CUSTOM_WEBSITE_HELPER_COPY,
+  isCustomWebsiteTemplate
+} from "../../lib/websiteTemplate";
 import type { WebsiteTemplate } from "../../types";
 
 export type WebsiteTemplateFieldMode = "picker" | "selected" | "readonly";
@@ -42,10 +46,12 @@ export function WebsiteTemplateField({
   id = "website-template"
 }: Props) {
   const selected = templates.find((t) => t.id === value) ?? null;
+  const isCustom = isCustomWebsiteTemplate(selected);
   const previewUrl = templateSamplePreviewUrl(selected);
   const posterUrl = templatePosterUrl(selected);
   const showCatalog =
     catalogUrl &&
+    !isCustom &&
     (mode === "picker" || (mode === "selected" && !value));
 
   const readOnly = mode === "readonly" || disabled;
@@ -85,6 +91,9 @@ export function WebsiteTemplateField({
             </div>
             {lockedReason ? (
               <p className="text-xs text-muted-foreground">{lockedReason}</p>
+            ) : null}
+            {isCustom ? (
+              <p className="text-xs text-muted-foreground">{CUSTOM_WEBSITE_HELPER_COPY}</p>
             ) : null}
           </div>
         </div>
