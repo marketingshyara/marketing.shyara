@@ -247,6 +247,7 @@ export interface TeamRepSummary {
   totalLeads: number;
   activeClients: number;
   ongoingProjects: number;
+  completedProjects: number;
   pendingPayments: number;
   needsAdminAction: number;
   /** Legacy alias */

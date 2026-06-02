@@ -15,6 +15,7 @@ describe("removeLeadFromTeamRepActiveCache", () => {
         totalLeads: 0,
         activeClients: 1,
         ongoingProjects: 1,
+        completedProjects: 0,
         pendingPayments: 0,
         needsAdminAction: 0
       },

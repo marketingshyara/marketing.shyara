@@ -74,6 +74,7 @@ export function RepProjectsPage() {
         <StatPill label="Leads" value={rep.totalLeads} />
         <StatPill label="Clients" value={rep.activeClients} />
         <StatPill label="Ongoing" value={rep.ongoingProjects} />
+        <StatPill label="Completed" value={rep.completedProjects ?? 0} />
         <StatPill label="Pending payments" value={rep.pendingPayments} />
         <StatPill
           label="Needs your approval"

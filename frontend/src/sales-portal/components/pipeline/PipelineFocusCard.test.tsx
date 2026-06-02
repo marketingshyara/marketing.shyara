@@ -34,7 +34,7 @@ describe("PipelineFocusCard", () => {
       />
     );
     expect(screen.getByRole("status")).toHaveTextContent(/waiting on admin/i);
-    expect(screen.getByRole("button", { name: /view submission/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /view deal/i })).toBeInTheDocument();
   });
 
   it("calls onPrimaryAction for idle View last step (admin caught up)", async () => {

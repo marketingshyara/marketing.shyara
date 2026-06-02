@@ -9,6 +9,7 @@ export type RepDashboardStats = {
   totalLeads: number;
   activeClients: number;
   ongoingProjects: number;
+  completedProjects: number;
   pendingPayments: number;
   needsAdminAction: number;
 };
@@ -19,7 +20,7 @@ export async function getRepDashboardStats(
 ): Promise<RepDashboardStats> {
   const assigned = { assignedToUserId: repUserId };
 
-  const [totalLeads, activeClients, ongoingProjects, pendingPayments, needsAdminAction] =
+  const [totalLeads, activeClients, ongoingProjects, completedProjects, pendingPayments, needsAdminAction] =
     await Promise.all([
       prisma.lead.count({
         where: { ...assigned, convertedAt: null }
@@ -37,6 +38,13 @@ export async function getRepDashboardStats(
           convertedAt: { not: null },
           status: { not: LeadStatus.COMMISSION_PAID },
           project: { is: { deploymentVerifiedAt: null } }
+        }
+      }),
+      prisma.lead.count({
+        where: {
+          ...assigned,
+          convertedAt: { not: null },
+          status: LeadStatus.COMMISSION_PAID
         }
       }),
       prisma.leadPayment.count({
@@ -115,6 +123,7 @@ export async function getRepDashboardStats(
     totalLeads,
     activeClients,
     ongoingProjects,
+    completedProjects,
     pendingPayments,
     needsAdminAction
   };

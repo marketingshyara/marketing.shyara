@@ -36,6 +36,8 @@ export function AdminRepCard({ rep }: Props) {
           <span>{rep.activeClients} clients</span>
           <span>·</span>
           <span>{rep.ongoingProjects} ongoing</span>
+          <span>·</span>
+          <span>{rep.completedProjects ?? 0} completed</span>
           {pendingPayments > 0 ? (
             <>
               <span>·</span>
