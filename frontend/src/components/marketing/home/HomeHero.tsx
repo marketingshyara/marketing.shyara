@@ -1,30 +1,29 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, ChevronDown, MessageCircle } from "lucide-react";
+import { ArrowRight, ChevronDown, MessageCircle, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollSection } from "@/components/marketing/motion/ScrollSection";
-import { ScrollLottie } from "@/components/marketing/motion/ScrollLottie";
-import { HomeAmbientLayer } from "./HomeAmbientLayer";
 import { homeHero } from "@/content/home";
-import { homeLottie } from "@/lib/homeLottie";
 import { openWhatsApp, homeWhatsAppMessages } from "@/lib/whatsapp";
 import { prefersReducedMotion } from "@/lib/prefersReducedMotion";
 import { cn } from "@/lib/utils";
 import { easeOutExpo } from "@/components/marketing/motion/motionPresets";
 
-/** One screen below the fixed h-16 site header — avoids double viewport + spacer push-down */
-const HERO_MIN_H = "min-h-[calc(100dvh-4rem)]";
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 export function HomeHero() {
   const scopeRef = useRef<HTMLElement>(null);
-  const orbARef = useRef<HTMLDivElement>(null);
-  const orbBRef = useRef<HTMLDivElement>(null);
-  const orbCRef = useRef<HTMLDivElement>(null);
-  const lottieWrapRef = useRef<HTMLDivElement>(null);
-  const scrollCueRef = useRef<HTMLDivElement>(null);
+  const bgLayerRef = useRef<HTMLDivElement>(null);
+  const contentLayerRef = useRef<HTMLDivElement>(null);
+  const blobARef = useRef<HTMLDivElement>(null);
+  const blobBRef = useRef<HTMLDivElement>(null);
+  const floatARef = useRef<HTMLDivElement>(null);
+  const floatBRef = useRef<HTMLDivElement>(null);
+  const marqueeRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
 
   useGSAP(
@@ -37,11 +36,8 @@ export function HomeHero() {
         gsap.set(heroParts, {
           opacity: 1,
           y: 0,
-          x: 0,
-          scale: 1,
-          filter: "none",
           visibility: "visible",
-          clearProps: "opacity,transform,filter,visibility",
+          clearProps: "opacity,transform,visibility",
         });
       };
 
@@ -50,215 +46,282 @@ export function HomeHero() {
         return;
       }
 
-      const lines = scope.querySelectorAll<HTMLElement>("[data-hero-line]");
-
-      const tl = gsap.timeline({
+      const loadTl = gsap.timeline({
         defaults: { ease: "power3.out", immediateRender: false },
         onComplete: settleHeroParts,
       });
 
-      tl.from(scope.querySelector("[data-hero-label]"), {
-        opacity: 0,
-        y: 12,
-        duration: 0.5,
-      })
-        .from(
-          lines,
-          {
-            opacity: 0,
-            y: 32,
-            scale: 0.96,
-            filter: "blur(6px)",
-            duration: 0.7,
-            stagger: 0.12,
-          },
-          "-=0.2"
-        )
+      loadTl
+        .from(scope.querySelector("[data-hero-headline]"), {
+          opacity: 0,
+          y: 28,
+          duration: 0.7,
+        })
         .from(
           scope.querySelector("[data-hero-sub]"),
           { opacity: 0, y: 16, duration: 0.5 },
           "-=0.35"
+        )
+        .from(
+          scope.querySelector("[data-hero-cta]"),
+          { opacity: 0, y: 14, duration: 0.45 },
+          "-=0.2"
+        )
+        .from(
+          scope.querySelector("[data-hero-proof]"),
+          { opacity: 0, y: 12, duration: 0.4 },
+          "-=0.15"
         );
 
-      [orbARef, orbBRef, orbCRef].forEach((ref, i) => {
+      [blobARef, blobBRef].forEach((ref, i) => {
         if (!ref.current) return;
         gsap.to(ref.current, {
-          y: i % 2 === 0 ? 18 : -12,
-          x: i === 1 ? -10 : 8,
-          rotation: i === 2 ? 4 : 0,
-          duration: 5 + i * 1.2,
+          y: i === 0 ? 18 : -14,
+          scale: i === 0 ? 1.03 : 1.02,
+          duration: i === 0 ? 8 : 10,
           repeat: -1,
           yoyo: true,
           ease: "sine.inOut",
         });
       });
 
-      if (lottieWrapRef.current) {
-        gsap.to(lottieWrapRef.current, {
-          rotation: 6,
-          scale: 1.05,
+      [floatARef, floatBRef].forEach((ref, i) => {
+        if (!ref.current) return;
+        gsap.to(ref.current, {
+          y: i === 0 ? -10 : 8,
+          duration: i === 0 ? 6 : 7,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          delay: 1.2 + i * 0.3,
+        });
+      });
+
+      const contentLayer = contentLayerRef.current;
+      const bgLayer = bgLayerRef.current;
+      const marquee = marqueeRef.current;
+
+      if (contentLayer) {
+        gsap.to(contentLayer, {
+          y: () => -window.innerHeight * 0.18,
+          opacity: 0,
+          scale: 0.97,
           ease: "none",
           scrollTrigger: {
             trigger: scope,
             start: "top top",
             end: "bottom top",
-            scrub: 0.8,
+            scrub: 0.85,
           },
         });
       }
 
-      if (scrollCueRef.current) {
-        gsap.to(scrollCueRef.current, {
-          y: 6,
-          opacity: 0.45,
-          duration: 1.2,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
+      if (bgLayer) {
+        gsap.to(bgLayer, {
+          y: () => window.innerHeight * 0.14,
+          ease: "none",
+          scrollTrigger: {
+            trigger: scope,
+            start: "top top",
+            end: "bottom top",
+            scrub: true,
+          },
         });
       }
+
+      if (marquee) {
+        gsap.to(marquee, {
+          opacity: 0,
+          y: 24,
+          ease: "none",
+          scrollTrigger: {
+            trigger: scope,
+            start: "top top",
+            end: "center top",
+            scrub: 0.5,
+          },
+        });
+      }
+
+      scope.querySelectorAll<HTMLElement>("[data-hero-parallax]").forEach((el) => {
+        const speed = Number(el.dataset.heroParallax ?? "0.3");
+        gsap.fromTo(
+          el,
+          { y: -speed * 36 },
+          {
+            y: speed * 48,
+            ease: "none",
+            scrollTrigger: {
+              trigger: scope,
+              start: "top top",
+              end: "bottom top",
+              scrub: 0.65,
+            },
+          }
+        );
+      });
     },
     { scope: scopeRef }
   );
+
+  const marqueeItems = [...homeHero.marquee, ...homeHero.marquee];
 
   return (
     <ScrollSection
       ref={scopeRef}
       section="hero"
-      className={cnHeroShell()}
+      className={cn(
+        "hero-wom relative -mt-16 flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden bg-background md:-mt-[4.25rem]"
+      )}
     >
-      <HomeAmbientLayer variant="hero" />
-      <div
-        ref={orbARef}
-        data-parallax
-        data-parallax-speed="0.2"
-        className="home-orb-drift pointer-events-none absolute -left-16 top-[12%] h-48 w-48 rounded-full bg-brand-emerald/15 blur-3xl md:h-64 md:w-64"
-        aria-hidden
-      />
-      <div
-        ref={orbBRef}
-        data-parallax
-        data-parallax-speed="0.35"
-        className="home-orb-drift-slow pointer-events-none absolute -right-12 top-[28%] h-40 w-40 rounded-full bg-brand-sky/15 blur-3xl md:h-56 md:w-56"
-        aria-hidden
-      />
-      <div
-        ref={orbCRef}
-        className="pointer-events-none absolute left-1/2 bottom-[18%] h-32 w-32 -translate-x-1/2 rounded-full bg-brand-violet/12 blur-3xl md:h-44 md:w-44"
-        aria-hidden
-      />
-
-      {/* Decorative Lottie — out of document flow so it does not push copy down */}
-      <div
-        ref={lottieWrapRef}
-        data-parallax
-        data-parallax-speed="0.15"
-        className="pointer-events-none absolute left-1/2 top-[40%] z-0 h-44 w-44 -translate-x-1/2 -translate-y-1/2 opacity-70 sm:h-52 sm:w-52 md:top-[42%] md:h-60 md:w-60 md:opacity-75"
-        aria-hidden
-      >
-        <ScrollLottie
-          src={homeLottie.hero}
-          triggerRef={scopeRef}
-          start="top top"
-          end="bottom top"
-          scrub={0.35}
-          className="h-full w-full"
-        />
+      <div ref={bgLayerRef} className="pointer-events-none absolute inset-0 z-0" aria-hidden>
+        <div className="hero-wom-dot-grid absolute inset-0" />
+        <div ref={blobARef} data-hero-parallax="0.45" className="hero-wom-blob-a absolute" />
+        <div ref={blobBRef} data-hero-parallax="0.35" className="hero-wom-blob-b absolute" />
       </div>
 
       <div
-        className={`container relative z-10 flex ${HERO_MIN_H} flex-col items-center justify-center px-4 py-8 text-center sm:py-10`}
+        ref={floatARef}
+        data-hero-parallax
+        data-hero-parallax="0.55"
+        className="hero-wom-float-card pointer-events-none absolute right-[4%] top-[34%] z-[8] hidden min-w-[11.5rem] rounded-2xl border border-brand-emerald/15 bg-card px-5 py-4 shadow-[0_12px_40px_rgb(0_0_0/0.07)] lg:block"
+        aria-hidden
       >
-        <p
-          data-hero-label
-          data-hero-part
-          className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-emerald"
-        >
-          {homeHero.label}
+        <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground/70">
+          {homeHero.floatCards.stat.label}
         </p>
-
-        <h1 className="font-display max-w-3xl text-balance font-extrabold text-display-clamp text-foreground">
-          {homeHero.headlineLines.map((line, i) => (
+        <p className="font-display text-[1.65rem] font-bold leading-none text-brand-teal">
+          {homeHero.floatCards.stat.value}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground/80">{homeHero.floatCards.stat.sub}</p>
+      </div>
+      <div
+        ref={floatBRef}
+        data-hero-parallax
+        data-hero-parallax="0.4"
+        className="hero-wom-float-card-dark pointer-events-none absolute left-[3%] top-[38%] z-[8] hidden min-w-[10rem] rounded-[14px] bg-brand-teal px-4 py-3.5 shadow-lg lg:block"
+        aria-hidden
+      >
+        <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-white/50">
+          {homeHero.floatCards.chart.label}
+        </p>
+        <p className="font-display text-[1.6rem] font-bold leading-none text-white">
+          {homeHero.floatCards.chart.value}
+        </p>
+        <div className="mt-2 flex h-6 items-end gap-0.5" aria-hidden>
+          {homeHero.floatCards.chart.bars.map((h, i) => (
             <span
-              key={line}
-              data-hero-line
-              data-hero-part
-              className={cn("block", i === 1 && "home-accent-line")}
-            >
-              {line}
-            </span>
+              key={i}
+              className={cn(
+                "w-1.5 rounded-sm",
+                i >= homeHero.floatCards.chart.activeFrom
+                  ? "bg-brand-coral/90"
+                  : "bg-white/25"
+              )}
+              style={{ height: `${h}%` }}
+            />
           ))}
+        </div>
+      </div>
+
+      <div
+        ref={contentLayerRef}
+        data-hero-scroll-content
+        className="relative z-[5] flex flex-1 flex-col items-center justify-center px-4 py-20 text-center sm:px-6 sm:py-24 md:px-10"
+      >
+        <h1
+          data-hero-headline
+          data-hero-part
+          className="hero-wom-headline font-display max-w-[54rem] text-balance font-black leading-[1.08] tracking-[-0.03em] text-foreground"
+        >
+          {homeHero.headline}
+          <span className="hero-wom-highlight relative inline-block">{homeHero.headlineHighlight}</span>
+          {homeHero.headlineSuffix}
         </h1>
 
         <p
           data-hero-sub
           data-hero-part
-          className="mt-4 max-w-md text-base text-muted-foreground md:text-lg"
+          className="mt-5 max-w-[30rem] text-base font-light leading-relaxed text-muted-foreground sm:mt-7 sm:text-lg"
         >
           {homeHero.subline}
         </p>
 
-        <ul
-          className="mt-5 flex w-full max-w-xl flex-col gap-1.5 text-sm sm:mt-6 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-2 md:text-base"
-          aria-label="What your website delivers"
-        >
-          {homeHero.outcomes.map((item, i) => (
-            <li key={item} className="flex items-center gap-2 sm:contents">
-              {i > 0 && (
-                <span className="hidden text-muted-foreground/35 sm:inline" aria-hidden>
-                  ·
-                </span>
-              )}
-              <span
-                className="rounded-lg border border-border/50 bg-background/75 px-3 py-2 font-medium text-foreground/90 backdrop-blur-sm transition-colors hover:border-brand-emerald/40 sm:rounded-full sm:border-border/40 sm:px-3 sm:py-1.5"
-              >
-                {item}
-              </span>
-            </li>
-          ))}
-        </ul>
-
         <motion.div
           data-hero-cta
           data-hero-part
-          className="mt-6 flex w-full max-w-sm flex-col gap-3 sm:mt-8 sm:max-w-none sm:flex-row sm:justify-center"
+          className="mt-8 flex w-full max-w-sm flex-col items-center gap-3 sm:mt-10 sm:max-w-none sm:flex-row sm:justify-center sm:gap-4"
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-          transition={{ delay: 0.85, duration: 0.5, ease: easeOutExpo }}
+          transition={{ delay: 0.45, duration: 0.5, ease: easeOutExpo }}
         >
-          <motion.div whileHover={reduceMotion ? undefined : { scale: 1.03 }} whileTap={reduceMotion ? undefined : { scale: 0.98 }}>
+          <motion.div whileHover={reduceMotion ? undefined : { y: -2 }} whileTap={reduceMotion ? undefined : { scale: 0.98 }}>
             <Button
               size="lg"
-              className="home-cta-pulse min-h-[48px] w-full gap-2 bg-brand-coral text-white shadow-md shadow-brand-coral/20 hover:bg-brand-coral/90 sm:w-auto"
+              className="h-auto min-h-[48px] w-full rounded-full bg-brand-coral px-8 py-3.5 text-[15px] font-medium text-white shadow-none hover:bg-brand-coral/90 hover:shadow-[0_8px_24px_hsl(var(--brand-coral)/0.28)] sm:w-auto"
               onClick={() => openWhatsApp(homeWhatsAppMessages.hero)}
             >
-              <MessageCircle className="h-5 w-5" />
+              <MessageCircle className="h-4 w-4" />
               {homeHero.primaryCta}
             </Button>
           </motion.div>
-          <motion.div whileHover={reduceMotion ? undefined : { scale: 1.02 }} whileTap={reduceMotion ? undefined : { scale: 0.98 }}>
-            <Button size="lg" variant="outline" className="min-h-[48px] w-full gap-2 sm:w-auto" asChild>
+          <motion.div whileHover={reduceMotion ? undefined : { y: -1 }} whileTap={reduceMotion ? undefined : { scale: 0.98 }}>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-auto min-h-[48px] w-full gap-2 rounded-full border-[1.5px] border-brand-emerald/25 bg-transparent px-7 py-3.5 text-[15px] font-medium text-brand-teal hover:border-brand-emerald/50 hover:bg-transparent sm:w-auto"
+              asChild
+            >
               <Link to="/samples">
+                <Play className="h-4 w-4 fill-current" aria-hidden />
                 {homeHero.secondaryCta}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                <ArrowRight className="h-4 w-4 opacity-70" />
               </Link>
             </Button>
           </motion.div>
         </motion.div>
+
+        <p
+          data-hero-proof
+          data-hero-part
+          className="mt-8 text-[13px] font-medium text-muted-foreground sm:mt-10"
+        >
+          {homeHero.socialProof}
+        </p>
+
       </div>
 
       <div
-        ref={scrollCueRef}
-        className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 text-muted-foreground/60"
+        data-hero-scroll-cue
+        className="pointer-events-none absolute bottom-[4.75rem] left-1/2 z-[6] flex -translate-x-1/2 flex-col items-center gap-1 text-muted-foreground/50 sm:bottom-[5.25rem]"
         aria-hidden
       >
-        <span className="h-6 w-px bg-gradient-to-b from-transparent via-brand-emerald/50 to-brand-emerald/80" />
-        <ChevronDown className="h-4 w-4" />
+        <span className="text-[11px] font-medium uppercase tracking-[0.14em]">Scroll</span>
+        <ChevronDown className="h-4 w-4 animate-bounce" />
+      </div>
+
+      <div
+        ref={marqueeRef}
+        className="hero-wom-marquee relative z-[5] mt-auto w-full shrink-0 overflow-hidden border-t border-brand-emerald/10 py-4 sm:py-6"
+      >
+        <div
+          className={cn(
+            "hero-wom-marquee-track flex w-max gap-12 whitespace-nowrap",
+            reduceMotion && "motion-reduce:animate-none"
+          )}
+          aria-hidden
+        >
+          {marqueeItems.map((item, i) => (
+            <span
+              key={`${item}-${i}`}
+              className="flex items-center gap-2.5 text-[13px] font-normal uppercase tracking-[0.04em] text-muted-foreground/50"
+            >
+              <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-brand-coral/60" />
+              {item}
+            </span>
+          ))}
+        </div>
       </div>
     </ScrollSection>
   );
-}
-
-function cnHeroShell() {
-  return `gradient-hero relative flex ${HERO_MIN_H} overflow-hidden`;
 }

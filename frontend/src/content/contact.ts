@@ -6,7 +6,6 @@ export const contactPage = {
     "No forms or call centers. Message us directly and speak with the team that will handle your website.",
   trustPoints: [
     "Reply within 2–4 hours on business days",
-    "First conversation is free",
     "Honest advice if we are not the right fit",
     "No pushy sales, just clarity",
   ],
@@ -33,8 +32,8 @@ export const contactPage = {
     subtitle: "Most owners ask these before their first message.",
     items: [
       {
-        q: "I'm not sure what I need yet.",
-        a: "That is fine. Tell us what you do and what you want more of (calls, walk-ins, bookings). We will recommend the right next step.",
+        q: "We are not sure what our website should include.",
+        a: "Start with what customers check before they visit: what you offer, location, hours, and a clear way to call or WhatsApp you. Tell us your business and what you want more of (calls, walk-ins, bookings). We will suggest a simple site structure and how it helps you show up on Google and Maps.",
       },
       {
         q: "My budget is small.",

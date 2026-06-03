@@ -8,7 +8,7 @@ vi.mock("gsap", () => ({
   default: {
     registerPlugin: vi.fn(),
     from: vi.fn(),
-    fromTo: vi.fn(),
+    fromTo: vi.fn().mockReturnValue({ kill: vi.fn() }),
     to: vi.fn(),
     set: vi.fn(),
     ticker: { add: vi.fn(), remove: vi.fn(), lagSmoothing: vi.fn() },
@@ -87,7 +87,9 @@ describe("Home page", () => {
       </HelmetProvider>
     );
 
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/We create\s*websites\./i);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      /Because word-of-mouth needs a landing page/i
+    );
     expect(screen.getByRole("heading", { level: 2, name: /Four outcomes/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: /SEO → AEO → GEO/i })).toBeInTheDocument();
   });

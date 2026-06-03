@@ -9,16 +9,35 @@ export const homeSeo = {
 };
 
 export const homeHero = {
-  label: "Websites for local businesses",
-  headlineLines: ["We create", "websites."],
-  subline: "For local businesses across India, in any industry.",
-  outcomes: [
-    "Show up on Google and Maps",
-    "Get calls and WhatsApp enquiries",
-    "Customers trust you before they visit",
-  ],
+  headline: "Because word-of-mouth needs a ",
+  headlineHighlight: "landing page",
+  headlineSuffix: ".",
+  subline:
+    "We build websites for local businesses across India, so Google, Maps, and AI answers send customers your way.",
   primaryCta: "Talk on WhatsApp",
   secondaryCta: "See samples",
+  socialProof: "Built for restaurants, clinics, gyms & more",
+  floatCards: {
+    stat: {
+      label: "Discovery",
+      value: "Google & Maps",
+      sub: "Local SEO built in",
+    },
+    chart: {
+      label: "Trust before visit",
+      value: "24/7",
+      bars: [40, 60, 50, 80, 70, 100],
+      activeFrom: 3,
+    },
+  },
+  marquee: [
+    "Local SEO",
+    "Google Business Profile",
+    "Mobile-first design",
+    "WhatsApp enquiries",
+    "AEO & GEO ready",
+    "Industry samples",
+  ],
 };
 
 export const homeOutcomes = {

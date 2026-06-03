@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { openWhatsApp, homeWhatsAppMessages } from "@/lib/whatsapp";
 import { prefersReducedMotion } from "@/lib/prefersReducedMotion";
-import shyaraLogo from "@/assets/shyara-logo.png";
+import { BrandLogo } from "@/components/marketing/BrandLogo";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -18,6 +18,38 @@ const navLinks = [
   { href: "/samples", label: "Samples" },
   { href: "/contact", label: "Contact" },
 ];
+
+function NavLink({
+  href,
+  label,
+  active,
+  className,
+  onClick,
+}: {
+  href: string;
+  label: string;
+  active: boolean;
+  className?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <Link
+      to={href}
+      onClick={onClick}
+      data-nav-item
+      className={cn(
+        "relative flex min-h-[40px] items-center justify-center rounded-full px-4 text-sm font-medium transition-all duration-200",
+        active
+          ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+          : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+        className
+      )}
+      aria-current={active ? "page" : undefined}
+    >
+      {label}
+    </Link>
+  );
+}
 
 export function SiteHeader() {
   const headerRef = useRef<HTMLElement>(null);
@@ -84,7 +116,7 @@ export function SiteHeader() {
           if (delta > 10 && y > 96 && !navHiddenRef.current) {
             navHiddenRef.current = true;
             gsap.to(header, {
-              y: -72,
+              y: -80,
               duration: 0.3,
               ease: "power2.in",
               overwrite: "auto",
@@ -142,53 +174,54 @@ export function SiteHeader() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 w-full transition-[border-color,background-color,box-shadow] duration-300",
           scrolled
-            ? "border-b border-border/60 bg-background/85 backdrop-blur-md shadow-sm"
-            : "border-b border-transparent bg-background/70 backdrop-blur-sm"
+            ? "border-b border-border/50 bg-background/90 shadow-[0_1px_0_0_hsl(var(--border)/0.4),0_8px_24px_-8px_rgb(0_0_0/0.08)] backdrop-blur-lg"
+            : "border-b border-transparent bg-background/55 backdrop-blur-md"
         )}
       >
-        <div className="container flex h-16 items-center justify-between">
-          <Link ref={logoRef} to="/" className="flex items-center gap-2">
-            <img src={shyaraLogo} alt="Shyara" className="h-9 w-auto dark:invert" />
-            <span className="text-xl font-display font-extrabold tracking-tight text-accent">Marketing</span>
-          </Link>
+        <div className="container relative flex h-16 items-center justify-between gap-4 md:h-[4.25rem]">
+          <BrandLogo ref={logoRef} size="lg" className="z-10" />
 
-          <nav className="hidden md:flex items-center gap-9" aria-label="Main navigation">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                data-nav-item
-                className={cn(
-                  "relative text-sm font-medium transition-colors hover:text-accent px-1 py-1 min-h-[44px] flex items-center",
-                  isActive(link.href)
-                    ? "text-foreground after:absolute after:bottom-1 after:left-0 after:right-0 after:h-0.5 after:bg-brand-emerald after:rounded-full"
-                    : "text-muted-foreground"
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav
+            className="absolute left-1/2 hidden -translate-x-1/2 md:flex"
+            aria-label="Main navigation"
+          >
+            <div
+              className={cn(
+                "flex items-center gap-0.5 rounded-full border p-1 transition-colors duration-300",
+                scrolled
+                  ? "border-border/50 bg-muted/30"
+                  : "border-border/40 bg-muted/20"
+              )}
+            >
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.href}
+                  href={link.href}
+                  label={link.label}
+                  active={isActive(link.href)}
+                />
+              ))}
+            </div>
           </nav>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="z-10 hidden items-center gap-3 md:flex">
             <ThemeToggle />
-            <div className="w-px h-4 bg-border" />
             <Button
               data-nav-item
               onClick={() => openWhatsApp(homeWhatsAppMessages.hero)}
-              className="bg-brand-coral hover:bg-brand-coral/90 text-white gap-2 shadow-sm shadow-brand-coral/15 min-h-[44px]"
+              className="h-10 min-h-[44px] gap-2 rounded-full bg-brand-coral px-5 text-white shadow-sm shadow-brand-coral/20 hover:bg-brand-coral/90"
             >
-              <MessageCircle className="h-4 w-4" />
-              Talk to Us
+              <MessageCircle className="h-4 w-4" aria-hidden />
+              <span className="text-sm font-medium">Talk to Us</span>
             </Button>
           </div>
 
-          <div className="flex md:hidden items-center gap-2">
+          <div className="z-10 flex items-center gap-1 md:hidden">
             <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
-              className="min-h-11 min-w-11"
+              className="min-h-11 min-w-11 rounded-full"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-expanded={mobileOpen}
               aria-controls="mobile-site-nav"
@@ -200,8 +233,7 @@ export function SiteHeader() {
         </div>
       </header>
 
-      {/* Spacer for fixed header */}
-      <div className="h-16" aria-hidden />
+      <div className="h-16 md:h-[4.25rem]" aria-hidden />
 
       {mobileOpen && (
         <div
@@ -212,40 +244,55 @@ export function SiteHeader() {
           aria-label="Mobile navigation"
         >
           <div
-            className="absolute inset-0 bg-foreground/25 backdrop-blur-sm"
+            className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
             aria-hidden
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute inset-x-0 top-0 bottom-0 flex flex-col bg-background pt-20 px-6 pb-8">
-            <nav id="mobile-site-nav" ref={linksRef} className="flex flex-col gap-2 flex-1" aria-label="Main navigation">
+          <div className="absolute inset-y-0 right-0 flex w-full max-w-sm flex-col border-l border-border/60 bg-background shadow-2xl">
+            <div className="flex h-16 items-center justify-between border-b border-border/50 px-5">
+              <BrandLogo size="md" onClick={() => setMobileOpen(false)} />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="min-h-11 min-w-11 rounded-full"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <nav
+              id="mobile-site-nav"
+              ref={linksRef}
+              className="flex flex-1 flex-col gap-2 px-5 py-6"
+              aria-label="Main navigation"
+            >
               {navLinks.map((link) => (
-                <Link
+                <NavLink
                   key={link.href}
-                  to={link.href}
-                  data-drawer-link
+                  href={link.href}
+                  label={link.label}
+                  active={isActive(link.href)}
                   onClick={() => setMobileOpen(false)}
-                  className={cn(
-                    "text-lg font-medium min-h-[48px] flex items-center px-4 rounded-xl transition-colors",
-                    isActive(link.href)
-                      ? "text-foreground bg-brand-emerald/10 border-l-4 border-brand-emerald"
-                      : "text-muted-foreground hover:bg-muted/50"
-                  )}
-                >
-                  {link.label}
-                </Link>
+                  className="min-h-[48px] w-full justify-start rounded-xl px-5 text-base"
+                />
               ))}
             </nav>
-            <Button
-              data-drawer-link
-              onClick={() => {
-                setMobileOpen(false);
-                openWhatsApp(homeWhatsAppMessages.hero);
-              }}
-              className="bg-brand-coral hover:bg-brand-coral/90 text-white gap-2 w-full min-h-[48px] mt-4"
-            >
-              <MessageCircle className="h-5 w-5" />
-              Talk to Us
-            </Button>
+
+            <div className="border-t border-border/50 p-5">
+              <Button
+                data-drawer-link
+                onClick={() => {
+                  setMobileOpen(false);
+                  openWhatsApp(homeWhatsAppMessages.hero);
+                }}
+                className="h-12 w-full gap-2 rounded-full bg-brand-coral text-white hover:bg-brand-coral/90"
+              >
+                <MessageCircle className="h-5 w-5" aria-hidden />
+                Talk to Us
+              </Button>
+            </div>
           </div>
         </div>
       )}

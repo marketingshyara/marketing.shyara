@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { MessageCircle, Mail } from "lucide-react";
-import shyaraLogo from "@/assets/shyara-logo.png";
+import { BrandLogo } from "@/components/marketing/BrandLogo";
 
 export function Footer() {
   return (
@@ -9,14 +9,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="md:col-span-2">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <img
-                src={shyaraLogo}
-                alt="Shyara"
-                className="h-9 w-auto dark:invert"
-              />
-              <span className="text-xl font-extrabold tracking-tight text-accent">Marketing</span>
-            </Link>
+            <BrandLogo size="md" className="mb-4" />
             <p className="text-muted-foreground text-sm max-w-md">
               We build websites for local Indian businesses so customers find you on Google, trust you online,
               and reach you on WhatsApp. Part of our mission to turn India digital.

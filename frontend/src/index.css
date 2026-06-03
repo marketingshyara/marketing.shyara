@@ -1,5 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
+@font-face {
+  font-family: 'Tan Pardiso';
+  src:
+    url('./assets/fonts/TAN-PARADISO.otf') format('opentype'),
+    url('./assets/fonts/TAN-PARADISO.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -335,6 +345,89 @@
   .home-card-lift:hover {
     @apply -translate-y-1 shadow-lg;
   }
+
+  /* Home hero — word-of-mouth reference layout */
+  .hero-wom-dot-grid {
+    background-image: radial-gradient(
+      circle,
+      hsl(var(--brand-emerald) / 0.12) 1px,
+      transparent 1px
+    );
+    background-size: 28px 28px;
+  }
+
+  .hero-wom-blob-a {
+    width: min(520px, 90vw);
+    height: min(520px, 90vw);
+    border-radius: 50%;
+    background: hsl(var(--brand-emerald) / 0.12);
+    top: -10rem;
+    right: -7rem;
+  }
+
+  .hero-wom-blob-b {
+    width: min(320px, 70vw);
+    height: min(320px, 70vw);
+    border-radius: 50%;
+    background: hsl(var(--brand-coral) / 0.1);
+    bottom: 4rem;
+    left: -5rem;
+  }
+
+  .hero-wom-headline {
+    font-size: clamp(2.25rem, 4.8vw, 4.25rem);
+  }
+
+  .hero-wom-highlight::after {
+    content: "";
+    position: absolute;
+    bottom: 0.2em;
+    left: 0;
+    right: 0;
+    height: 0.35em;
+    border-radius: 3px;
+    background: hsl(var(--brand-coral));
+    z-index: -1;
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: hero-wom-underline 0.6s ease forwards;
+    animation-delay: 0.85s;
+  }
+
+  .hero-wom-marquee-track {
+    animation: hero-wom-marquee 22s linear infinite;
+  }
+
+  .dark .hero-wom-blob-a {
+    background: hsl(var(--brand-emerald) / 0.18);
+  }
+
+  .dark .hero-wom-blob-b {
+    background: hsl(var(--brand-coral) / 0.14);
+  }
+
+  .dark .hero-wom-dot-grid {
+    background-image: radial-gradient(
+      circle,
+      hsl(var(--brand-emerald) / 0.18) 1px,
+      transparent 1px
+    );
+  }
+}
+
+@keyframes hero-wom-underline {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes hero-wom-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes home-mesh-drift {
@@ -414,7 +507,14 @@
   .home-orb-drift-slow,
   .home-accent-line,
   .home-glow-ring,
-  .home-cta-pulse {
+  .home-cta-pulse,
+  .hero-wom-marquee-track,
+  .hero-wom-highlight::after,
+  [data-hero-scroll-cue] .animate-bounce {
     animation: none !important;
+  }
+
+  .hero-wom-highlight::after {
+    transform: scaleX(1);
   }
 }

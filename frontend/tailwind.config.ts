@@ -17,6 +17,7 @@ export default {
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         display: ['Bricolage Grotesque', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        brand: ['Tan Pardiso', 'Bricolage Grotesque', 'serif'],
       },
       fontSize: {
         display: ['3.75rem', { lineHeight: '1.05', letterSpacing: '-0.02em' }],
