@@ -118,7 +118,7 @@ export default function SocialMediaService() {
         canonical="/services/social-media"
         keywords="social media management, reels package, creatives package, social media plans, local business social media"
         breadcrumbs={[
-          { name: "Services", url: "https://marketing.shyara.co.in/services" },
+          { name: "Home", url: "https://marketing.shyara.co.in/" },
           { name: "Social Media Management", url: "https://marketing.shyara.co.in/services/social-media" },
         ]}
         serviceSchema={{
@@ -132,7 +132,7 @@ export default function SocialMediaService() {
       <PageHero
         label="Social Media Management"
         breadcrumbs={[
-          { label: "Services", href: "/services" },
+          { label: "Home", href: "/" },
           { label: "Social Media Management" },
         ]}
         title={<>Consistent Content. Real Engagement. <span className="text-accent">Month After Month.</span></>}

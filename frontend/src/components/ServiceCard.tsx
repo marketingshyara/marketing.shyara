@@ -1,6 +1,8 @@
 import { LucideIcon, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { brandToneClasses, type BrandTone } from "@/lib/brandColors";
+import { cn } from "@/lib/utils";
 
 interface ServiceCardProps {
   title: string;
@@ -9,14 +11,30 @@ interface ServiceCardProps {
   href?: string;
   onClick?: () => void;
   ctaLabel?: string;
+  tone?: BrandTone;
 }
 
-export function ServiceCard({ title, description, icon: Icon, href, onClick, ctaLabel = "View Details" }: ServiceCardProps) {
+export function ServiceCard({
+  title,
+  description,
+  icon: Icon,
+  href,
+  onClick,
+  ctaLabel = "View Details",
+  tone = "emerald",
+}: ServiceCardProps) {
+  const chroma = brandToneClasses[tone];
+
   const content = (
-    <Card className="group h-full shadow-card hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-300 hover:border-accent/40">
+    <Card
+      className={cn(
+        "group h-full shadow-card hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-300",
+        chroma.border
+      )}
+    >
       <CardHeader className="pb-4">
-        <div className="icon-well-lg mb-4 group-hover:bg-accent/20 transition-colors">
-          <Icon className="h-8 w-8 text-accent" />
+        <div className={cn("icon-well-lg mb-4 transition-colors", chroma.well, chroma.wellHover)}>
+          <Icon className={cn("h-8 w-8", chroma.text)} />
         </div>
         <CardTitle className="text-xl font-semibold">{title}</CardTitle>
         <CardDescription className="text-muted-foreground text-small leading-relaxed mt-1">
@@ -24,7 +42,12 @@ export function ServiceCard({ title, description, icon: Icon, href, onClick, cta
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="flex items-center gap-2 text-small font-semibold text-accent group-hover:gap-3 transition-all">
+        <div
+          className={cn(
+            "flex items-center gap-2 text-small font-semibold group-hover:gap-3 transition-all",
+            chroma.text
+          )}
+        >
           {ctaLabel}
           <ArrowRight className="h-4 w-4" />
         </div>

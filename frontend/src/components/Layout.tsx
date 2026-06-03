@@ -1,4 +1,4 @@
-import { Header } from "./Header";
+import { SiteHeader } from "./marketing/SiteHeader";
 import { Footer } from "./Footer";
 import { OrganizationSchema } from "./StructuredData";
 
@@ -16,7 +16,7 @@ export function Layout({ children }: LayoutProps) {
       >
         Skip to main content
       </a>
-      <Header />
+      <SiteHeader />
       <main id="main-content" className="flex-1 outline-none" tabIndex={-1}>
         {children}
       </main>

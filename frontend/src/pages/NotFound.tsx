@@ -30,9 +30,9 @@ const NotFound = () => {
                 Home
               </Button>
             </Link>
-            <Link to="/services">
+            <Link to="/samples">
               <Button size="lg" variant="outline" className="min-h-11">
-                Services
+                Samples
               </Button>
             </Link>
             <Link to="/contact">

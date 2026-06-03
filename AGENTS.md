@@ -6,6 +6,7 @@
 - **Holistic delivery** (user POV, whole solutions, ripple fixes): `.cursor/rules/sales-portal-delivery.mdc` — follow on every portal task.
 - **Bug-fix workflow** (rep-first, full-stack, elevated UI/UX on every reported bug): `.cursor/rules/sales-portal-bug-fix-workflow.mdc`.
 - Sales portal UX expectations (rep/admin journeys, mobile copy, progressive disclosure) live in `.cursor/rules/sales-portal-ux.mdc` — follow them for portal UI work.
+- **Marketing website** (main site only, not `/portal/*`): mission, positioning, and copy standards in `.cursor/rules/marketing-website-mission.mdc` and `frontend/docs/marketing-website-brief.md` — website-only offering, “Turn India digital”, local-business outcomes (SEO, AEO, GEO, trust, discovery).
 
 ## Required Review Workflow
 - Run a `code-reviewer` style pass before merge and tag findings by severity (`CRITICAL`, `MAJOR`, `MINOR`).

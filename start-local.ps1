@@ -1,3 +1,7 @@
+param(
+  [switch]$Foreground
+)
+
 $ErrorActionPreference = "Stop"
 
 function Get-NodeExecutable {
@@ -65,12 +69,29 @@ function Get-FreeTcpPort {
   throw "Unable to find a free TCP port in range $Min-$Max."
 }
 
+function Resolve-ViteScript {
+  param([string]$Root, [string]$FrontendDir)
+
+  $candidates = @(
+    (Join-Path $Root "node_modules\vite\bin\vite.js"),
+    (Join-Path $FrontendDir "node_modules\vite\bin\vite.js")
+  )
+
+  foreach ($path in $candidates) {
+    if (Test-Path $path) {
+      return $path
+    }
+  }
+
+  return $null
+}
+
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $frontendDir = Join-Path $root "frontend"
-$viteScript = Join-Path $root "node_modules\vite\bin\vite.js"
+$viteScript = Resolve-ViteScript -Root $root -FrontendDir $frontendDir
 
-if (-not (Test-Path $viteScript)) {
-  Write-Host "Dependencies missing: $viteScript not found." -ForegroundColor Red
+if (-not $viteScript) {
+  Write-Host "Dependencies missing: vite.js not found." -ForegroundColor Red
   Write-Host "From the repo root run: npm install" -ForegroundColor Yellow
   exit 1
 }
@@ -88,15 +109,34 @@ $frontendPort = Get-FreeTcpPort
 $frontendUrl = "http://localhost:$frontendPort"
 
 Write-Host "Using Node: $nodeExe" -ForegroundColor DarkGray
-Write-Host "Starting Shyara Marketing locally..." -ForegroundColor Green
+Write-Host "Starting Shyara Marketing locally (frontend only)..." -ForegroundColor Green
 Write-Host "Frontend: $frontendUrl" -ForegroundColor Cyan
+Write-Host "Press Ctrl+C in the Vite window to stop." -ForegroundColor DarkGray
 
-$psCommand = "Set-Location `"$frontendDir`"; & `"$nodeExe`" `"$viteScript`" --host localhost --port $frontendPort"
+$viteArgs = @(
+  $viteScript
+  "--host"
+  "localhost"
+  "--port"
+  "$frontendPort"
+)
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $psCommand | Out-Null
+if ($Foreground) {
+  Push-Location $frontendDir
+  try {
+    & $nodeExe @viteArgs
+  } finally {
+    Pop-Location
+  }
+  exit $LASTEXITCODE
+}
+
+# Use Start-Process -ArgumentList array so paths with spaces (e.g. Program Files) work.
+Start-Process -FilePath $nodeExe -ArgumentList $viteArgs -WorkingDirectory $frontendDir | Out-Null
 Start-Sleep -Seconds 3
 
 Start-Process $frontendUrl
 
 Write-Host ""
 Write-Host "Website opened at $frontendUrl" -ForegroundColor Green
+Write-Host "Vite is running in a separate window." -ForegroundColor DarkGray

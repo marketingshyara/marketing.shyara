@@ -1,149 +1,199 @@
+import { motion, useReducedMotion } from "framer-motion";
+import type { ReactNode } from "react";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
-import { Button } from "@/components/ui/button";
-import { MessageCircle, Mail, Clock, Check } from "lucide-react";
+import { MarketingPageHero } from "@/components/marketing/MarketingPageHero";
+import { MarketingCtaBand } from "@/components/marketing/MarketingCtaBand";
+import { ScrollSection } from "@/components/marketing/motion/ScrollSection";
+import { MotionReveal } from "@/components/marketing/motion/MotionReveal";
+import { StaggerChildren, StaggerItem } from "@/components/marketing/motion/StaggerChildren";
+import { useRevealOnScroll } from "@/components/marketing/motion/useRevealOnScroll";
+import { contactPage } from "@/content/contact";
+import { openWhatsApp, contactWhatsAppMessages } from "@/lib/whatsapp";
+import { MessageCircle, Mail, Clock, Check, ArrowRight } from "lucide-react";
 
-const trustPoints = [
-  "We respond within 2–4 hours on business days",
-  "First consultation is always free",
-  "We'll tell you honestly if we're not the right fit",
-  "No pushy sales calls — just a genuine conversation",
-];
+function ContactChannelCard({
+  children,
+  className,
+  onClick,
+  href,
+}: {
+  children: ReactNode;
+  className?: string;
+  onClick?: () => void;
+  href?: string;
+}) {
+  const reduce = useReducedMotion();
+  const motionProps = reduce
+    ? {}
+    : {
+        whileHover: { y: -3, transition: { duration: 0.2 } },
+        whileTap: { scale: 0.99 },
+      };
 
-const preContactFaqs = [
-  {
-    q: "I'm not sure which service I need.",
-    a: "That's exactly what the initial conversation is for. Tell us about your business and goal — we'll recommend the right service.",
-  },
-  {
-    q: "I have a very small budget.",
-    a: "We work with businesses at different stages. Share your budget honestly and we'll tell you what's realistic within it.",
-  },
-  {
-    q: "I've worked with agencies before and been disappointed.",
-    a: "We hear this a lot. Ask us for our process documentation upfront — we'll show you exactly what you'll receive and when, before you pay.",
-  },
-];
+  const base =
+    "w-full rounded-2xl border text-left transition-shadow duration-300 hover:shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+
+  if (href) {
+    return (
+      <motion.a href={href} className={`${base} block ${className ?? ""}`} {...motionProps}>
+        {children}
+      </motion.a>
+    );
+  }
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      className={`${base} ${className ?? ""}`}
+      {...motionProps}
+    >
+      {children}
+    </motion.button>
+  );
+}
 
 export default function Contact() {
-  const openWhatsApp = () => {
-    window.open(
-      "https://wa.me/919584661610?text=Hi%20Shyara%20Marketing%2C%20I%27m%20reaching%20out%20from%20your%20website.%20I%27d%20like%20to%20discuss%20a%20project%20for%20my%20business.%20Please%20let%20me%20know%20a%20good%20time%20to%20connect.",
-      "_blank"
-    );
-  };
+  const channelsRef = useRevealOnScroll({ direction: "up", stagger: 0.1 });
+  const faqRef = useRevealOnScroll({ batch: true, stagger: 0.08 });
+  const reduce = useReducedMotion();
 
   return (
     <Layout>
       <SEO
         title="Contact Us"
-        description="Get in touch with Shyara Marketing. Reach out to us directly via WhatsApp or email and let us help you choose the right digital marketing and technology solution for your business."
+        description="Get in touch with Shyara Marketing via WhatsApp or email. We help local businesses get found online with professional websites."
         canonical="/contact"
-        keywords="contact digital marketing agency, hire marketing company, get quote website development, digital marketing consultation, Shyara Marketing contact"
+        keywords="contact digital marketing agency, website development India, Shyara Marketing contact, WhatsApp business website"
       />
 
-      {/* Main Contact Section */}
-      <section className="py-20 lg:py-28 gradient-hero">
-        <div className="container">
-          <div className="grid lg:grid-cols-2 gap-16 items-start">
-            {/* Left: Trust content */}
-            <div>
-              <span className="section-label block mb-4">Contact Us</span>
-              <h1 className="text-hero font-extrabold tracking-tight text-foreground lg:text-display">
-                Let's Talk About{" "}
-                <span className="text-accent">Your Business.</span>
-              </h1>
-              <p className="mt-4 text-body text-muted-foreground leading-relaxed md:text-lg">
-                No forms. No call centers. Just a direct conversation with the team that
-                will actually be managing your work.
+      <MarketingPageHero
+        label={contactPage.label}
+        title={
+          <>
+            {contactPage.title}{" "}
+            <span className="text-brand-emerald">{contactPage.titleAccent}</span>
+          </>
+        }
+        description={contactPage.description}
+        trustPoints={[...contactPage.trustPoints]}
+      />
+
+      <ScrollSection section="contact-channels" className="surface-warm border-b border-border/40">
+        <div ref={channelsRef} className="container py-14 md:py-20">
+          <div className="mx-auto grid max-w-5xl items-start gap-8 lg:grid-cols-2 lg:gap-12">
+            <div data-reveal>
+              <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
+                Pick what feels easiest
+              </h2>
+              <p className="mt-3 text-muted-foreground leading-relaxed">
+                Most owners message us on WhatsApp with a short note about their business. We reply with
+                clear next steps, not a sales script.
               </p>
-              <div className="mt-8 space-y-3">
-                {trustPoints.map((point) => (
-                  <div key={point} className="flex items-center gap-3 text-small text-muted-foreground">
-                    <Check className="h-4 w-4 text-accent flex-shrink-0" />
+              <ul className="mt-6 space-y-3">
+                {contactPage.trustPoints.slice(0, 3).map((point) => (
+                  <li key={point} className="flex items-start gap-3 text-sm text-muted-foreground">
+                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-emerald" />
                     {point}
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
 
-            {/* Right: Contact cards */}
-            <div className="space-y-4">
-              {/* WhatsApp card */}
-              <button
-                onClick={openWhatsApp}
-                type="button"
-                aria-label="Chat with Shyara Marketing on WhatsApp"
-                className="w-full min-h-11 rounded-card border-2 border-[#25D366] bg-[#25D366]/5 hover:bg-[#25D366]/10 shadow-card p-6 text-left flex items-center gap-4 transition-all duration-300 group cursor-pointer"
+            <div className="space-y-4" data-reveal>
+              <ContactChannelCard
+                onClick={() => openWhatsApp(contactWhatsAppMessages.main)}
+                className="border-2 border-brand-coral/50 bg-brand-coral/5 p-6"
               >
-                <div className="w-14 h-14 rounded-xl bg-[#25D366] flex items-center justify-center flex-shrink-0">
-                  <MessageCircle className="h-7 w-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-foreground text-body">Chat on WhatsApp</div>
-                  <div className="text-small text-muted-foreground">Fastest way to reach us — typical reply in 2–4 hours</div>
-                  <div className="text-caption text-[#25D366] font-medium mt-1 group-hover:gap-1.5 flex items-center gap-1 transition-all">
-                    Open WhatsApp →
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-brand-coral">
+                    <MessageCircle className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-foreground">{contactPage.channels.whatsapp.title}</div>
+                    <div className="text-sm text-muted-foreground">{contactPage.channels.whatsapp.subtitle}</div>
+                    <div className="mt-1 flex items-center gap-1 text-sm font-medium text-brand-coral">
+                      {contactPage.channels.whatsapp.action}
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
                   </div>
                 </div>
-              </button>
+              </ContactChannelCard>
 
-              {/* Email card */}
-              <a
-                href="mailto:marketing.shyara@gmail.com"
-                className="w-full rounded-card border border-border bg-card shadow-card hover:border-accent/40 hover:shadow-elevated p-6 text-left flex items-center gap-4 transition-all duration-300 block"
+              <ContactChannelCard
+                href={`mailto:${contactPage.channels.email.address}`}
+                className="border-border bg-card p-6 shadow-card"
               >
-                <div className="icon-well-lg flex-shrink-0">
-                  <Mail className="h-7 w-7 text-accent" />
+                <div className="flex items-center gap-4">
+                  <div className="icon-well-lg flex-shrink-0">
+                    <Mail className="h-7 w-7 text-brand-emerald" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-foreground">{contactPage.channels.email.title}</div>
+                    <div className="text-sm text-muted-foreground">{contactPage.channels.email.address}</div>
+                    <div className="mt-1 text-sm font-medium text-brand-emerald">
+                      {contactPage.channels.email.hint}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-foreground text-body">Email Us</div>
-                  <div className="text-small text-muted-foreground">marketing.shyara@gmail.com</div>
-                  <div className="text-caption text-accent font-medium mt-1">Expect a reply within 24 hours</div>
-                </div>
-              </a>
+              </ContactChannelCard>
 
-              {/* Business hours info */}
-              <div className="rounded-card bg-muted/50 border border-border p-4 flex items-start gap-3">
-                <Clock className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
-                <p className="text-small text-muted-foreground">
-                  Business hours:{" "}
-                  <strong className="text-foreground">Mon–Sat, 9am–7pm IST.</strong>{" "}
-                  Messages received outside hours are answered first thing next morning.
-                </p>
-              </div>
+              <MotionReveal delay={0.1}>
+                <div className="flex items-start gap-3 rounded-2xl border border-border bg-card/80 p-4 backdrop-blur-sm">
+                  <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-brand-amber" />
+                  <p className="text-sm text-muted-foreground">
+                    <strong className="text-foreground">{contactPage.channels.hours.title}:</strong>{" "}
+                    {contactPage.channels.hours.body}
+                  </p>
+                </div>
+              </MotionReveal>
             </div>
           </div>
         </div>
-      </section>
+      </ScrollSection>
 
-      {/* Before You Reach Out */}
-      <section className="py-20 lg:py-28 bg-[hsl(var(--surface))]">
-        <div className="container">
-          <div className="text-center mb-10">
-            <span className="section-label block mb-3">Common Concerns</span>
-            <h2 className="text-section font-bold text-foreground">Before You Reach Out</h2>
-            <p className="text-body text-muted-foreground mt-2">These are the most common things people wonder before messaging us.</p>
+      <ScrollSection section="contact-faq" className="surface-trust py-14 md:py-20">
+        <div ref={faqRef} className="container">
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <span className="section-label mb-3 block" data-reveal>
+              {contactPage.faq.label}
+            </span>
+            <h2 className="font-display text-section font-bold text-foreground" data-reveal>
+              {contactPage.faq.title}
+            </h2>
+            <p className="mt-2 text-muted-foreground" data-reveal>
+              {contactPage.faq.subtitle}
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl mx-auto">
-            {preContactFaqs.map((faq) => (
-              <div key={faq.q} className="rounded-card border border-border bg-card shadow-card p-6">
-                <h3 className="font-semibold text-foreground text-small mb-2">"{faq.q}"</h3>
-                <p className="text-muted-foreground text-small leading-relaxed">{faq.a}</p>
-              </div>
+
+          <StaggerChildren className="mx-auto grid max-w-4xl grid-cols-1 gap-5 md:grid-cols-3">
+            {contactPage.faq.items.map((faq) => (
+              <StaggerItem key={faq.q}>
+                <motion.div
+                  className="h-full rounded-2xl border border-border/80 bg-card p-6 shadow-card"
+                  whileHover={reduce ? undefined : { y: -4 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                >
+                  <h3 className="mb-2 font-semibold text-foreground text-sm leading-snug">
+                    &ldquo;{faq.q}&rdquo;
+                  </h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{faq.a}</p>
+                </motion.div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerChildren>
         </div>
-      </section>
+      </ScrollSection>
 
-      {/* Footer context */}
-      <section className="py-8 bg-background">
-        <div className="container">
-          <p className="text-sm text-muted-foreground text-center">
-            Shyara Tech Solutions (OPC) Pvt. Ltd. · India · Serving clients globally
-          </p>
-        </div>
-      </section>
+      <MarketingCtaBand
+        headline={contactPage.cta.headline}
+        body={contactPage.cta.body}
+        whatsappMessage={contactWhatsAppMessages.cta}
+        primaryLabel={contactPage.cta.primary}
+        secondaryHref="/samples"
+        secondaryLabel={contactPage.cta.secondary}
+      />
     </Layout>
   );
 }

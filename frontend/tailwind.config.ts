@@ -16,6 +16,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        display: ['Bricolage Grotesque', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         display: ['3.75rem', { lineHeight: '1.05', letterSpacing: '-0.02em' }],
@@ -54,6 +55,21 @@ export default {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+        },
+        brand: {
+          emerald: "hsl(var(--brand-emerald) / <alpha-value>)",
+          sky: "hsl(var(--brand-sky) / <alpha-value>)",
+          amber: "hsl(var(--brand-amber) / <alpha-value>)",
+          coral: "hsl(var(--brand-coral) / <alpha-value>)",
+          violet: "hsl(var(--brand-violet) / <alpha-value>)",
+          teal: "hsl(var(--brand-teal) / <alpha-value>)",
+          sand: "hsl(var(--brand-sand) / <alpha-value>)",
+        },
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          warm: "hsl(var(--surface-warm))",
+          mint: "hsl(var(--surface-mint))",
+          trust: "hsl(var(--surface-trust))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",

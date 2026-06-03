@@ -25,16 +25,12 @@ const root = resolve(__dirname, "..");
 // Routes to prerender — skips redirects, wildcards, and 404
 const routes = [
   "/",
-  "/services",
   "/services/social-media",
   "/services/ads-campaign-management",
   "/services/website-development",
   "/services/app-development",
-  "/samples",
+  // Do not prerender /samples — dist/samples/index.html blocks nested /samples/websites/* static assets on some hosts.
   "/samples/social-media",
-  "/samples/websites",
-  "/offers",
-  "/about",
   "/contact",
   "/privacy-policy",
   "/terms-of-service",

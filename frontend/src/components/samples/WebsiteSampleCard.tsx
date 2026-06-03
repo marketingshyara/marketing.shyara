@@ -11,6 +11,7 @@ import {
 import { useInView } from "@/hooks/useInView";
 import { usePreferPosterGrid } from "@/hooks/use-mobile";
 import { useQueuedIframeSrc } from "@/hooks/useQueuedIframeSrc";
+import { sampleAssetUrl } from "@/lib/sampleAssetUrl";
 import type { WebsiteSample } from "@/types/samples";
 
 const DESKTOP_ROOT_MARGIN = "280px 0px";
@@ -36,8 +37,9 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({ sample }: { s
   const [gridIframePainted, setGridIframePainted] = useState(false);
   const [posterFailed, setPosterFailed] = useState(false);
 
-  const sampleUrl = `/samples/websites/${sample.folder}/`;
-  const posterUrl = sample.posterUrl?.trim() ?? "";
+  const sampleUrl = sampleAssetUrl(`/samples/websites/${sample.folder}/`);
+  const posterPath = sample.posterUrl?.trim() ?? "";
+  const posterUrl = posterPath ? sampleAssetUrl(posterPath) : "";
   const hasPosterAsset = posterUrl.length > 0 && !posterFailed;
   const hasWaitingRoom = sample.category === "clinics" && sample.clinicExperience === "waiting-room";
   const waitingRoomPath = (sample.waitingRoomPath || "waiting").replace(/^\/+/, "");

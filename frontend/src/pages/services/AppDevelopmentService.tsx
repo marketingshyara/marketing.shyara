@@ -104,7 +104,7 @@ export default function AppDevelopmentService() {
         canonical="/services/app-development"
         keywords="app development, mobile app development, custom app development, business mobile app"
         breadcrumbs={[
-          { name: "Services", url: "https://marketing.shyara.co.in/services" },
+          { name: "Home", url: "https://marketing.shyara.co.in/" },
           { name: "App Development", url: "https://marketing.shyara.co.in/services/app-development" },
         ]}
         serviceSchema={{
@@ -118,7 +118,7 @@ export default function AppDevelopmentService() {
       <PageHero
         label="App Development"
         breadcrumbs={[
-          { label: "Services", href: "/services" },
+          { label: "Home", href: "/" },
           { label: "App Development" },
         ]}
         title={<>Your Business Idea, Turned Into an App <span className="text-accent">That Works.</span></>}
@@ -241,7 +241,7 @@ export default function AppDevelopmentService() {
               <MessageCircle className="h-4 w-4" />
               Get a Quote
             </Button>
-            <Link to="/samples/websites">
+            <Link to="/samples">
               <Button variant="outline" className="bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white gap-2">
                 View Web Portfolio
                 <ArrowRight className="h-4 w-4" />

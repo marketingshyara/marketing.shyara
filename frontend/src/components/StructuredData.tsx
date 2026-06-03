@@ -7,7 +7,7 @@ const organizationSchema = {
   "legalName": "Shyara Tech Solutions (OPC) Pvt. Ltd.",
   "url": "https://marketing.shyara.co.in",
   "logo": "https://marketing.shyara.co.in/android-chrome-s-20260408-512x512.png",
-  "description": "Digital marketing and technology services company helping businesses grow through social media, advertising, websites, and apps.",
+  "description": "Website development for local Indian businesses: get found on Google, trusted online, and reachable on WhatsApp. Mission: turn India digital.",
   "email": "marketing.shyara@gmail.com",
   "address": {
     "@type": "PostalAddress",
@@ -20,10 +20,10 @@ const localBusinessSchema = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   "name": "Shyara Marketing",
-  "description": "Digital marketing and technology services company in India",
+  "description": "Website development for local businesses in India: SEO, local search, and discoverability built in.",
   "url": "https://marketing.shyara.co.in",
   "email": "marketing.shyara@gmail.com",
-  "priceRange": "₹₹",
+  "priceRange": "$$",
   "address": {
     "@type": "PostalAddress",
     "addressCountry": "IN"

@@ -26,7 +26,9 @@ export function PageHero({
 }: PageHeroProps) {
   return (
     <section className="gradient-hero relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-background via-background to-[hsl(var(--surface))] py-20 lg:py-28">
-      <div className="pointer-events-none absolute inset-x-0 top-4 mx-auto h-40 w-[min(90vw,70rem)] rounded-full bg-accent/15 blur-3xl" />
+      <div className="pointer-events-none absolute inset-x-0 top-4 mx-auto h-40 w-[min(90vw,70rem)] rounded-full bg-brand-emerald/15 blur-3xl" />
+      <div className="pointer-events-none absolute -left-8 top-24 h-32 w-32 rounded-full bg-brand-sky/20 blur-3xl" />
+      <div className="pointer-events-none absolute -right-4 top-16 h-28 w-28 rounded-full bg-brand-amber/15 blur-3xl" />
       <div className="container relative">
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav className="mx-auto mb-6 flex max-w-4xl flex-wrap items-center justify-center gap-2 text-small text-muted-foreground">
@@ -46,7 +48,7 @@ export function PageHero({
         )}
 
         <div className="mx-auto max-w-4xl text-center">
-          <span className="section-label inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5">
+          <span className="section-label inline-flex items-center rounded-full border border-brand-emerald/30 bg-brand-emerald/10 px-4 py-1.5">
             {label}
           </span>
 

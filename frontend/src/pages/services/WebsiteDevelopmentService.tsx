@@ -136,7 +136,7 @@ export default function WebsiteDevelopmentService() {
         canonical="/services/website-development"
         keywords="website development, ecommerce website, booking website, custom web app development"
         breadcrumbs={[
-          { name: "Services", url: "https://marketing.shyara.co.in/services" },
+          { name: "Home", url: "https://marketing.shyara.co.in/" },
           { name: "Website Development", url: "https://marketing.shyara.co.in/services/website-development" },
         ]}
         serviceSchema={{
@@ -150,7 +150,7 @@ export default function WebsiteDevelopmentService() {
       <PageHero
         label="Website Development"
         breadcrumbs={[
-          { label: "Services", href: "/services" },
+          { label: "Home", href: "/" },
           { label: "Website Development" },
         ]}
         title={<>Websites That Work for Your Business, <span className="text-accent">Not Just Look Good.</span></>}

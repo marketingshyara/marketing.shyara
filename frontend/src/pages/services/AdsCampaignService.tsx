@@ -81,7 +81,7 @@ export default function AdsCampaignService() {
         canonical="/services/ads-campaign-management"
         keywords="ads campaign management, paid advertising service, local ad targeting, ad optimization"
         breadcrumbs={[
-          { name: "Services", url: "https://marketing.shyara.co.in/services" },
+          { name: "Home", url: "https://marketing.shyara.co.in/" },
           { name: "Ads Campaign Management", url: "https://marketing.shyara.co.in/services/ads-campaign-management" },
         ]}
         serviceSchema={{
@@ -95,7 +95,7 @@ export default function AdsCampaignService() {
       <PageHero
         label="Ads Campaign Management"
         breadcrumbs={[
-          { label: "Services", href: "/services" },
+          { label: "Home", href: "/" },
           { label: "Ads Campaign Management" },
         ]}
         title={<>More Reach. Better ROI. <span className="text-accent">Ads That Actually Perform.</span></>}

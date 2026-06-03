@@ -1,0 +1,57 @@
+---
+description: Marketing website mission, positioning, and content standards (NOT Sales Portal). Apply on every main-site copy, route, design, or feature change.
+globs: frontend/src/pages/**,frontend/src/components/**,frontend/src/AppRoutes.tsx,frontend/src/index.css,frontend/tailwind.config.ts,frontend/scripts/prerender.mjs,frontend/docs/**
+alwaysApply: false
+---
+
+# Marketing website — mission & positioning
+
+**Scope:** Main marketing site only (`frontend/` excluding `frontend/src/sales-portal/**`). Do not change Sales Portal product copy or flows unless explicitly asked.
+
+**Full brief:** `frontend/docs/marketing-website-brief.md`
+
+## What Shyara Marketing is (now)
+
+We **only build websites** for local and small businesses. We are not a general digital marketing agency. Removed from public positioning: social media management, ads campaign management, app development, offers/pricing pages, and plan cards.
+
+## Mission (lead every story)
+
+**Turn India digital** — help everyday businesses get online so new customers can find them, trust them, and walk in.
+
+Frame copy around: people search online before they visit; a professional website builds trust; being invisible on Google and in AI answers (ChatGPT, Gemini) means losing customers to competitors who show up.
+
+## Who we serve
+
+B2C and local businesses, including: restaurants, clinics & healthcare, gyms, coaching classes, automobile garages, car/bike washes, and similar “find us → visit us” businesses.
+
+## What clients actually care about (sell outcomes, not gimmicks)
+
+Lead with real business value:
+
+- **Found online** — Google search visibility, local SEO, maps presence
+- **SEO** — rank for what their customers search
+- **AEO / GEO** — answer-engine & generative-engine optimization so AI assistants can recommend them by name when asked
+- **Trust** — credible site, clear info (hours, location, services, contact)
+- **More customers** — inquiries, calls, WhatsApp, footfall
+
+Avoid vague agency fluff (“growth hacking”, “360° solutions”) unless tied to a concrete outcome.
+
+## Voice & UX
+
+- Mission-driven, clear, confident — not price-led or discount-led
+- Less text, more proof: samples, outcomes, before/after search visibility where possible
+- Primary CTA: start a conversation (WhatsApp) about getting their business online
+- No public ₹ pricing or “offers” on the marketing site
+
+## Ripples on every marketing change
+
+When editing routes, nav, footer, SEO, or structured data:
+
+- Remove or redirect dead service URLs (SMM, ads, apps, offers)
+- Update `AppRoutes.tsx`, `Header.tsx`, `Footer.tsx`, `prerender.mjs`, and `StructuredData.tsx` together
+- Keep website samples/portfolio as proof of vertical fit (restaurant, clinic, gym, etc.)
+- Service detail pages should reflect **website development + discoverability** only
+
+## Design direction (overhaul)
+
+Highly animated, color-rich, immersive — see prior overhaul plan — but **content must always serve the mission above**, not generic “creative agency” tropes.

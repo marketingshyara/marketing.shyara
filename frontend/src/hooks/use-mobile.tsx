@@ -19,7 +19,10 @@ export function useIsMobile() {
   return isMobile;
 }
 
-/** Website samples: static posters in grid on small screens; live iframes on desktop. */
+/**
+ * Website samples grid uses poster thumbnails (reliable in dev + production).
+ * Live preview opens in a dialog on tap; avoids SPA fallback breaking iframe previews.
+ */
 export function usePreferPosterGrid(): boolean {
-  return useIsMobile();
+  return true;
 }
