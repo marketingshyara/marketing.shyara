@@ -36,12 +36,12 @@ function NavLink({
     <Link
       to={href}
       onClick={onClick}
-      data-nav-item
+      data-nav-link
       className={cn(
-        "relative flex min-h-[40px] items-center justify-center rounded-full px-4 text-sm font-medium transition-all duration-200",
+        "relative flex min-h-[40px] items-center justify-center rounded-full px-4 text-sm font-medium transition-colors duration-200",
         active
-          ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
-          : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+          ? "bg-card font-semibold text-foreground shadow-sm ring-1 ring-border/70"
+          : "text-foreground/80 hover:bg-card/55 hover:text-foreground",
         className
       )}
       aria-current={active ? "page" : undefined}
@@ -71,6 +71,16 @@ export function SiteHeader() {
     setMobileOpen(false);
   }, [location.pathname]);
 
+  /** GSAP entrance can leave inline opacity; reset on every route change. */
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    gsap.set(header.querySelectorAll("[data-nav-link], [data-nav-cta]"), {
+      opacity: 1,
+      clearProps: "opacity,y",
+    });
+  }, [location.pathname]);
+
   useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = "hidden";
@@ -89,14 +99,21 @@ export function SiteHeader() {
       if (!header || !logo) return;
 
       if (!prefersReducedMotion()) {
-        gsap.from(logo, { opacity: 0, x: -16, duration: 0.45, ease: "power3.out" });
-        gsap.from(header.querySelectorAll("[data-nav-item]"), {
+        gsap.from(logo, {
+          opacity: 0,
+          x: -16,
+          duration: 0.45,
+          ease: "power3.out",
+          clearProps: "opacity,x",
+        });
+        gsap.from(header.querySelectorAll("[data-nav-link], [data-nav-cta]"), {
           opacity: 0,
           y: -8,
           duration: 0.4,
           stagger: 0.06,
           delay: 0.1,
           ease: "power3.out",
+          clearProps: "opacity,y",
         });
       }
 
@@ -187,10 +204,10 @@ export function SiteHeader() {
           >
             <div
               className={cn(
-                "flex items-center gap-0.5 rounded-full border p-1 transition-colors duration-300",
+                "flex items-center gap-0.5 rounded-full border p-1 shadow-sm transition-colors duration-300",
                 scrolled
-                  ? "border-border/50 bg-muted/30"
-                  : "border-border/40 bg-muted/20"
+                  ? "border-border/60 bg-card/75 backdrop-blur-sm"
+                  : "border-border/50 bg-card/55 backdrop-blur-sm"
               )}
             >
               {navLinks.map((link) => (
@@ -207,7 +224,7 @@ export function SiteHeader() {
           <div className="z-10 hidden items-center gap-3 md:flex">
             <ThemeToggle />
             <Button
-              data-nav-item
+              data-nav-cta
               onClick={() => openWhatsApp(homeWhatsAppMessages.hero)}
               className="h-10 min-h-[44px] gap-2 rounded-full bg-brand-coral px-5 text-white shadow-sm shadow-brand-coral/20 hover:bg-brand-coral/90"
             >
