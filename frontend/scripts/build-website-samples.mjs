@@ -8,7 +8,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { copyFileSync, cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,9 +43,16 @@ function copyBuiltSample(sourceProjectDir, slug) {
   }
 
   const dest = resolve(publicSamplesRoot, slug);
+  const posterPath = resolve(dest, "poster.jpg");
+  const posterBackup = existsSync(posterPath) ? readFileSync(posterPath) : null;
+
   rmSync(dest, { recursive: true, force: true });
   mkdirSync(dest, { recursive: true });
   cpSync(clientDir, dest, { recursive: true });
+
+  if (posterBackup) {
+    writeFileSync(posterPath, posterBackup);
+  }
 
   const indexPath = resolve(dest, "index.html");
   if (!existsSync(indexPath)) {

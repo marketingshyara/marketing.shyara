@@ -43,6 +43,26 @@ test.describe("website samples page", () => {
     });
   });
 
+  test("car wash and gym inner pages visible without hard refresh", async ({ page }) => {
+    test.setTimeout(120_000);
+
+    await page.goto("/samples/websites/car-wash-auto-care-website/", {
+      waitUntil: "domcontentloaded",
+    });
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Services" }).click();
+    const carWashHeading = page.getByRole("heading", { name: /care, packaged/i });
+    await expect(carWashHeading).toBeVisible({ timeout: 30_000 });
+    await expect(carWashHeading).toHaveCSS("opacity", "1");
+
+    await page.goto("/samples/websites/gym-ironforge-website/", {
+      waitUntil: "domcontentloaded",
+    });
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "About" }).click();
+    const gymHeading = page.getByRole("heading", { name: /built to/i });
+    await expect(gymHeading).toBeVisible({ timeout: 30_000 });
+    await expect(gymHeading).toHaveCSS("opacity", "1");
+  });
+
   test("deep-linked category shows sample cards without hard refresh", async ({ page }) => {
     await page.goto("/samples?category=fitness", { waitUntil: "domcontentloaded" });
     const card = page.getByTestId("website-sample-card").first();
