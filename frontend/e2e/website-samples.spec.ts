@@ -28,6 +28,21 @@ test.describe("website samples page", () => {
     await expect(page.getByText("GYM/001")).toHaveCount(0);
   });
 
+  test("car wash sample SPA routes serve index shell", async ({ page, request }) => {
+    const base = "/samples/websites/car-wash-auto-care-website";
+    for (const path of ["/services", "/about", "/gallery", "/contact"]) {
+      const res = await request.get(`${base}${path}`);
+      expect(res.status(), path).toBe(200);
+      const html = await res.text();
+      expect(html, path).toContain(`${base}/assets/index-`);
+    }
+
+    await page.goto(`${base}/services`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: /care, packaged/i })).toBeVisible({
+      timeout: 60_000,
+    });
+  });
+
   test("deep-linked category shows sample cards without hard refresh", async ({ page }) => {
     await page.goto("/samples?category=fitness", { waitUntil: "domcontentloaded" });
     const card = page.getByTestId("website-sample-card").first();

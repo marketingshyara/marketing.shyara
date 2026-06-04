@@ -1,6 +1,14 @@
 {
   "public": "dist",
   "rewrites": [
+    {
+      "source": "/samples/websites/car-wash-auto-care-website/**",
+      "destination": "/samples/websites/car-wash-auto-care-website/index.html"
+    },
+    {
+      "source": "/samples/websites/gym-ironforge-website/**",
+      "destination": "/samples/websites/gym-ironforge-website/index.html"
+    },
     { "source": "!/samples/**", "destination": "/index.html" }
   ],
   "headers": [

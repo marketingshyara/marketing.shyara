@@ -14,5 +14,11 @@ services:
     # Render serves matching files before rewrites; this documents the intent.
     routes:
       - type: rewrite
+        source: /samples/websites/car-wash-auto-care-website/*
+        destination: /samples/websites/car-wash-auto-care-website/index.html
+      - type: rewrite
+        source: /samples/websites/gym-ironforge-website/*
+        destination: /samples/websites/gym-ironforge-website/index.html
+      - type: rewrite
         source: /*
         destination: /index.html

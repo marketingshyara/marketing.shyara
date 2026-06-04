@@ -25,7 +25,7 @@ npm run capture-sample-posters:dist
 ## Toolchain
 
 - **Vite**: standard `@tanstack/react-start/plugin/vite` (no Lovable config packages).
-- **Static hosting**: each `vite.config.ts` sets `base` to `/samples/websites/<slug>/`; SPA prerender emits `_shell.html`, copied to `index.html` by `build-website-samples.mjs`.
+- **Static hosting**: each `vite.config.ts` sets `base` to `/samples/websites/<slug>/`; SPA prerender emits `_shell.html`, copied to `index.html` by `build-website-samples.mjs`. Client routes (`/services`, `/about`, etc.) need SPA fallback — see `frontend/serve.json`, `render.yaml`, and `frontend/src/plugins/sampleStaticMiddleware.ts`. When adding a new TanStack sample slug, add matching rewrite rules there.
 - **Favicons**: unified Shyara marketing icons in each project `public/`; linked from `src/lib/shyaraFaviconLinks.ts` in `__root.tsx` `head()`.
 
 ## Edit a sample
