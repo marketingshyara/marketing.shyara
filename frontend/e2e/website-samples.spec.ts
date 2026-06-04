@@ -108,6 +108,28 @@ test.describe("website samples page", () => {
     });
   });
 
+  const MOJIBAKE_SNIPPETS = ["â€", "Â°", "â€™", "â€œ", "Ã©"];
+
+  for (const sample of [
+    { path: "/samples/websites/restaurant-classic-website/", heading: /fire meets flavor/i },
+    { path: "/samples/websites/restaurant-botanical-website/", heading: /nature meets flavor/i },
+    { path: "/samples/websites/astrology-consultant-website/", heading: /celestia|astrology|stars/i },
+    { path: "/samples/websites/clinic-multispeciality-waiting-room/", heading: /clinic|health|multispecial/i },
+    { path: "/samples/websites/clinic-dental-waiting-room-classic/", heading: /dental|smile/i },
+    { path: "/samples/websites/clinic-dermatology-waiting-room/", heading: /dermatology|skin/i },
+    { path: "/samples/websites/clinic-pathology-waiting-room/", heading: /pathology|lab/i },
+  ]) {
+    test(`no UTF-8 mojibake in ${sample.path}`, async ({ page }) => {
+      test.setTimeout(90_000);
+      await page.goto(sample.path, { waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("heading").first()).toBeVisible({ timeout: 60_000 });
+      const body = await page.locator("body").innerText();
+      for (const snippet of MOJIBAKE_SNIPPETS) {
+        expect(body, `found "${snippet}"`).not.toContain(snippet);
+      }
+    });
+  }
+
   test("poster image URLs return 200", async ({ page, request }) => {
     await page.goto("/samples", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("website-sample-card").first()).toBeVisible({ timeout: 60_000 });

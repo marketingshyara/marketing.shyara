@@ -33,3 +33,20 @@ npm run capture-sample-posters:dist
 1. Change source in `samples-sources/<name>/src/`.
 2. Run `npm run build:website-samples` in `frontend/`.
 3. Run `npm run capture-sample-posters:dist` if thumbnails need updating.
+
+## Garbled text (â€", Â°, etc.) in static samples
+
+Restaurant, clinic, astrology, and other **prebuilt** samples under `frontend/public/samples/websites/` can show UTF-8 mojibake when punctuation was saved with the wrong encoding. From `frontend/`:
+
+```bash
+npm run fix:website-sample-encoding
+npm run verify:website-sample-encoding
+```
+
+To fix an external Lovable/template tree (exclude `node_modules` automatically):
+
+```bash
+node scripts/fix-sample-encoding.mjs "E:/path/to/template-project"
+```
+
+Only files that still contain mojibake markers are rewritten — already-correct UTF-8 (em dashes, degree symbols) is left unchanged.

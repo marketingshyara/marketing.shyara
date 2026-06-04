@@ -7,7 +7,19 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SAMPLES_ROOT = path.resolve(__dirname, "../public/samples/websites");
+const DEFAULT_ROOTS = [
+  path.resolve(__dirname, "../public/samples"),
+  path.resolve(__dirname, "../public/samples/websites"),
+];
+
+const SKIP_DIRS = new Set([
+  "node_modules",
+  "dist",
+  ".git",
+  ".tanstack",
+  ".wrangler",
+  ".lovable",
+]);
 
 /** Unicode code point → Windows-1252 byte (0x80–0x9F range). */
 const WIN1252_UNICODES = {
@@ -48,6 +60,10 @@ const TEXT_EXTENSIONS = new Set([
   ".txt",
   ".svg",
   ".xml",
+  ".tsx",
+  ".ts",
+  ".jsx",
+  ".md",
 ]);
 
 /** Detect likely mojibake without scanning every file byte-by-byte in CI. */
@@ -79,7 +95,9 @@ export function fixMojibakeText(text) {
 }
 
 function walk(dir, files = []) {
+  if (!fs.existsSync(dir)) return files;
   for (const name of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (SKIP_DIRS.has(name.name)) continue;
     const full = path.join(dir, name.name);
     if (name.isDirectory()) walk(full, files);
     else if (TEXT_EXTENSIONS.has(path.extname(name.name).toLowerCase())) files.push(full);
@@ -87,13 +105,31 @@ function walk(dir, files = []) {
   return files;
 }
 
+function collectFiles(roots) {
+  const seen = new Set();
+  const files = [];
+  for (const root of roots) {
+    for (const file of walk(root)) {
+      if (!seen.has(file)) {
+        seen.add(file);
+        files.push(file);
+      }
+    }
+  }
+  return files;
+}
+
 function main() {
-  if (!fs.existsSync(SAMPLES_ROOT)) {
-    console.error("Samples root not found:", SAMPLES_ROOT);
+  const extraRoots = process.argv.slice(2).map((r) => path.resolve(r));
+  const roots = [...DEFAULT_ROOTS, ...extraRoots].filter((r, i, a) => a.indexOf(r) === i);
+  const missing = roots.filter((r) => !fs.existsSync(r));
+  if (missing.length === roots.length) {
+    console.error("No sample roots found:", missing.join(", "));
     process.exit(1);
   }
+  for (const m of missing) console.warn("Skipping missing root:", m);
 
-  const files = walk(SAMPLES_ROOT);
+  const files = collectFiles(roots.filter((r) => fs.existsSync(r)));
   let scanned = 0;
   let fixed = 0;
   const fixedPaths = [];
@@ -107,15 +143,15 @@ function main() {
     if (next === original) continue;
 
     if (MOJIBAKE_MARKER.test(next)) {
-      console.warn("Still has mojibake after fix:", path.relative(SAMPLES_ROOT, filePath));
+      console.warn("Still has mojibake after fix:", filePath);
     }
 
     fs.writeFileSync(filePath, next, "utf8");
     fixed++;
-    fixedPaths.push(path.relative(SAMPLES_ROOT, filePath));
+    fixedPaths.push(filePath);
   }
 
-  console.log(`Scanned ${scanned} text files under samples/websites`);
+  console.log(`Scanned ${scanned} text file(s) under ${roots.join(", ")}`);
   console.log(`Fixed ${fixed} file(s)`);
   if (fixedPaths.length) {
     for (const p of fixedPaths) console.log("  ", p);
@@ -124,7 +160,7 @@ function main() {
   const remaining = files.filter((f) => MOJIBAKE_MARKER.test(fs.readFileSync(f, "utf8")));
   if (remaining.length) {
     console.error(`\n${remaining.length} file(s) still contain mojibake markers:`);
-    for (const f of remaining) console.error("  ", path.relative(SAMPLES_ROOT, f));
+    for (const f of remaining) console.error("  ", f);
     process.exit(1);
   }
 }
