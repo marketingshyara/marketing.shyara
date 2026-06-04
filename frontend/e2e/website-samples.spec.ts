@@ -28,6 +28,14 @@ test.describe("website samples page", () => {
     await expect(page.getByText("GYM/001")).toHaveCount(0);
   });
 
+  test("deep-linked category shows sample cards without hard refresh", async ({ page }) => {
+    await page.goto("/samples?category=fitness", { waitUntil: "domcontentloaded" });
+    const card = page.getByTestId("website-sample-card").first();
+    await expect(card).toBeVisible({ timeout: 60_000 });
+    await expect(card).toHaveCSS("opacity", "1");
+    await expect(page.getByText("GYM/001")).toBeVisible();
+  });
+
   test("mobile viewport: no grid iframes until live preview opened", async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 390, height: 720 });

@@ -30,13 +30,20 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Car,
 };
 
-const SamplesGrid = memo(function SamplesGrid({ samples }: { samples: WebsiteSample[] }) {
+const SamplesGrid = memo(function SamplesGrid({
+  samples,
+  revealKey,
+}: {
+  samples: WebsiteSample[];
+  revealKey: string;
+}) {
   const reduce = useReducedMotion();
 
   return (
     <StaggerChildren
       className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
       stagger={0.06}
+      revealKey={revealKey}
     >
       {samples.map((sample) => (
         <StaggerItem key={sample.id}>
@@ -275,7 +282,10 @@ export default function Samples() {
                     </p>
                   </div>
                   {waitingRoomClinicSamples.length > 0 ? (
-                    <SamplesGrid samples={waitingRoomClinicSamples} />
+                    <SamplesGrid
+                      samples={waitingRoomClinicSamples}
+                      revealKey={`${activeCategory ?? "all"}-waiting`}
+                    />
                   ) : (
                     <div className="rounded-xl border border-dashed border-border py-10 px-6 text-center text-sm text-muted-foreground">
                       No waiting-room clinic samples yet.
@@ -293,7 +303,10 @@ export default function Samples() {
                     </p>
                   </div>
                   {standardClinicSamples.length > 0 ? (
-                    <SamplesGrid samples={standardClinicSamples} />
+                    <SamplesGrid
+                      samples={standardClinicSamples}
+                      revealKey={`${activeCategory ?? "all"}-standard`}
+                    />
                   ) : (
                     <div className="rounded-xl border border-dashed border-border py-10 px-6 text-center text-sm text-muted-foreground">
                       Standard clinic samples will appear here.
@@ -302,7 +315,10 @@ export default function Samples() {
                 </div>
               </div>
             ) : (
-              <SamplesGrid samples={filteredSamples} />
+              <SamplesGrid
+                samples={filteredSamples}
+                revealKey={`${activeCategory ?? "all"}-${codeFilter || "all"}-${filteredSamples.length}`}
+              />
             )}
           </div>
         </div>
