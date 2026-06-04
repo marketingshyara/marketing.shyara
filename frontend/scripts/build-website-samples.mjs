@@ -86,4 +86,7 @@ for (const { sourceDir, slug } of SAMPLES) {
   copyBuiltSample(projectDir, slug);
 }
 
-console.log("\nAll website samples built. Run marketing build + capture-sample-posters next.\n");
+console.log("\nAll website samples built. Fixing UTF-8 mojibake in sample assets…\n");
+run("node", [resolve(__dirname, "fix-sample-encoding.mjs")], frontendRoot);
+
+console.log("\nDone. Run marketing build + capture-sample-posters next.\n");
