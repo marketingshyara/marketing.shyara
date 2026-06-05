@@ -5,16 +5,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useTeamRepQuery } from "../../hooks/useSalesQueries";
 import { AdminProjectCard } from "../../components/admin/AdminProjectCard";
+import { RepAllLeadsTimeline } from "../../components/admin/RepAllLeadsTimeline";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
 
+type PageTab = "projects" | "all_leads";
 type FilterTab = "active" | "all" | "completed";
 
 export function RepProjectsPage() {
   const { repId } = useParams<{ repId: string }>();
-  const [tab, setTab] = useState<FilterTab>("active");
-  const qr = useTeamRepQuery(repId, !!repId, tab);
+  const [pageTab, setPageTab] = useState<PageTab>("projects");
+  const [projectTab, setProjectTab] = useState<FilterTab>("active");
+  const qr = useTeamRepQuery(repId, !!repId, projectTab);
 
   if (!repId) {
     return <p className="text-destructive">Missing rep.</p>;
@@ -50,7 +53,7 @@ export function RepProjectsPage() {
       <PortalPageHeader
         title={rep.displayName ?? rep.email}
         variant="operational"
-        stat={`${projects.length} projects`}
+        stat={pageTab === "projects" ? `${projects.length} projects` : "All leads"}
         toolbar={
           <DataStaleToolbar
             dataUpdatedAt={qr.dataUpdatedAt}
@@ -71,7 +74,10 @@ export function RepProjectsPage() {
       ) : null}
 
       <div className="flex flex-wrap gap-2 text-xs">
-        <StatPill label="Leads" value={rep.totalLeads} />
+        <StatPill label="Active prospects" value={rep.totalLeads} />
+        {(rep.notInterestedLeads ?? 0) > 0 ? (
+          <StatPill label="Not interested" value={rep.notInterestedLeads ?? 0} />
+        ) : null}
         <StatPill label="Clients" value={rep.activeClients} />
         <StatPill label="Ongoing" value={rep.ongoingProjects} />
         <StatPill label="Completed" value={rep.completedProjects ?? 0} />
@@ -86,40 +92,71 @@ export function RepProjectsPage() {
       <div
         className="inline-flex rounded-lg border bg-muted/40 p-1"
         role="tablist"
-        aria-label="Project filter"
+        aria-label="Rep detail"
       >
-        {(["active", "all", "completed"] as const).map((v) => (
+        {(
+          [
+            ["projects", "Projects"],
+            ["all_leads", "All leads"]
+          ] as const
+        ).map(([v, label]) => (
           <Button
             key={v}
             type="button"
             role="tab"
-            aria-selected={tab === v}
-            variant={tab === v ? "secondary" : "ghost"}
-            className={cn("min-h-11 capitalize", tab === v && "shadow-sm")}
-            onClick={() => setTab(v)}
+            aria-selected={pageTab === v}
+            variant={pageTab === v ? "secondary" : "ghost"}
+            className={cn("min-h-11", pageTab === v && "shadow-sm")}
+            onClick={() => setPageTab(v)}
           >
-            {v === "active" ? "Active" : v === "completed" ? "Completed" : "All"}
+            {label}
           </Button>
         ))}
       </div>
 
-      {projects.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {tab === "active"
-            ? "No active client projects for this rep."
-            : "No projects in this filter."}
-        </p>
+      {pageTab === "all_leads" ? (
+        <RepAllLeadsTimeline repId={repId} />
       ) : (
-        <div className="space-y-3">
-          {[...projects]
-            .sort((a, b) => {
-              if (a.pendingAdmin === b.pendingAdmin) return 0;
-              return a.pendingAdmin ? -1 : 1;
-            })
-            .map((p) => (
-              <AdminProjectCard key={p.id} repId={repId} project={p} />
+        <>
+          <div
+            className="inline-flex rounded-lg border bg-muted/40 p-1"
+            role="tablist"
+            aria-label="Project filter"
+          >
+            {(["active", "all", "completed"] as const).map((v) => (
+              <Button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={projectTab === v}
+                variant={projectTab === v ? "secondary" : "ghost"}
+                className={cn("min-h-11 capitalize", projectTab === v && "shadow-sm")}
+                onClick={() => setProjectTab(v)}
+              >
+                {v === "active" ? "Active" : v === "completed" ? "Completed" : "All"}
+              </Button>
             ))}
-        </div>
+          </div>
+
+          {projects.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {projectTab === "active"
+                ? "No active client projects for this rep."
+                : "No projects in this filter."}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {[...projects]
+                .sort((a, b) => {
+                  if (a.pendingAdmin === b.pendingAdmin) return 0;
+                  return a.pendingAdmin ? -1 : 1;
+                })
+                .map((p) => (
+                  <AdminProjectCard key={p.id} repId={repId} project={p} />
+                ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

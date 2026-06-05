@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
 import { useDebounced } from "../../hooks/useDebounced";
 import { useLeadsQuery } from "../../hooks/useSalesQueries";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,9 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
-import { DeleteProspectButton } from "../../components/pipeline/DeleteProspectButton";
+import { MarkNotInterestedButton } from "../../components/pipeline/MarkNotInterestedButton";
 import { PipelineListSummary } from "../../components/pipeline/PipelineListSummary";
-import { canDeleteProspect } from "../../lib/leadDelete";
+import { canMarkNotInterested } from "../../lib/leadNotInterested";
 import { listStatusChip } from "../../lib/pipelineCopy";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +72,13 @@ export function PipelineListPage() {
     enabled: !searchTooShort
   });
 
+  const notInterestedCountQr = useLeadsQuery({
+    page: 1,
+    pageSize: 1,
+    view: "not_interested"
+  });
+  const notInterestedTotal = notInterestedCountQr.data?.total ?? 0;
+
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
 
   return (
@@ -111,6 +119,16 @@ export function PipelineListPage() {
           <Link to="/portal/pipeline/new">
             <Plus className="mr-2 h-4 w-4" aria-hidden />
             Add prospect
+          </Link>
+        </Button>
+        <Button asChild variant="outline" className="min-h-11 gap-2">
+          <Link to="/portal/pipeline/not-interested">
+            Not interested
+            {notInterestedTotal > 0 ? (
+              <Badge variant="secondary" className="tabular-nums">
+                {notInterestedTotal > 99 ? "99+" : notInterestedTotal}
+              </Badge>
+            ) : null}
           </Link>
         </Button>
       </div>
@@ -171,7 +189,7 @@ export function PipelineListPage() {
                 pendingAdmin: false
               };
               const statusChip = listStatusChip(summary, undefined, "rep");
-              const deletable = tab === "leads" && canDeleteProspect(lead);
+              const markable = tab === "leads" && canMarkNotInterested(lead);
               return (
                 <PipelineListSummary
                   key={lead.id}
@@ -181,12 +199,12 @@ export function PipelineListPage() {
                   href={`/portal/pipeline/${lead.id}`}
                   statusChip={statusChip}
                   trailingAction={
-                    deletable ? (
-                      <DeleteProspectButton
+                    markable ? (
+                      <MarkNotInterestedButton
                         leadId={lead.id}
                         clientName={lead.clientName}
                         variant="listRow"
-                        onDeleted={() => void refetch()}
+                        onMarked={() => void refetch()}
                       />
                     ) : null
                   }

@@ -1,4 +1,9 @@
 import { Link, Navigate, useParams } from "react-router-dom";
+
+const RESERVED_PIPELINE_SLUGS: Record<string, string> = {
+  new: "/portal/pipeline/new",
+  "not-interested": "/portal/pipeline/not-interested"
+};
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
@@ -87,6 +92,10 @@ export function PipelineDetailGate() {
         <Skeleton className="h-96 w-full" />
       </div>
     );
+  }
+
+  if (id && RESERVED_PIPELINE_SLUGS[id]) {
+    return <Navigate to={RESERVED_PIPELINE_SLUGS[id]} replace />;
   }
 
   if (user?.role === "ADMIN") {

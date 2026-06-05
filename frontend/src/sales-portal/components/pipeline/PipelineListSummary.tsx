@@ -29,7 +29,13 @@ export function PipelineListSummary({
   const stepLine = stageShortTitle(summary.currentStageKey, summary.currentStageTitle);
 
   return (
-    <div className="flex min-w-0 items-stretch gap-0 rounded-lg border touch-manipulation">
+    <div
+      className={
+        trailingAction
+          ? "flex min-w-0 flex-col rounded-lg border touch-manipulation sm:flex-row sm:items-stretch"
+          : "flex min-w-0 items-stretch gap-0 rounded-lg border touch-manipulation"
+      }
+    >
     <Link
       to={href}
       className="flex min-h-11 min-w-0 flex-1 items-center gap-3 p-4 transition-colors hover:bg-muted/40 active:bg-muted/60"
@@ -51,7 +57,9 @@ export function PipelineListSummary({
       <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
     </Link>
     {trailingAction ? (
-      <div className="flex shrink-0 items-center border-l px-1">{trailingAction}</div>
+      <div className="flex shrink-0 items-center justify-stretch border-t px-3 py-2 sm:justify-center sm:border-l sm:border-t-0 sm:px-2 sm:py-0">
+        <div className="w-full sm:w-auto">{trailingAction}</div>
+      </div>
     ) : null}
     </div>
   );

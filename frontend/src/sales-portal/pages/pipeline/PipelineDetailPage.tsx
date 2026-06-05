@@ -37,9 +37,10 @@ import {
   pendingPaymentForKind
 } from "../../components/pipeline/paymentSubmissionMetaItems";
 import { PaymentSubmissionReviewSection } from "../../components/pipeline/PaymentSubmissionReviewSection";
-import { DeleteProspectButton } from "../../components/pipeline/DeleteProspectButton";
+import { MarkNotInterestedButton } from "../../components/pipeline/MarkNotInterestedButton";
+import { NotInterestedArchiveBanner } from "../../components/pipeline/NotInterestedArchiveBanner";
 import { RepDemoPreviewLink } from "../../components/pipeline/RepDemoPreviewLink";
-import { canDeleteProspect } from "../../lib/leadDelete";
+import { canMarkNotInterested } from "../../lib/leadNotInterested";
 import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
@@ -200,6 +201,37 @@ export function PipelineDetailPage() {
     );
   }
 
+  if (!lead.convertedAt && lead.notInterestedAt) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <Button variant="ghost" className="min-h-11 w-fit -ml-2" asChild>
+          <Link to="/portal/pipeline/not-interested">
+            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
+            Not interested
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-xl font-semibold md:text-2xl">{lead.clientName}</h1>
+          <p className="text-sm text-muted-foreground">Archived prospect</p>
+        </div>
+        <NotInterestedArchiveBanner
+          lead={lead}
+          onRestored={() => {
+            void leadQr.refetch();
+            navigate("/portal/pipeline", { replace: true });
+          }}
+        />
+        <PortalMetaGrid
+          items={[
+            { label: "Phone", value: lead.clientPhone ?? "—" },
+            { label: "Email", value: lead.clientEmail ?? "—" },
+            { label: "Notes", value: lead.notes?.trim() || "—" }
+          ]}
+        />
+      </div>
+    );
+  }
+
   const closeModal = () => {
     setActiveStage(null);
   };
@@ -312,15 +344,15 @@ export function PipelineDetailPage() {
             {lead.convertedAt ? "Client" : "Lead"} · {leadStatusLabel(lead.status)}
           </p>
         </div>
-        {canDeleteProspect(lead) ? (
-          <DeleteProspectButton
+        {canMarkNotInterested(lead) ? (
+          <MarkNotInterestedButton
             leadId={lead.id}
             clientName={lead.clientName}
-            variant="destructive"
-            onDeleted={() => navigate("/portal/pipeline", { replace: true })}
+            variant="outline"
+            onMarked={() => navigate("/portal/pipeline", { replace: true })}
           />
         ) : !lead.convertedAt ? null : (
-          <p className="text-xs text-muted-foreground">Converted clients cannot be deleted.</p>
+          <p className="text-xs text-muted-foreground">Converted clients cannot be marked not interested.</p>
         )}
       </div>
 

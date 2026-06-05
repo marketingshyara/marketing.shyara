@@ -76,6 +76,7 @@ model User {
 
   leadsCreated   Lead[]          @relation("LeadCreatedBy")
   leadsAssigned  Lead[]          @relation("LeadAssignedTo")
+  leadsMarkedNotInterested Lead[] @relation("LeadNotInterestedBy")
   paymentsMarked LeadPayment[]   @relation("PaymentMarkedBy")
   paymentsVerified LeadPayment[] @relation("PaymentVerifiedBy")
   commissions    Commission[]    @relation("CommissionRep")
@@ -122,11 +123,15 @@ model Lead {
   repoTransferVerifiedAt  DateTime?
   /** Per-stage admin decline context keyed by pipeline stage (e.g. accounts_ready). */
   stageDeclineNotes    Json?
+  notInterestedAt      DateTime?
+  notInterestedNote    String?
+  notInterestedByUserId String?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
   createdBy   User           @relation("LeadCreatedBy", fields: [createdByUserId], references: [id])
   assignedTo  User?          @relation("LeadAssignedTo", fields: [assignedToUserId], references: [id])
+  notInterestedBy User?      @relation("LeadNotInterestedBy", fields: [notInterestedByUserId], references: [id], onDelete: SetNull)
   websiteTemplate WebsiteTemplate? @relation(fields: [websiteTemplateId], references: [id], onDelete: SetNull)
   payments    LeadPayment[]
   project     Project?
@@ -139,6 +144,8 @@ model Lead {
   @@index([createdAt])
   @@index([websiteTemplateId])
   @@index([convertedAt])
+  @@index([notInterestedAt])
+  @@index([assignedToUserId, createdAt])
 }
 
 model PortalSettings {

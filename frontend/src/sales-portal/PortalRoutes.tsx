@@ -13,6 +13,7 @@ import { PortalChangePasswordPage } from "./pages/PortalChangePasswordPage";
 import { PipelineListPage } from "./pages/pipeline/PipelineListPage";
 import { PipelineDetailGate } from "./pages/pipeline/PipelineDetailGate";
 import { PipelineNewLeadPage } from "./pages/pipeline/PipelineNewLeadPage";
+import { NotInterestedLeadsPage } from "./pages/pipeline/NotInterestedLeadsPage";
 import { ResourcesPage } from "./pages/resources/ResourcesPage";
 import { ReviewsPage } from "./pages/admin/ReviewsPage";
 import { SettingsPage } from "./pages/admin/SettingsPage";
@@ -94,14 +95,16 @@ export function PortalRoutes() {
           <Route element={<SalesPortalLayout />}>
             <Route index element={<PortalIndexRedirect />} />
 
-            <Route path="pipeline/:id" element={<PipelineDetailGate />} />
             <Route path="commission" element={<CommissionPage />} />
 
             <Route element={<RequireSalesRep />}>
               <Route path="pipeline" element={<PipelineListPage />} />
+              <Route path="pipeline/not-interested" element={<NotInterestedLeadsPage />} />
               <Route path="pipeline/new" element={<PipelineNewLeadPage />} />
               <Route path="resources" element={<ResourcesPage />} />
             </Route>
+
+            <Route path="pipeline/:id" element={<PipelineDetailGate />} />
 
             <Route
               path="leads"

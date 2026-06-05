@@ -7,6 +7,7 @@ import {
 
 export type RepDashboardStats = {
   totalLeads: number;
+  notInterestedLeads: number;
   activeClients: number;
   ongoingProjects: number;
   completedProjects: number;
@@ -20,10 +21,20 @@ export async function getRepDashboardStats(
 ): Promise<RepDashboardStats> {
   const assigned = { assignedToUserId: repUserId };
 
-  const [totalLeads, activeClients, ongoingProjects, completedProjects, pendingPayments, needsAdminAction] =
-    await Promise.all([
+  const [
+    totalLeads,
+    notInterestedLeads,
+    activeClients,
+    ongoingProjects,
+    completedProjects,
+    pendingPayments,
+    needsAdminAction
+  ] = await Promise.all([
       prisma.lead.count({
-        where: { ...assigned, convertedAt: null }
+        where: { ...assigned, convertedAt: null, notInterestedAt: null }
+      }),
+      prisma.lead.count({
+        where: { ...assigned, convertedAt: null, notInterestedAt: { not: null } }
       }),
       prisma.lead.count({
         where: {
@@ -121,6 +132,7 @@ export async function getRepDashboardStats(
 
   return {
     totalLeads,
+    notInterestedLeads,
     activeClients,
     ongoingProjects,
     completedProjects,

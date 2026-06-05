@@ -23,7 +23,7 @@ vi.mock("../../hooks/useSalesQueries", () => ({
   useConvertLeadMutation: (...args: unknown[]) => useConvertLeadMutation(...args),
   useMarkPaymentMutation: (...args: unknown[]) => useMarkPaymentMutation(...args),
   usePatchProjectMutation: (...args: unknown[]) => usePatchProjectMutation(...args),
-  useDeleteLeadMutation: () => ({ mutate: vi.fn(), isPending: false })
+  useMarkNotInterestedMutation: () => ({ mutate: vi.fn(), isPending: false })
 }));
 
 const mockLead: Lead = {

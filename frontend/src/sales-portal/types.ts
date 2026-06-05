@@ -146,6 +146,8 @@ export interface Lead {
   websiteTemplateId: string | null;
   contentReceivedAt: string | null;
   convertedAt: string | null;
+  notInterestedAt?: string | null;
+  notInterestedNote?: string | null;
   clientDetailsSubmittedAt: string | null;
   clientDetailsVerifiedAt: string | null;
   whatsappGroupLink: string | null;
@@ -245,6 +247,7 @@ export interface TeamRepSummary {
   archivedAt?: string | null;
   isActive?: boolean;
   totalLeads: number;
+  notInterestedLeads?: number;
   activeClients: number;
   ongoingProjects: number;
   completedProjects: number;
@@ -253,6 +256,20 @@ export interface TeamRepSummary {
   /** Legacy alias */
   activeLeads?: number;
   pendingVerifications?: number;
+}
+
+export type RepLeadDisposition = "prospect" | "not_interested" | "client" | "settled";
+
+export interface TeamRepLeadItem {
+  id: string;
+  clientName: string;
+  status: LeadStatus;
+  createdAt: string;
+  convertedAt: string | null;
+  notInterestedAt: string | null;
+  notInterestedNote: string | null;
+  disposition: RepLeadDisposition;
+  pipelineSummary: LeadPipelineSummary | null;
 }
 
 export interface TeamRepProject {

@@ -7,6 +7,8 @@ import { PaymentVerifyDialog } from "../../components/pipeline/PaymentVerifyDial
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DeclineFeedbackBanner } from "../../components/pipeline/DeclineFeedbackBanner";
+import { NotInterestedArchiveBanner } from "../../components/pipeline/NotInterestedArchiveBanner";
+import { PortalMetaGrid } from "../../components/ui/PortalMetaGrid";
 import { PipelineFocusCard } from "../../components/pipeline/PipelineFocusCard";
 import { findDeclineFeedbackStage } from "../../lib/declineFeedback";
 import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
@@ -440,6 +442,56 @@ export function AdminProjectPage() {
   const rejectable = activeStage ? STAGE_REJECTABLE[activeStage] : undefined;
   const declineFeedback = findDeclineFeedbackStage(stages);
 
+  if (!lead.convertedAt && lead.notInterestedAt) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <nav className="text-sm text-muted-foreground" aria-label="Breadcrumb">
+          <Link to="/portal/team" className="hover:underline">
+            Team
+          </Link>
+          <span className="mx-2">/</span>
+          <Link to={`/portal/team/${repId}`} className="hover:underline">
+            {repName}
+            {repRemoved ? " (removed)" : ""}
+          </Link>
+          <span className="mx-2">/</span>
+          <span className="text-foreground">{lead.clientName}</span>
+        </nav>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <Button variant="ghost" className="min-h-11 w-fit -ml-2" asChild>
+            <Link to={`/portal/team/${repId}`}>
+              <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
+              Back to rep
+            </Link>
+          </Button>
+          <DataStaleToolbar
+            dataUpdatedAt={leadQr.dataUpdatedAt}
+            onRefresh={() => void leadQr.refetch()}
+            isFetching={leadQr.isFetching}
+          />
+        </div>
+
+        <div>
+          <h1 className="text-xl font-semibold md:text-2xl">{lead.clientName}</h1>
+          <p className="text-sm text-muted-foreground">
+            Archived prospect · {leadStatusLabel(lead.status)}
+          </p>
+        </div>
+
+        <NotInterestedArchiveBanner lead={lead} actorMode="admin" />
+
+        <PortalMetaGrid
+          items={[
+            { label: "Phone", value: lead.clientPhone ?? "—" },
+            { label: "Email", value: lead.clientEmail ?? "—" },
+            { label: "Notes", value: lead.notes?.trim() || "—" }
+          ]}
+        />
+      </div>
+    );
+  }
+
   const verifiedAdvance = lead.payments?.find(
     (p) => p.kind === "ADVANCE" && p.verificationStatus === "VERIFIED"
   );
@@ -466,7 +518,7 @@ export function AdminProjectPage() {
         <Button variant="ghost" className="min-h-11 w-fit -ml-2" asChild>
           <Link to={`/portal/team/${repId}`}>
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
-            Back to projects
+            Back to rep
           </Link>
         </Button>
         <DataStaleToolbar
@@ -479,7 +531,7 @@ export function AdminProjectPage() {
       <div>
         <h1 className="text-xl font-semibold md:text-2xl">{lead.clientName}</h1>
         <p className="text-sm text-muted-foreground">
-          Client · {leadStatusLabel(lead.status)}
+          {lead.convertedAt ? "Client" : "Prospect"} · {leadStatusLabel(lead.status)}
           {lead.agreedTotalCents != null ? ` · ${formatMinorUnits(lead.agreedTotalCents)}` : ""}
         </p>
       </div>

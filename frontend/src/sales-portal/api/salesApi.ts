@@ -86,7 +86,7 @@ export const salesApi = {
   leads: (params: {
     page?: number;
     pageSize?: number;
-    view?: "leads" | "clients" | "completed";
+    view?: "leads" | "not_interested" | "clients" | "completed";
     status?: LeadStatus;
     search?: string;
     from?: Date;
@@ -111,7 +111,11 @@ export const salesApi = {
   createLead: (body: Record<string, unknown>) =>
     apiJson<{ lead: Lead }>("POST", "/leads", body),
 
-  deleteLead: (id: string) => apiJson<{ ok: boolean }>("DELETE", `/leads/${id}`),
+  markNotInterested: (id: string, body?: { note?: string }) =>
+    apiJson<{ lead: Lead }>("POST", `/leads/${id}/not-interested`, body ?? {}),
+
+  restoreLeadInterest: (id: string) =>
+    apiJson<{ lead: Lead }>("POST", `/leads/${id}/restore-interest`),
 
   convertLead: (
     id: string,
@@ -255,6 +259,23 @@ export const salesApi = {
       rep: import("../types").TeamRepSummary;
       projects: import("../types").TeamRepProject[];
     }>("GET", `/team/reps/${userId}${qs ? `?${qs}` : ""}`);
+  },
+
+  teamRepLeads: (
+    userId: string,
+    params: { page?: number; pageSize?: number; search?: string; from?: Date; to?: Date }
+  ) => {
+    const q = new URLSearchParams();
+    if (params.page != null) q.set("page", String(params.page));
+    if (params.pageSize != null) q.set("pageSize", String(params.pageSize));
+    if (params.search) q.set("search", params.search);
+    if (params.from) q.set("from", params.from.toISOString());
+    if (params.to) q.set("to", params.to.toISOString());
+    const qs = q.toString();
+    return apiJson<Paginated<import("../types").TeamRepLeadItem>>(
+      "GET",
+      `/team/reps/${userId}/leads${qs ? `?${qs}` : ""}`
+    );
   },
 
   activityLogs: (params: {

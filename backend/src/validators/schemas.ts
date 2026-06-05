@@ -78,8 +78,8 @@ export const pipelineStageKeySchema = z.enum([
 
 export const leadsListQuerySchema = paginationQuerySchema
   .extend({
-    /** `leads` = prospects; `clients` = in-flight converted; `completed` = commission settled */
-    view: z.enum(["leads", "clients", "completed"]).optional(),
+    /** `leads` = active prospects; `not_interested` = archived prospects; `clients` / `completed` = converted */
+    view: z.enum(["leads", "not_interested", "clients", "completed"]).optional(),
     /** Admin-only: filter pipeline by assigned sales rep. */
     assignedToUserId: z.string().cuid().optional(),
     /** Ignored when `view` is `clients` or `completed` (view applies status filters). */
@@ -101,7 +101,27 @@ export const leadsListQuerySchema = paginationQuerySchema
   .refine(
     (q) => !q.status || !q.view || q.view === "leads",
     { message: "Use view=clients or view=completed instead of status for converted lists." }
-  );
+  )
+  .refine((q) => q.view !== "not_interested" || !q.status, {
+    message: "status filter is not supported with view=not_interested."
+  });
+
+export const markNotInterestedBodySchema = z.object({
+  note: z.string().trim().max(500).optional().nullable()
+});
+
+export const teamRepLeadsQuerySchema = paginationQuerySchema
+  .extend({
+    search: z.preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+      z.string().min(2).max(200).optional()
+    ),
+    from: z.coerce.date().optional(),
+    to: z.coerce.date().optional()
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: "Query parameter 'from' must be on or before 'to'."
+  });
 
 /** Omit key = no change; null/"" = clear; string = validate (must not map missing keys to null). */
 const optionalLeadEmail = z.preprocess(

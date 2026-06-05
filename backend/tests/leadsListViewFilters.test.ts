@@ -8,6 +8,22 @@ describe("leadsListQuerySchema view filters", () => {
     expect(q.view).toBe("completed");
   });
 
+  it("accepts view=not_interested", () => {
+    const q = leadsListQuerySchema.parse({ page: 1, pageSize: 20, view: "not_interested" });
+    expect(q.view).toBe("not_interested");
+  });
+
+  it("rejects status with view=not_interested", () => {
+    expect(() =>
+      leadsListQuerySchema.parse({
+        page: 1,
+        pageSize: 20,
+        view: "not_interested",
+        status: LeadStatus.BUILDING
+      })
+    ).toThrow();
+  });
+
   it("rejects status with view=clients", () => {
     expect(() =>
       leadsListQuerySchema.parse({

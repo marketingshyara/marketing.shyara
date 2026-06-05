@@ -7,6 +7,18 @@ import { HttpError } from "../errors/httpError.js";
 import { getPipelineStages, summarizePipelineStages } from "../services/pipeline.js";
 import { getPortalSettings } from "../services/settings.js";
 import { getRepDashboardStats } from "../services/teamStats.js";
+import { teamRepLeadsQuerySchema } from "../validators/schemas.js";
+
+function repLeadDisposition(lead: {
+  convertedAt: Date | null;
+  notInterestedAt: Date | null;
+  status: LeadStatus;
+}): "prospect" | "not_interested" | "client" | "settled" {
+  if (lead.convertedAt == null) {
+    return lead.notInterestedAt != null ? "not_interested" : "prospect";
+  }
+  return lead.status === LeadStatus.COMMISSION_PAID ? "settled" : "client";
+}
 
 const repProjectsQuerySchema = z.object({
   status: z.enum(["active", "all", "completed"]).optional().default("active")
@@ -112,6 +124,90 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
           activeLeads: stats.activeClients
         },
         projects
+      });
+    }
+  );
+
+  app.get(
+    "/api/team/reps/:userId/leads",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      requireAdmin(request);
+      const { userId } = request.params as { userId: string };
+      const query = teamRepLeadsQuerySchema.parse(request.query);
+
+      const rep = await app.prisma.user.findFirst({
+        where: { id: userId, role: UserRole.SALES_REP },
+        select: { id: true }
+      });
+      if (!rep) {
+        throw new HttpError(404, "NOT_FOUND", "Sales rep not found.");
+      }
+
+      const settings = await getPortalSettings(app.prisma);
+      const search = query.search?.trim();
+      const createdAtFilter =
+        query.from || query.to
+          ? {
+              createdAt: {
+                ...(query.from ? { gte: query.from } : {}),
+                ...(query.to ? { lte: query.to } : {})
+              }
+            }
+          : {};
+
+      const where = {
+        assignedToUserId: rep.id,
+        ...createdAtFilter,
+        ...(search
+          ? {
+              OR: [
+                { clientName: { contains: search, mode: "insensitive" as const } },
+                { clientEmail: { contains: search, mode: "insensitive" as const } },
+                { clientPhone: { contains: search, mode: "insensitive" as const } }
+              ]
+            }
+          : {})
+      };
+
+      const [total, leads] = await Promise.all([
+        app.prisma.lead.count({ where }),
+        app.prisma.lead.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (query.page - 1) * query.pageSize,
+          take: query.pageSize,
+          include: {
+            payments: { orderBy: { markedAt: "desc" } },
+            project: true
+          }
+        })
+      ]);
+
+      const items = leads.map((lead) => {
+        const disposition = repLeadDisposition(lead);
+        const pipelineSummary =
+          lead.convertedAt != null
+            ? summarizePipelineStages(getPipelineStages(lead, settings, UserRole.ADMIN))
+            : null;
+        return {
+          id: lead.id,
+          clientName: lead.clientName,
+          status: lead.status,
+          createdAt: lead.createdAt,
+          convertedAt: lead.convertedAt,
+          notInterestedAt: lead.notInterestedAt,
+          notInterestedNote: lead.notInterestedNote,
+          disposition,
+          pipelineSummary
+        };
+      });
+
+      return reply.send({
+        items,
+        page: query.page,
+        pageSize: query.pageSize,
+        total
       });
     }
   );

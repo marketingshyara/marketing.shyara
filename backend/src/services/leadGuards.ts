@@ -9,6 +9,13 @@ import type { PortalSettingsValues } from "../validators/schemas.js";
  * payment kind, etc.); this guard only enforces the global "do not touch terminals" rule.
  */
 export function assertLeadMutable(lead: Lead, settings: PortalSettingsValues): void {
+  if (lead.notInterestedAt != null && lead.convertedAt == null) {
+    throw new HttpError(
+      400,
+      "LEAD_NOT_INTERESTED",
+      "This prospect is marked not interested. Restore them to Prospects before making changes."
+    );
+  }
   if (settings.terminalNoMutationStatuses.includes(lead.status)) {
     throw new HttpError(
       400,
@@ -45,22 +52,22 @@ export function assertMarkedPaymentAmountMatchesLead(
   }
 }
 
-type LeadDeleteCheck = Pick<Lead, "convertedAt" | "status"> & {
+export type LeadProspectDispositionCheck = Pick<Lead, "convertedAt" | "status"> & {
   payments: { verificationStatus: PaymentVerificationStatus }[];
   project: { id: string } | null;
 };
 
-/** Unconverted prospects with no verified payments and no project may be deleted. */
-export function assertLeadDeletable(lead: LeadDeleteCheck): void {
+/** Unconverted prospects with no verified payments and no project may be marked not interested. */
+export function assertLeadNotInterestedEligible(lead: LeadProspectDispositionCheck): void {
   if (lead.convertedAt != null) {
     throw new HttpError(
       400,
       "LEAD_ALREADY_CONVERTED",
-      "Converted clients cannot be deleted."
+      "Converted clients cannot be marked not interested."
     );
   }
   if (lead.status === LeadStatus.COMMISSION_PAID) {
-    throw new HttpError(400, "LEAD_TERMINAL", "This lead is complete and cannot be deleted.");
+    throw new HttpError(400, "LEAD_TERMINAL", "This lead is complete and cannot be changed.");
   }
   if (
     lead.payments.some((p) => p.verificationStatus === PaymentVerificationStatus.VERIFIED)
@@ -68,14 +75,17 @@ export function assertLeadDeletable(lead: LeadDeleteCheck): void {
     throw new HttpError(
       400,
       "LEAD_HAS_VERIFIED_PAYMENT",
-      "Cannot delete a prospect after a payment has been verified."
+      "Cannot mark a prospect not interested after a payment has been verified."
     );
   }
   if (lead.project != null) {
     throw new HttpError(
       400,
       "LEAD_HAS_PROJECT",
-      "Cannot delete a prospect that already has a project."
+      "Cannot mark a prospect not interested that already has a project."
     );
   }
 }
+
+/** @deprecated Use assertLeadNotInterestedEligible — hard delete is disabled for reps. */
+export const assertLeadDeletable = assertLeadNotInterestedEligible;

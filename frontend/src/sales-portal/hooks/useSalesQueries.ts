@@ -122,16 +122,43 @@ export function errToast(e: unknown, qc?: QueryClient) {
       }
       return;
     }
+    if (e.code === "LEAD_NOT_INTERESTED") {
+      toast.error(
+        e.message ||
+          "This prospect is marked not interested. Restore them to Prospects before making changes."
+      );
+      if (qc) invalidateQueryPrefixes(qc, ["lead", "leads"]);
+      return;
+    }
+    if (e.code === "ALREADY_NOT_INTERESTED") {
+      toast.error(e.message || "This prospect is already marked not interested.");
+      if (qc) invalidateQueryPrefixes(qc, ["lead", "leads"]);
+      return;
+    }
+    if (e.code === "NOT_NOT_INTERESTED") {
+      toast.error(e.message || "This prospect is not marked not interested.");
+      return;
+    }
+    if (e.code === "LEAD_DELETE_DISABLED") {
+      toast.error(
+        e.message || "Prospects cannot be deleted. Mark them as not interested instead."
+      );
+      return;
+    }
     if (e.code === "LEAD_ALREADY_CONVERTED") {
-      toast.error(e.message || "Converted clients cannot be deleted.");
+      toast.error(e.message || "Converted clients cannot be marked not interested.");
       return;
     }
     if (e.code === "LEAD_HAS_VERIFIED_PAYMENT") {
-      toast.error(e.message || "Cannot delete after a payment has been verified.");
+      toast.error(
+        e.message || "Cannot mark not interested after a payment has been verified."
+      );
       return;
     }
     if (e.code === "LEAD_HAS_PROJECT") {
-      toast.error(e.message || "Cannot delete a prospect that already has a project.");
+      toast.error(
+        e.message || "Cannot mark a prospect not interested that already has a project."
+      );
       return;
     }
     if (e.code === "LAST_ADMIN") {
@@ -334,7 +361,7 @@ export function useResetPasswordMutation() {
 export function useLeadsQuery(params: {
   page: number;
   pageSize: number;
-  view?: "leads" | "clients" | "completed";
+  view?: "leads" | "not_interested" | "clients" | "completed";
   status?: LeadStatus;
   search?: string;
   from?: Date;
@@ -358,16 +385,36 @@ export function useLeadQuery(id: string | undefined, enabled = true) {
   });
 }
 
-export function useDeleteLeadMutation() {
+export function useMarkNotInterestedMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: salesApi.deleteLead,
-    onSuccess: () => {
+    mutationFn: ({ leadId, note }: { leadId: string; note?: string }) =>
+      salesApi.markNotInterested(leadId, note ? { note } : {}),
+    onSuccess: (_data, { leadId }) => {
+      void qc.invalidateQueries({ queryKey: qk.lead(leadId) });
       qc.invalidateQueries({ queryKey: ["leads"] });
       void qc.invalidateQueries({ queryKey: ["team-reps"] });
       void qc.invalidateQueries({ queryKey: ["team-rep"] });
+      void qc.invalidateQueries({ queryKey: ["team-rep-leads"] });
       invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "admin-projects"]);
-      toast.success("Prospect deleted");
+      toast.success("Moved to Not interested");
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+export function useRestoreLeadInterestMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: salesApi.restoreLeadInterest,
+    onSuccess: (_data, leadId) => {
+      void qc.invalidateQueries({ queryKey: qk.lead(leadId) });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      void qc.invalidateQueries({ queryKey: ["team-reps"] });
+      void qc.invalidateQueries({ queryKey: ["team-rep"] });
+      void qc.invalidateQueries({ queryKey: ["team-rep-leads"] });
+      invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "admin-projects"]);
+      toast.success("Restored to Prospects");
     },
     onError: (e) => errToast(e, qc)
   });
@@ -653,6 +700,26 @@ export function useTeamRepQuery(
   return useQuery({
     queryKey: [...qk.teamRep(userId ?? ""), status],
     queryFn: () => salesApi.teamRep(userId!, { status }),
+    enabled: !!userId && enabled,
+    staleTime: 60_000
+  });
+}
+
+export function useTeamRepLeadsQuery(
+  userId: string | undefined,
+  params: {
+    page: number;
+    pageSize: number;
+    search?: string;
+    from?: Date;
+    to?: Date;
+    enabled?: boolean;
+  }
+) {
+  const { enabled = true, ...rest } = params;
+  return useQuery({
+    queryKey: qk.teamRepLeads(userId ?? "", rest),
+    queryFn: () => salesApi.teamRepLeads(userId!, rest),
     enabled: !!userId && enabled,
     staleTime: 60_000
   });

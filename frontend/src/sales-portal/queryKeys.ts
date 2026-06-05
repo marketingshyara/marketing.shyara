@@ -20,5 +20,7 @@ export const qk = {
   notificationsUnreadCount: (userId: string) => ["notifications-unread-count", userId] as const,
   websiteTemplates: ["website-templates"] as const,
   teamReps: ["team-reps"] as const,
-  teamRep: (userId: string) => ["team-rep", userId] as const
+  teamRep: (userId: string) => ["team-rep", userId] as const,
+  teamRepLeads: (userId: string, params: Record<string, unknown>) =>
+    ["team-rep-leads", userId, params] as const
 };

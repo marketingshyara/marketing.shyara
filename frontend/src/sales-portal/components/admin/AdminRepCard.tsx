@@ -31,7 +31,13 @@ export function AdminRepCard({ rep }: Props) {
       </CardHeader>
       <CardContent className="mt-auto space-y-4">
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground tabular-nums">
-          <span>{rep.totalLeads} leads</span>
+          <span>{rep.totalLeads} prospects</span>
+          {(rep.notInterestedLeads ?? 0) > 0 ? (
+            <>
+              <span>·</span>
+              <span>{rep.notInterestedLeads} not interested</span>
+            </>
+          ) : null}
           <span>·</span>
           <span>{rep.activeClients} clients</span>
           <span>·</span>
@@ -46,7 +52,7 @@ export function AdminRepCard({ rep }: Props) {
           ) : null}
         </div>
         <Button asChild variant="outline" className="min-h-11 w-full">
-          <Link to={`/portal/team/${rep.id}`}>View projects</Link>
+          <Link to={`/portal/team/${rep.id}`}>View rep</Link>
         </Button>
       </CardContent>
     </Card>

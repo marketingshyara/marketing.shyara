@@ -22,6 +22,25 @@ const run = process.env.E2E_RUN_ADMIN_TEAM === "1";
   await expect(page.getByRole("heading", { name: /Sales team/i })).toBeVisible();
 });
 
+(run ? test : test.skip)("rep detail shows All leads tab", async ({ page, request }) => {
+  const loginRes = await request.post("/api/auth/login", {
+    data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
+  });
+  if (!loginRes.ok()) {
+    test.skip();
+    return;
+  }
+  await page.goto("/portal/team");
+  const viewRep = page.getByRole("link", { name: /View rep/i }).first();
+  if ((await viewRep.count()) === 0) {
+    test.skip();
+    return;
+  }
+  await viewRep.click();
+  await page.getByRole("tab", { name: /All leads/i }).click();
+  await expect(page.getByLabel(/Search leads/i)).toBeVisible();
+});
+
 (run ? test : test.skip)("admin cannot access rep pipeline", async ({ page, request }) => {
   const loginRes = await request.post("/api/auth/login", {
     data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD }
