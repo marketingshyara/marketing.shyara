@@ -73,6 +73,16 @@
       "posterUrl": "/samples/websites/restaurant-journey-of-taste-website/poster.jpg"
     },
     {
+      "id": "restaurant-fire-town-website",
+      "displayCode": "RES/004",
+      "name": "Fire Town Cafe Website",
+      "description": "A premium cafe website with slow brew menu, botanical drinks, gallery, and reservation-focused contact flow.",
+      "folder": "restaurant-fire-town-website",
+      "file": "index.html",
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/restaurant-fire-town-website/poster.jpg"
+    },
+    {
       "id": "clinic-dental-waiting-room-classic",
       "displayCode": "CLI/001",
       "name": "Dental Clinic Website (Classic)",

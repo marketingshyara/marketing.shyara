@@ -11,6 +11,7 @@ test.describe("website samples page", () => {
   test("shows template display codes on sample cards", async ({ page }) => {
     await page.goto("/samples", { waitUntil: "domcontentloaded" });
     await expect(page.getByText("RES/001")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("RES/004")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("COA/001")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("GYM/001")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("CAR/001")).toBeVisible({ timeout: 60_000 });
@@ -26,6 +27,21 @@ test.describe("website samples page", () => {
     await page.getByRole("button", { name: /auto \/ car care/i }).click();
     await expect(page.getByText("CAR/001")).toBeVisible();
     await expect(page.getByText("GYM/001")).toHaveCount(0);
+  });
+
+  test("fire town cafe sample SPA routes serve index shell", async ({ page, request }) => {
+    const base = "/samples/websites/restaurant-fire-town-website";
+    for (const path of ["/menu", "/about", "/gallery", "/contact"]) {
+      const res = await request.get(`${base}${path}`);
+      expect(res.status(), path).toBe(200);
+      const html = await res.text();
+      expect(html, path).toContain(`${base}/static/js/main`);
+    }
+
+    await page.goto(`${base}/menu`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: /the menu|la carte/i }).first()).toBeVisible({
+      timeout: 60_000,
+    });
   });
 
   test("car wash sample SPA routes serve index shell", async ({ page, request }) => {
@@ -113,6 +129,7 @@ test.describe("website samples page", () => {
   for (const sample of [
     { path: "/samples/websites/restaurant-classic-website/", heading: /fire meets flavor/i },
     { path: "/samples/websites/restaurant-botanical-website/", heading: /nature meets flavor/i },
+    { path: "/samples/websites/restaurant-fire-town-website/", heading: /fire town|coffee|caf/i },
     { path: "/samples/websites/astrology-consultant-website/", heading: /celestia|astrology|stars/i },
     { path: "/samples/websites/clinic-multispeciality-waiting-room/", heading: /clinic|health|multispecial/i },
     { path: "/samples/websites/clinic-dental-waiting-room-classic/", heading: /dental|smile/i },

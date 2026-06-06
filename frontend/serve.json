@@ -9,6 +9,10 @@
       "source": "/samples/websites/gym-ironforge-website/**",
       "destination": "/samples/websites/gym-ironforge-website/index.html"
     },
+    {
+      "source": "/samples/websites/restaurant-fire-town-website/**",
+      "destination": "/samples/websites/restaurant-fire-town-website/index.html"
+    },
     { "source": "!/samples/**", "destination": "/index.html" }
   ],
   "headers": [

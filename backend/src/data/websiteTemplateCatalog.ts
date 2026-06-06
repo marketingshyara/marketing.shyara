@@ -44,6 +44,11 @@ const RAW_SAMPLES: { sampleSlug: string; name: string; categoryId: string }[] = 
     categoryId: "restaurants"
   },
   {
+    sampleSlug: "restaurant-fire-town-website",
+    name: "Fire Town Cafe Website",
+    categoryId: "restaurants"
+  },
+  {
     sampleSlug: "clinic-dental-waiting-room-classic",
     name: "Dental Clinic Website (Classic)",
     categoryId: "clinics"
