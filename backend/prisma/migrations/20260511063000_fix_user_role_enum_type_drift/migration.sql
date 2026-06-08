@@ -1,16 +1,14 @@
--- Drift fix: some production schemas have User.role bound to old enum "Role" or lowercase enum values.
+-- Legacy production drift: User.role may be bound to an old enum. Fresh installs from init already use UserRole.
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
-    WHERE t.typname = 'UserRole' AND n.nspname = 'public'
-  ) THEN
-    CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'SALES_REP');
-  END IF;
-
   IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'User' AND column_name = 'role'
+    SELECT 1
+    FROM information_schema.columns c
+    JOIN pg_type t ON t.oid = c.udt_name::regtype
+    WHERE c.table_schema = 'public'
+      AND c.table_name = 'User'
+      AND c.column_name = 'role'
+      AND t.typname <> 'UserRole'
   ) THEN
     ALTER TABLE "User" ALTER COLUMN "role" DROP DEFAULT;
     ALTER TABLE "User"
@@ -24,5 +22,6 @@ BEGIN
       )::"UserRole";
     ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'ADMIN'::"UserRole";
   END IF;
-END
-$$;
+EXCEPTION WHEN others THEN
+  NULL;
+END $$;
