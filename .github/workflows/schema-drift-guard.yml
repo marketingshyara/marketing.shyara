@@ -39,7 +39,7 @@ jobs:
 
       - name: Check migrations match schema
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres?schema=deploy_check
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
         run: |
           npx prisma migrate deploy --schema backend/prisma/schema.prisma
           npx prisma migrate diff \

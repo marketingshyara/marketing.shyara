@@ -35,7 +35,7 @@ BEGIN
     UPDATE "User" SET "role" = 'ADMIN'::"UserRole" WHERE "role" IS NULL;
     ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'ADMIN'::"UserRole";
   ELSE
-    ALTER TABLE "User" ADD COLUMN "role" "UserRole" NOT NULL DEFAULT 'ADMIN';
+    ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "role" "UserRole" NOT NULL DEFAULT 'ADMIN';
   END IF;
 END
 $$;
@@ -63,44 +63,51 @@ ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "finalQuoteCents" INTEGER;
 ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
-UPDATE "Lead"
-SET "clientName" = COALESCE(
-  "clientName",
-  NULLIF("businessName", ''),
-  NULLIF("contactPersonName", ''),
-  'Unknown Client'
-)
-WHERE "clientName" IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'Lead' AND column_name = 'businessName'
+  ) THEN
+    UPDATE "Lead"
+    SET "clientName" = COALESCE(
+      "clientName",
+      NULLIF("businessName", ''),
+      NULLIF("contactPersonName", ''),
+      'Unknown Client'
+    )
+    WHERE "clientName" IS NULL;
 
-UPDATE "Lead"
-SET "clientEmail" = COALESCE("clientEmail", "email")
-WHERE "clientEmail" IS NULL;
+    UPDATE "Lead"
+    SET "clientEmail" = COALESCE("clientEmail", "email")
+    WHERE "clientEmail" IS NULL;
 
-UPDATE "Lead"
-SET "clientPhone" = COALESCE("clientPhone", "phoneNumber")
-WHERE "clientPhone" IS NULL;
+    UPDATE "Lead"
+    SET "clientPhone" = COALESCE("clientPhone", "phoneNumber")
+    WHERE "clientPhone" IS NULL;
 
-UPDATE "Lead"
-SET "notes" = COALESCE("notes", "description")
-WHERE "notes" IS NULL;
+    UPDATE "Lead"
+    SET "notes" = COALESCE("notes", "description")
+    WHERE "notes" IS NULL;
 
-UPDATE "Lead"
-SET "assignedToUserId" = COALESCE("assignedToUserId", "assignedSalesPersonId", "createdByUserId")
-WHERE "assignedToUserId" IS NULL;
+    UPDATE "Lead"
+    SET "assignedToUserId" = COALESCE("assignedToUserId", "assignedSalesPersonId", "createdByUserId")
+    WHERE "assignedToUserId" IS NULL;
 
--- Convert legacy lead status values into current enum values.
-UPDATE "Lead"
-SET "status" = CASE
-  WHEN "status"::text IN ('new', 'contacted', 'under_follow_up', 'interested', 'callback_later', 'dormant') THEN 'NEW'::"LeadStatus"
-  WHEN "status"::text IN ('payment_pending') THEN 'ADVANCE_PAID'::"LeadStatus"
-  WHEN "status"::text IN ('closed_won') THEN 'DEPLOYED'::"LeadStatus"
-  WHEN "status"::text IN ('lost', 'not_interested') THEN 'COMMISSION_PAID'::"LeadStatus"
-  ELSE "status"
-END
-WHERE "status"::text IN (
-  'new', 'contacted', 'under_follow_up', 'interested', 'callback_later',
-  'dormant', 'payment_pending', 'closed_won', 'lost', 'not_interested'
-);
+    UPDATE "Lead"
+    SET "status" = CASE
+      WHEN "status"::text IN ('new', 'contacted', 'under_follow_up', 'interested', 'callback_later', 'dormant') THEN 'NEW'::"LeadStatus"
+      WHEN "status"::text IN ('payment_pending') THEN 'ADVANCE_PAID'::"LeadStatus"
+      WHEN "status"::text IN ('closed_won') THEN 'DEPLOYED'::"LeadStatus"
+      WHEN "status"::text IN ('lost', 'not_interested') THEN 'COMMISSION_PAID'::"LeadStatus"
+      ELSE "status"
+    END
+    WHERE "status"::text IN (
+      'new', 'contacted', 'under_follow_up', 'interested', 'callback_later',
+      'dormant', 'payment_pending', 'closed_won', 'lost', 'not_interested'
+    );
+  END IF;
+END $$;
 
 ALTER TABLE "Lead" ALTER COLUMN "clientName" SET NOT NULL;
 ALTER TABLE "Lead" ALTER COLUMN "createdByUserId" SET NOT NULL;
