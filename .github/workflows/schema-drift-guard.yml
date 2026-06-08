@@ -38,9 +38,11 @@ jobs:
         run: npm run backend:prisma:generate
 
       - name: Check migrations match schema
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres?schema=deploy_check
         run: |
+          npx prisma migrate deploy --schema backend/prisma/schema.prisma
           npx prisma migrate diff \
-            --from-migrations backend/prisma/migrations \
+            --from-url "$DATABASE_URL" \
             --to-schema-datamodel backend/prisma/schema.prisma \
-            --shadow-database-url "postgresql://postgres:postgres@localhost:5432/postgres?schema=shadow" \
             --exit-code
