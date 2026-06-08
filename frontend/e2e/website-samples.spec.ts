@@ -14,6 +14,7 @@ test.describe("website samples page", () => {
     await expect(page.getByText("RES/004")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("COA/001")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("GYM/001")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("GYM/002")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("CAR/001")).toBeVisible({ timeout: 60_000 });
   });
 
@@ -22,6 +23,7 @@ test.describe("website samples page", () => {
     await expect(page.getByRole("button", { name: "Fitness" })).toBeVisible({ timeout: 60_000 });
     await page.getByRole("button", { name: "Fitness" }).click();
     await expect(page.getByText("GYM/001")).toBeVisible();
+    await expect(page.getByText("GYM/002")).toBeVisible();
     await expect(page.getByText("CAR/001")).toHaveCount(0);
 
     await page.getByRole("button", { name: /auto \/ car care/i }).click();
@@ -59,6 +61,21 @@ test.describe("website samples page", () => {
     });
   });
 
+  test("yoga ananda sample SPA routes serve index shell", async ({ page, request }) => {
+    const base = "/samples/websites/yoga-ananda-website";
+    for (const path of ["/classes", "/about", "/instructors", "/schedule", "/contact"]) {
+      const res = await request.get(`${base}${path}`);
+      expect(res.status(), path).toBe(200);
+      const html = await res.text();
+      expect(html, path).toContain(`${base}/assets/index-`);
+    }
+
+    await page.goto(`${base}/classes`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: /practice for every season/i }).first()).toBeVisible({
+      timeout: 60_000,
+    });
+  });
+
   test("car wash and gym inner pages visible without hard refresh", async ({ page }) => {
     test.setTimeout(120_000);
 
@@ -85,6 +102,7 @@ test.describe("website samples page", () => {
     await expect(card).toBeVisible({ timeout: 60_000 });
     await expect(card).toHaveCSS("opacity", "1");
     await expect(page.getByText("GYM/001")).toBeVisible();
+    await expect(page.getByText("GYM/002")).toBeVisible();
   });
 
   test("mobile viewport: no grid iframes until live preview opened", async ({ page }) => {

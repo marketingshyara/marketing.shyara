@@ -194,6 +194,16 @@
       "posterUrl": "/samples/websites/gym-ironforge-website/poster.jpg"
     },
     {
+      "id": "yoga-ananda-website",
+      "displayCode": "GYM/002",
+      "name": "Ānanda Yoga Studio Website",
+      "description": "A serene yoga studio website with class styles, instructor profiles, weekly schedule, and booking-focused contact flow.",
+      "folder": "yoga-ananda-website",
+      "file": "index.html",
+      "category": "fitness",
+      "posterUrl": "/samples/websites/yoga-ananda-website/poster.jpg"
+    },
+    {
       "id": "car-wash-auto-care-website",
       "displayCode": "CAR/001",
       "name": "Car Wash & Auto Care Website",

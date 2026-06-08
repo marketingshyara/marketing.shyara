@@ -77,6 +77,7 @@ const RAW_SAMPLES: { sampleSlug: string; name: string; categoryId: string }[] = 
   },
   { sampleSlug: "coaching-classes-website", name: "Coaching Classes Website", categoryId: "coaching" },
   { sampleSlug: "gym-ironforge-website", name: "IronForge Gym Website", categoryId: "fitness" },
+  { sampleSlug: "yoga-ananda-website", name: "Ānanda Yoga Studio Website", categoryId: "fitness" },
   {
     sampleSlug: "car-wash-auto-care-website",
     name: "Car Wash & Auto Care Website",

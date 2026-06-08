@@ -27,6 +27,10 @@ const SAMPLES = [
     sourceDir: "car-wash-auto-care",
     slug: "car-wash-auto-care-website",
   },
+  {
+    sourceDir: "yoga-ananda",
+    slug: "yoga-ananda-website",
+  },
 ];
 
 function run(cmd, args, cwd) {

@@ -10,6 +10,10 @@
       "destination": "/samples/websites/gym-ironforge-website/index.html"
     },
     {
+      "source": "/samples/websites/yoga-ananda-website/**",
+      "destination": "/samples/websites/yoga-ananda-website/index.html"
+    },
+    {
       "source": "/samples/websites/restaurant-fire-town-website/**",
       "destination": "/samples/websites/restaurant-fire-town-website/index.html"
     },
