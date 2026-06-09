@@ -10,6 +10,8 @@ export const TEMPLATE_CATEGORY_PREFIX: Record<string, string> = {
   astrology: "AST",
   fitness: "GYM",
   automotive: "CAR",
+  retail: "RET",
+  "real-estate": "REA",
   custom: "CUS"
 };
 
@@ -82,6 +84,16 @@ const RAW_SAMPLES: { sampleSlug: string; name: string; categoryId: string }[] = 
     sampleSlug: "car-wash-auto-care-website",
     name: "Car Wash & Auto Care Website",
     categoryId: "automotive"
+  },
+  {
+    sampleSlug: "florist-bloom-vine-website",
+    name: "Bloom & Vine Florist Website",
+    categoryId: "retail"
+  },
+  {
+    sampleSlug: "realestate-verdant-heights-website",
+    name: "Verdant Heights Real Estate Website",
+    categoryId: "real-estate"
   }
 ];
 

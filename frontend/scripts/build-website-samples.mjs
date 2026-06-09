@@ -31,6 +31,14 @@ const SAMPLES = [
     sourceDir: "yoga-ananda",
     slug: "yoga-ananda-website",
   },
+  {
+    sourceDir: "florist-bloom-vine",
+    slug: "florist-bloom-vine-website",
+  },
+  {
+    sourceDir: "realestate-verdant-heights",
+    slug: "realestate-verdant-heights-website",
+  },
 ];
 
 function run(cmd, args, cwd) {

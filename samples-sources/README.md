@@ -7,6 +7,8 @@ Editable TanStack Start projects used to build static previews under `frontend/p
 | `gym-ironforge` | `gym-ironforge-website` | `E:\Websites\Templates for Marketing-Shyara\Gym\fit-foundry-front-main` |
 | `car-wash-auto-care` | `car-wash-auto-care-website` | `E:\Websites\Templates for Marketing-Shyara\Car Wash\shyara-sparkle-web-main` |
 | `yoga-ananda` | `yoga-ananda-website` | `E:\Websites\Templates for Marketing-Shyara\Yoga\flow-motion-pages-main` |
+| `florist-bloom-vine` | `florist-bloom-vine-website` | Bloom & Vine florist (formerly `bloom-whispers-animate-main`) |
+| `realestate-verdant-heights` | `realestate-verdant-heights-website` | Verdant Heights real estate (formerly `serene-nest-showcase-main`) |
 
 ## Build
 

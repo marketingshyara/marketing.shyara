@@ -27,6 +27,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   coaching: "Coaching",
   fitness: "Fitness",
   automotive: "Auto / Car Care",
+  retail: "Retail & Florists",
+  "real-estate": "Real Estate",
   custom: "Custom"
 };
 

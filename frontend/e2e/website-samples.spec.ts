@@ -16,6 +16,42 @@ test.describe("website samples page", () => {
     await expect(page.getByText("GYM/001")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("GYM/002")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("CAR/001")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("RET/001")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("REA/001")).toBeVisible({ timeout: 60_000 });
+  });
+
+  test("industry filter pills cover every sample category", async ({ page }) => {
+    await page.goto("/samples", { waitUntil: "domcontentloaded" });
+    const tablist = page.getByRole("tablist", { name: "Filter samples by industry" });
+    await expect(tablist).toBeVisible({ timeout: 60_000 });
+
+    for (const label of [
+      "All",
+      "Restaurants",
+      "Clinics",
+      "Astrology",
+      "Coaching",
+      "Fitness",
+      "Auto / Car Care",
+      "Retail & Florists",
+      "Real Estate",
+    ]) {
+      await expect(tablist.getByRole("button", { name: label, exact: true })).toBeVisible();
+    }
+  });
+
+  test("retail and real estate category filters show new samples", async ({ page }) => {
+    await page.goto("/samples", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("button", { name: /retail & florists/i })).toBeVisible({
+      timeout: 60_000,
+    });
+    await page.getByRole("button", { name: /retail & florists/i }).click();
+    await expect(page.getByText("RET/001")).toBeVisible();
+    await expect(page.getByText("REA/001")).toHaveCount(0);
+
+    await page.getByRole("button", { name: /real estate/i }).click();
+    await expect(page.getByText("REA/001")).toBeVisible();
+    await expect(page.getByText("RET/001")).toHaveCount(0);
   });
 
   test("fitness and automotive category filters show new samples", async ({ page }) => {
@@ -72,6 +108,38 @@ test.describe("website samples page", () => {
 
     await page.goto(`${base}/classes`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: /practice for every season/i }).first()).toBeVisible({
+      timeout: 60_000,
+    });
+  });
+
+  test("florist bloom vine sample SPA routes serve index shell", async ({ page, request }) => {
+    const base = "/samples/websites/florist-bloom-vine-website";
+    for (const path of ["/shop", "/journal", "/about", "/contact"]) {
+      const res = await request.get(`${base}${path}`);
+      expect(res.status(), path).toBe(200);
+      const html = await res.text();
+      expect(html, path).toContain(`${base}/assets/index-`);
+    }
+
+    await page.goto(`${base}/shop`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: /in bloom this week/i }).first()).toBeVisible({
+      timeout: 60_000,
+    });
+  });
+
+  test("real estate verdant heights sample SPA routes serve index shell", async ({ page, request }) => {
+    const base = "/samples/websites/realestate-verdant-heights-website";
+    for (const path of ["/residences", "/amenities", "/location", "/gallery", "/contact"]) {
+      const res = await request.get(`${base}${path}`);
+      expect(res.status(), path).toBe(200);
+      const html = await res.text();
+      expect(html, path).toContain(`${base}/assets/index-`);
+    }
+
+    await page.goto(`${base}/residences`, { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByRole("heading", { name: /four ways to live/i }).first()
+    ).toBeVisible({
       timeout: 60_000,
     });
   });

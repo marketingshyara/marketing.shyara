@@ -6,7 +6,7 @@ export const samplesPage = {
     "Scroll through live previews we built for local businesses. Open any sample, click around, and imagine your brand in its place.",
   trustPoints: [
     "Delivered work, not mockups",
-    "Restaurants, clinics, gyms, and more",
+    "Restaurants, clinics, fitness, florists, real estate, and more",
     "Ask us to build yours next",
   ],
   filterLabel: "Browse by industry",

@@ -17,18 +17,9 @@ import { samplesPage } from "@/content/samples";
 import { samplesWhatsAppMessages } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 import { Loader2, FolderOpen, Share2, Check, LayoutGrid } from "lucide-react";
-import { UtensilsCrossed, Stethoscope, Stars, GraduationCap, Dumbbell, Car } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { WebsiteSample } from "@/types/samples";
-
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  UtensilsCrossed,
-  Stethoscope,
-  Stars,
-  GraduationCap,
-  Dumbbell,
-  Car,
-};
+import { sampleCategoriesWithSamples, sampleCategoryIcon } from "@/lib/sampleFilterCategories";
 
 const SamplesGrid = memo(function SamplesGrid({
   samples,
@@ -152,6 +143,11 @@ export default function Samples() {
     return list;
   }, [samples, activeCategory, codeFilter]);
 
+  const filterCategories = useMemo(
+    () => sampleCategoriesWithSamples(categories, samples),
+    [categories, samples]
+  );
+
   const isClinicCategory = activeCategory === "clinics";
 
   const waitingRoomClinicSamples = useMemo(
@@ -212,16 +208,21 @@ export default function Samples() {
             {samplesPage.filterLabel}
           </p>
           <div
-            className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row"
+            className="mx-auto flex w-full max-w-6xl flex-col items-stretch justify-between gap-4 lg:flex-row lg:items-center"
             data-reveal
           >
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="w-full overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div
+                className="flex min-w-min flex-wrap items-center justify-center gap-2 px-1 sm:px-0"
+                role="tablist"
+                aria-label="Filter samples by industry"
+              >
               <CategoryPill active={!activeCategory} onClick={goAll}>
                 <LayoutGrid className="h-4 w-4" />
                 All
               </CategoryPill>
-              {categories.map((cat) => {
-                const IconComp = iconMap[cat.icon];
+              {filterCategories.map((cat) => {
+                const IconComp = sampleCategoryIcon(cat.icon);
                 return (
                   <CategoryPill
                     key={cat.id}
@@ -233,6 +234,7 @@ export default function Samples() {
                   </CategoryPill>
                 );
               })}
+              </div>
             </div>
             <ShareButton category={activeCategory || undefined} />
           </div>

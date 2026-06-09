@@ -14,6 +14,14 @@
       "destination": "/samples/websites/yoga-ananda-website/index.html"
     },
     {
+      "source": "/samples/websites/florist-bloom-vine-website/**",
+      "destination": "/samples/websites/florist-bloom-vine-website/index.html"
+    },
+    {
+      "source": "/samples/websites/realestate-verdant-heights-website/**",
+      "destination": "/samples/websites/realestate-verdant-heights-website/index.html"
+    },
+    {
       "source": "/samples/websites/restaurant-fire-town-website/**",
       "destination": "/samples/websites/restaurant-fire-town-website/index.html"
     },
