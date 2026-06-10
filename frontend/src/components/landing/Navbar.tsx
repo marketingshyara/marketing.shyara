@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
-import { SITE } from "@/constants/site";
 
 const links = [
   { label: "Services", to: "/services" },
   { label: "Work", to: "/work" },
+  { label: "Contact", to: "/contact" },
 ];
 
 const RollingText = ({ text }: { text: string }) => (
@@ -89,35 +89,28 @@ export const Navbar = () => {
               <RollingText text={l.label} />
             </NavLink>
           ))}
-          <a
-            href={SITE.whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="nav-whatsapp-btn"
-            className="group px-2.5 text-[11px] font-bold uppercase tracking-wide text-white md:px-4 md:text-[13px]"
-          >
-            <RollingText text="Contact" />
-          </a>
         </nav>
       </motion.header>
 
       <AnimatePresence>
         {scrolled && (
-          <motion.a
+          <motion.div
             key="nav-cta-pill"
-            href={SITE.whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="nav-cta-pill"
             initial={{ y: -14, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -14, opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-3 hidden items-center gap-2.5 self-start rounded-xl bg-white px-5 py-3 text-[13px] font-bold uppercase tracking-wide text-[#0A0A0A] shadow-[0_8px_24px_rgba(0,0,0,0.18)] md:inline-flex"
+            className="mt-3 hidden md:block"
           >
-            <span className="h-2 w-2 rounded-full bg-[#25D366]" />
-            Start a Project
-          </motion.a>
+            <Link
+              to="/contact"
+              data-testid="nav-cta-pill"
+              className="inline-flex items-center gap-2.5 rounded-xl bg-white px-5 py-3 text-[13px] font-bold uppercase tracking-wide text-[#0A0A0A] shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-transform hover:-translate-y-0.5"
+            >
+              <span className="h-2 w-2 rounded-full bg-[#25D366]" />
+              Start a Project
+            </Link>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

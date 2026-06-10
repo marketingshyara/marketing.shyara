@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import Home from "./pages/Home";
 import ServicesPage from "./pages/ServicesPage";
 import WorkPage from "./pages/WorkPage";
+import ContactPage from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import TermsOfService from "./pages/legal/TermsOfService";
@@ -12,7 +13,6 @@ import ServiceDeliveryPolicy from "./pages/legal/ServiceDeliveryPolicy";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { SamplesLegacyRedirect } from "./components/marketing/SamplesLegacyRedirect";
 import { MarketingLayout } from "./components/MarketingLayout";
-import { SITE } from "./constants/site";
 
 const PortalApp = lazy(() => import("./sales-portal/PortalApp"));
 
@@ -22,13 +22,6 @@ function PortalFallback() {
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
     </div>
   );
-}
-
-function ExternalRedirect({ url }: { url: string }) {
-  useEffect(() => {
-    window.location.replace(url);
-  }, [url]);
-  return null;
 }
 
 function WorkRedirect() {
@@ -59,8 +52,6 @@ export function AppRoutes() {
         <Route path="/services/ads-campaign-management" element={<Navigate to="/services" replace />} />
         <Route path="/services/website-development" element={<Navigate to="/services" replace />} />
         <Route path="/services/app-development" element={<Navigate to="/services" replace />} />
-        <Route path="/contact" element={<ExternalRedirect url={SITE.whatsappUrl} />} />
-
         <Route
           path="/portal/*"
           element={
@@ -74,6 +65,7 @@ export function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/work" element={<WorkPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />

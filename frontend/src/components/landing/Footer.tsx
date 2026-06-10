@@ -46,6 +46,13 @@ export const Footer = () => (
           Work
         </Link>
         <Link
+          to="/contact"
+          data-testid="footer-contact-link"
+          className="text-white/70 transition-colors hover:text-[#FF3333]"
+        >
+          Contact
+        </Link>
+        <Link
           to="/portal/login"
           data-testid="footer-sales-portal-link"
           className="text-white/70 transition-colors hover:text-[#FF3333]"

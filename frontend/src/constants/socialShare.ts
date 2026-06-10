@@ -14,6 +14,10 @@ export const SOCIAL_SHARE = {
     title: "Shyara — Our Work",
     description: "Live website previews.",
   },
+  contact: {
+    title: "Shyara — Contact",
+    description: "Message us on WhatsApp, email, or phone.",
+  },
   legal: {
     title: "Shyara — Legal",
     description: "Policies & terms.",
