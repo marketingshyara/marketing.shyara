@@ -1,0 +1,247 @@
+{
+  "categories": [
+    {
+      "id": "restaurants",
+      "name": "Restaurants",
+      "icon": "UtensilsCrossed"
+    },
+    {
+      "id": "clinics",
+      "name": "Clinics",
+      "icon": "Stethoscope"
+    },
+    {
+      "id": "astrology",
+      "name": "Astrology",
+      "icon": "Stars"
+    },
+    {
+      "id": "coaching",
+      "name": "Coaching",
+      "icon": "GraduationCap"
+    },
+    {
+      "id": "fitness",
+      "name": "Fitness",
+      "icon": "Dumbbell"
+    },
+    {
+      "id": "automotive",
+      "name": "Auto / Car Care",
+      "icon": "Car"
+    },
+    {
+      "id": "retail",
+      "name": "Retail & Florists",
+      "icon": "Flower2"
+    },
+    {
+      "id": "real-estate",
+      "name": "Real Estate",
+      "icon": "Building2"
+    }
+  ],
+  "samples": [
+    {
+      "id": "restaurant-classic-website",
+      "displayCode": "RES/001",
+      "name": "Restaurant Website",
+      "description": "A premium restaurant website with animated sections, gallery, menu, and contact form.",
+      "folder": "restaurant-classic-website",
+      "file": "index.html",
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/restaurant-classic-website/poster.jpg"
+    },
+    {
+      "id": "astrology-consultant-website",
+      "displayCode": "AST/001",
+      "name": "Astrologer Website",
+      "description": "A mystical astrology website with cosmic design, services showcase, and consultation booking.",
+      "folder": "astrology-consultant-website",
+      "file": "index.html",
+      "category": "astrology",
+      "posterUrl": "/samples/websites/astrology-consultant-website/poster.jpg"
+    },
+    {
+      "id": "restaurant-botanical-website",
+      "displayCode": "RES/002",
+      "name": "Botanical Restaurant Website",
+      "description": "A nature-inspired restaurant website with botanical design, seasonal menu, and organic dining experience.",
+      "folder": "restaurant-botanical-website",
+      "file": "index.html",
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/restaurant-botanical-website/poster.jpg"
+    },
+    {
+      "id": "restaurant-journey-of-taste-website",
+      "displayCode": "RES/003",
+      "name": "Journey Of Taste Website",
+      "description": "A cinematic restaurant website with immersive storytelling, signature dishes, and modern dining visuals.",
+      "folder": "restaurant-journey-of-taste-website",
+      "file": "index.html",
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/restaurant-journey-of-taste-website/poster.jpg"
+    },
+    {
+      "id": "restaurant-fire-town-website",
+      "displayCode": "RES/004",
+      "name": "Fire Town Cafe Website",
+      "description": "A premium cafe website with slow brew menu, botanical drinks, gallery, and reservation-focused contact flow.",
+      "folder": "restaurant-fire-town-website",
+      "file": "index.html",
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/restaurant-fire-town-website/poster.jpg"
+    },
+    {
+      "id": "clinic-dental-waiting-room-classic",
+      "displayCode": "CLI/001",
+      "name": "Dental Clinic Website (Classic)",
+      "description": "A dental clinic sample with QR-enabled waiting room flow, doctor profiles, blogs, and patient information pages.",
+      "folder": "clinic-dental-waiting-room-classic",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Dental Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "patient",
+      "posterUrl": "/samples/websites/clinic-dental-waiting-room-classic/poster.jpg"
+    },
+    {
+      "id": "clinic-multispeciality-waiting-room",
+      "displayCode": "CLI/002",
+      "name": "Multispeciality Clinic Website",
+      "description": "A multispeciality clinic sample with QR waiting-room pages, doctor highlights, blogs, and service information.",
+      "folder": "clinic-multispeciality-waiting-room",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Multispeciality Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-multispeciality-waiting-room/poster.jpg"
+    },
+    {
+      "id": "clinic-dental-waiting-room-modern",
+      "displayCode": "CLI/003",
+      "name": "Dental Clinic Website (Modern)",
+      "description": "A modern dental clinic website with waiting-room QR flow, specialists, educational blogs, and treatment details.",
+      "folder": "clinic-dental-waiting-room-modern",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Dental Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-dental-waiting-room-modern/poster.jpg"
+    },
+    {
+      "id": "clinic-dermatology-waiting-room",
+      "displayCode": "CLI/004",
+      "name": "Dermatology Clinic Website",
+      "description": "A dermatology-focused clinic sample with QR waiting room, skin-care blogs, doctor cards, and clinic details.",
+      "folder": "clinic-dermatology-waiting-room",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Dermatology Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-dermatology-waiting-room/poster.jpg"
+    },
+    {
+      "id": "clinic-pathology-waiting-room",
+      "displayCode": "CLI/005",
+      "name": "Pathology Clinic Website",
+      "description": "A pathology clinic sample with QR-enabled waiting room, test-focused resources, doctors, and service information.",
+      "folder": "clinic-pathology-waiting-room",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Pathology Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-pathology-waiting-room/poster.jpg"
+    },
+    {
+      "id": "clinic-physiotherapy-waiting-room",
+      "displayCode": "CLI/006",
+      "name": "Physiotherapy Clinic Website",
+      "description": "A physiotherapy clinic sample with QR waiting-room experience, therapist profiles, care blogs, and clinic highlights.",
+      "folder": "clinic-physiotherapy-waiting-room",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Physiotherapy Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-physiotherapy-waiting-room/poster.jpg"
+    },
+    {
+      "id": "clinic-psychological-waiting-room",
+      "displayCode": "CLI/007",
+      "name": "Psychological Clinic Website",
+      "description": "A psychology clinic sample with QR waiting room, therapist information, wellness blogs, and patient support details.",
+      "folder": "clinic-psychological-waiting-room",
+      "file": "index.html",
+      "category": "clinics",
+      "clinicType": "Psychological Clinic",
+      "clinicExperience": "waiting-room",
+      "waitingRoomPath": "waiting",
+      "posterUrl": "/samples/websites/clinic-psychological-waiting-room/poster.jpg"
+    },
+    {
+      "id": "coaching-classes-website",
+      "displayCode": "COA/001",
+      "name": "Coaching Classes Website",
+      "description": "A modern coaching institute website with courses, faculty profiles, results showcase, scholarship info, and test series.",
+      "folder": "coaching-classes-website",
+      "file": "index.html",
+      "category": "coaching",
+      "posterUrl": "/samples/websites/coaching-classes-website/poster.jpg"
+    },
+    {
+      "id": "gym-ironforge-website",
+      "displayCode": "GYM/001",
+      "name": "IronForge Gym Website",
+      "description": "A premium strength and conditioning gym website with programs, trainers, schedule, and membership CTAs.",
+      "folder": "gym-ironforge-website",
+      "file": "index.html",
+      "category": "fitness",
+      "posterUrl": "/samples/websites/gym-ironforge-website/poster.jpg"
+    },
+    {
+      "id": "yoga-ananda-website",
+      "displayCode": "GYM/002",
+      "name": "Ānanda Yoga Studio Website",
+      "description": "A serene yoga studio website with class styles, instructor profiles, weekly schedule, and booking-focused contact flow.",
+      "folder": "yoga-ananda-website",
+      "file": "index.html",
+      "category": "fitness",
+      "posterUrl": "/samples/websites/yoga-ananda-website/poster.jpg"
+    },
+    {
+      "id": "car-wash-auto-care-website",
+      "displayCode": "CAR/001",
+      "name": "Car Wash & Auto Care Website",
+      "description": "An auto care website with wash packages, detailing services, gallery, and booking-focused contact flow.",
+      "folder": "car-wash-auto-care-website",
+      "file": "index.html",
+      "category": "automotive",
+      "posterUrl": "/samples/websites/car-wash-auto-care-website/poster.jpg"
+    },
+    {
+      "id": "florist-bloom-vine-website",
+      "displayCode": "RET/001",
+      "name": "Bloom & Vine Florist Website",
+      "description": "A studio florist website with seasonal shop, journal, weddings, and hand-arranged bouquet collections.",
+      "folder": "florist-bloom-vine-website",
+      "file": "index.html",
+      "category": "retail",
+      "posterUrl": "/samples/websites/florist-bloom-vine-website/poster.jpg"
+    },
+    {
+      "id": "realestate-verdant-heights-website",
+      "displayCode": "REA/001",
+      "name": "Verdant Heights Real Estate Website",
+      "description": "A premium residential project website with residence plans, amenities, location highlights, and site-visit booking.",
+      "folder": "realestate-verdant-heights-website",
+      "file": "index.html",
+      "category": "real-estate",
+      "posterUrl": "/samples/websites/realestate-verdant-heights-website/poster.jpg"
+    }
+  ]
+}

@@ -27,6 +27,9 @@ function SamplePosterPlaceholder({ name }: { name: string }) {
   );
 }
 
+const embeddedActionButtonClass =
+  "inline-flex min-h-11 w-full items-center justify-center gap-2 border-2 border-[#0A0A0A] bg-white px-3 text-sm font-bold uppercase tracking-wide text-[#0A0A0A] transition-colors hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3333] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+
 export const WebsiteSampleCard = memo(function WebsiteSampleCard({
   sample,
   variant = "default",
@@ -34,6 +37,7 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({
   sample: WebsiteSample;
   variant?: "default" | "embedded";
 }) {
+  const isEmbedded = variant === "embedded";
   const previewRootRef = useRef<HTMLDivElement>(null);
   const usePosterGrid = usePreferPosterGrid();
   const inView = useInView(previewRootRef, {
@@ -143,8 +147,15 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({
             ) : (
               <SamplePosterPlaceholder name={sample.name} />
             )}
-            <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
-              <Play className="h-3.5 w-3.5 text-accent" aria-hidden />
+            <span
+              className={cn(
+                "absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wide shadow-[2px_2px_0_0_#0A0A0A]",
+                isEmbedded
+                  ? "border-2 border-[#0A0A0A] bg-white text-[#0A0A0A]"
+                  : "rounded-full bg-background/90 font-medium text-foreground backdrop-blur-sm"
+              )}
+            >
+              <Play className={cn("h-3.5 w-3.5", isEmbedded ? "text-[#FF3333]" : "text-accent")} aria-hidden />
               Live preview
             </span>
           </button>
@@ -185,19 +196,33 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({
           </div>
         )}
 
-        <div className="p-4 sm:p-5">
+        <div className={cn("p-4 sm:p-5", isEmbedded && "marketing-card-surface")}>
           {(sample.clinicType || sample.category === "clinics") && (
             <div className="flex flex-wrap gap-2 mb-2">
               {sample.clinicType && (
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                <span
+                  className={cn(
+                    "text-[11px] font-medium px-2 py-0.5 rounded-full",
+                    isEmbedded
+                      ? "border border-[#0A0A0A]/20 bg-[#F5F5F5] text-[#0A0A0A]"
+                      : "bg-secondary text-secondary-foreground"
+                  )}
+                >
                   {sample.clinicType}
                 </span>
               )}
               {sample.category === "clinics" && (
                 <span
-                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                    hasWaitingRoom ? "bg-accent/15 text-accent" : "bg-muted text-muted-foreground"
-                  }`}
+                  className={cn(
+                    "text-[11px] font-medium px-2 py-0.5 rounded-full",
+                    isEmbedded
+                      ? hasWaitingRoom
+                        ? "border border-[#FF3333]/40 bg-[#FF3333]/10 text-[#0A0A0A]"
+                        : "border border-[#0A0A0A]/20 bg-[#F5F5F5] text-[#0A0A0A]/70"
+                      : hasWaitingRoom
+                        ? "bg-accent/15 text-accent"
+                        : "bg-muted text-muted-foreground"
+                  )}
                 >
                   {hasWaitingRoom ? "Waiting Room + QR" : "Standard Clinic Website"}
                 </span>
@@ -205,27 +230,65 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({
             </div>
           )}
           <div className="mb-1 flex flex-wrap items-center gap-2">
-            <span className="rounded-md border border-border bg-muted px-2 py-0.5 font-mono text-xs font-semibold tracking-wide text-foreground">
+            <span
+              className={cn(
+                "rounded-md px-2 py-0.5 font-mono text-xs font-semibold tracking-wide",
+                isEmbedded
+                  ? "border-2 border-[#0A0A0A] bg-[#F5F5F5] text-[#0A0A0A]"
+                  : "border border-border bg-muted text-foreground"
+              )}
+            >
               {sample.displayCode}
             </span>
-            <h3 className="font-semibold text-foreground text-base leading-snug">{sample.name}</h3>
-          </div>
-          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{sample.description}</p>
-          <div className={`grid gap-2 mt-3 ${waitingRoomUrl ? "grid-cols-2" : "grid-cols-1"}`}>
-            <Button variant="outline" size="sm" className="min-h-11 w-full" onClick={handlePreviewClick}>
-              {usePosterGrid ? (
-                <Play className="h-4 w-4 mr-2 shrink-0" aria-hidden />
-              ) : (
-                <ExternalLink className="h-4 w-4 mr-2 shrink-0" aria-hidden />
+            <h3
+              className={cn(
+                "font-semibold text-base leading-snug",
+                isEmbedded ? "text-[#0A0A0A]" : "text-foreground"
               )}
-              {usePosterGrid ? "Live preview" : "Preview"}
-            </Button>
-            {waitingRoomUrl && (
-              <Button variant="outline" size="sm" className="min-h-11 w-full" onClick={openWaitingRoomInNewTab}>
-                <ExternalLink className="h-4 w-4 mr-2 shrink-0" aria-hidden />
-                Waiting Room
+            >
+              {sample.name}
+            </h3>
+          </div>
+          <p
+            className={cn(
+              "text-sm line-clamp-2 leading-relaxed",
+              isEmbedded ? "text-[#0A0A0A]/65" : "text-muted-foreground"
+            )}
+          >
+            {sample.description}
+          </p>
+          <div className={`grid gap-2 mt-3 ${waitingRoomUrl ? "grid-cols-2" : "grid-cols-1"}`}>
+            {isEmbedded ? (
+              <button type="button" className={embeddedActionButtonClass} onClick={handlePreviewClick}>
+                {usePosterGrid ? (
+                  <Play className="h-4 w-4 shrink-0" aria-hidden />
+                ) : (
+                  <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+                )}
+                {usePosterGrid ? "Live preview" : "Preview"}
+              </button>
+            ) : (
+              <Button variant="outline" size="sm" className="min-h-11 w-full" onClick={handlePreviewClick}>
+                {usePosterGrid ? (
+                  <Play className="h-4 w-4 mr-2 shrink-0" aria-hidden />
+                ) : (
+                  <ExternalLink className="h-4 w-4 mr-2 shrink-0" aria-hidden />
+                )}
+                {usePosterGrid ? "Live preview" : "Preview"}
               </Button>
             )}
+            {waitingRoomUrl &&
+              (isEmbedded ? (
+                <button type="button" className={embeddedActionButtonClass} onClick={openWaitingRoomInNewTab}>
+                  <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+                  Waiting Room
+                </button>
+              ) : (
+                <Button variant="outline" size="sm" className="min-h-11 w-full" onClick={openWaitingRoomInNewTab}>
+                  <ExternalLink className="h-4 w-4 mr-2 shrink-0" aria-hidden />
+                  Waiting Room
+                </Button>
+              ))}
             <Button
               size="sm"
               className={`min-h-11 w-full bg-[#25D366] hover:bg-[#1fb855] text-white ${waitingRoomUrl ? "col-span-2" : ""}`}

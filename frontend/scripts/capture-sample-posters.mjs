@@ -170,7 +170,10 @@ for (const sample of samples) {
   }
 }
 
-writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+const manifestJson = `${JSON.stringify(manifest, null, 2)}\n`;
+writeFileSync(manifestPath, manifestJson, "utf8");
+const srcManifestPath = resolve(root, "src/data/websites-manifest.json");
+writeFileSync(srcManifestPath, manifestJson, "utf8");
 console.log(`Updated manifest with posterUrl for ${samples.length} samples.`);
 
 await browser.close();

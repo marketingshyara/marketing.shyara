@@ -16,6 +16,29 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Sample cards on /work use forced light surfaces — stay readable in app dark mode */
+.marketing-site .marketing-card-surface {
+  color-scheme: light;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 4%;
+  --primary: 0 0% 4%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 4%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 0 100% 60%;
+  --accent-foreground: 0 0% 100%;
+  --border: 0 0% 4%;
+  --input: 0 0% 4%;
+  --ring: 0 100% 60%;
+  color: #0a0a0a;
+}
+
 .marketing-site .font-heading {
   font-family: "Cabinet Grotesk", "Bricolage Grotesque", sans-serif;
 }
