@@ -150,7 +150,7 @@ export const Hero = () => {
             ✱
           </motion.span>
 
-          <div className="relative z-10 border-2 border-[#0A0A0A] bg-white shadow-[10px_10px_0px_0px_#FF3333]">
+          <div className="relative z-10 w-full border-2 border-[#0A0A0A] bg-white shadow-[10px_10px_0px_0px_#FF3333]">
             <div className="flex items-center gap-1.5 border-b-2 border-[#0A0A0A] bg-[#F5F5F5] px-4 py-2.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
               <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />

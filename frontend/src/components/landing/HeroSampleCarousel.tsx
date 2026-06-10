@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { sampleAssetUrl } from "@/lib/sampleAssetUrl";
-import { websiteSamplesWithPosters } from "@/lib/websiteSamplesManifest";
+import {
+  SAMPLE_POSTER_ASPECT_RATIO,
+  websiteSamplesWithPosters,
+} from "@/lib/websiteSamplesManifest";
 
 const SLIDE_INTERVAL_MS = 3000;
 const SLIDE_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -11,9 +14,33 @@ const FALLBACK_POSTER = sampleAssetUrl(
   "/samples/websites/restaurant-classic-website/poster.jpg"
 );
 
+const frameClass =
+  "relative w-full overflow-hidden bg-[#F5F5F5]";
+
 type Props = {
   className?: string;
 };
+
+function PosterFrame({
+  src,
+  alt,
+  loading,
+}: {
+  src: string;
+  alt: string;
+  loading?: "eager" | "lazy";
+}) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="block h-full w-full object-contain object-top"
+      loading={loading}
+      decoding="async"
+      draggable={false}
+    />
+  );
+}
 
 export function HeroSampleCarousel({ className }: Props) {
   const reduceMotion = useReducedMotion() ?? false;
@@ -37,18 +64,31 @@ export function HeroSampleCarousel({ className }: Props) {
     img.src = next.src;
   }, [index, slides]);
 
+  const frameStyle = { aspectRatio: String(SAMPLE_POSTER_ASPECT_RATIO) };
+
   if (slides.length === 0) {
     return (
       <div
         data-testid="hero-sample-carousel"
-        className={cn("relative h-[340px] w-full overflow-hidden bg-[#F5F5F5]", className)}
+        className={cn(frameClass, className)}
+        style={frameStyle}
         aria-hidden
       >
-        <img
-          src={FALLBACK_POSTER}
-          alt="Website design preview"
-          className="h-full w-full object-cover object-top"
-        />
+        <PosterFrame src={FALLBACK_POSTER} alt="Website design preview" loading="eager" />
+      </div>
+    );
+  }
+
+  if (slides.length === 1) {
+    const slide = slides[0];
+    return (
+      <div
+        data-testid="hero-sample-carousel"
+        className={cn(frameClass, className)}
+        style={frameStyle}
+        aria-hidden
+      >
+        <PosterFrame src={slide.src} alt={slide.alt} loading="eager" />
       </div>
     );
   }
@@ -56,7 +96,8 @@ export function HeroSampleCarousel({ className }: Props) {
   return (
     <div
       data-testid="hero-sample-carousel"
-      className={cn("relative h-[340px] w-full overflow-hidden bg-[#F5F5F5]", className)}
+      className={cn(frameClass, className)}
+      style={frameStyle}
       aria-hidden
     >
       <div
@@ -68,15 +109,17 @@ export function HeroSampleCarousel({ className }: Props) {
         }}
       >
         {slides.map((slide, slideIndex) => (
-          <img
+          <div
             key={slide.id}
-            src={slide.src}
-            alt={slide.alt}
-            className="h-full flex-shrink-0 object-cover object-top"
-            style={{ width: `${100 / slides.length}%`, minWidth: `${100 / slides.length}%` }}
-            loading={slideIndex === 0 ? "eager" : "lazy"}
-            decoding="async"
-          />
+            className="h-full shrink-0"
+            style={{ width: `${100 / slides.length}%` }}
+          >
+            <PosterFrame
+              src={slide.src}
+              alt={slide.alt}
+              loading={slideIndex === 0 ? "eager" : "lazy"}
+            />
+          </div>
         ))}
       </div>
     </div>
