@@ -7,6 +7,8 @@ export default function PrivacyPolicy() {
       <SEO 
         title="Privacy Policy"
         description="Learn how Shyara Marketing collects, uses, and protects your personal information. We are committed to safeguarding your privacy."
+        shareTitle="Shyara — Privacy"
+        shareDescription="How we handle your data."
         canonical="/privacy-policy"
         keywords="privacy policy, data protection, Shyara Marketing privacy, personal information protection"
       />

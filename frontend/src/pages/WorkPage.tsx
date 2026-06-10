@@ -2,6 +2,7 @@ import { FinalCTA } from "@/components/landing/FinalCTA";
 import { PortfolioHeader } from "@/components/landing/PortfolioHeader";
 import { WorkSamplesGrid } from "@/components/landing/WorkSamplesGrid";
 import { SEO } from "@/components/SEO";
+import { SOCIAL_SHARE } from "@/constants/socialShare";
 import { useSearchParams } from "react-router-dom";
 
 export default function WorkPage() {
@@ -14,6 +15,8 @@ export default function WorkPage() {
       <SEO
         title="Our Work — Website Portfolio"
         description="Don't just take our word for it. See real websites designed for real businesses — restaurants, clinics, gyms, and more."
+        shareTitle={SOCIAL_SHARE.work.title}
+        shareDescription={SOCIAL_SHARE.work.description}
         canonical={seoCanonical}
         keywords="website portfolio, website samples, web design examples, live website previews, business website examples"
       />

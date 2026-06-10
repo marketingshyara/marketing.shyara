@@ -7,6 +7,8 @@ export default function RefundPolicy() {
       <SEO 
         title="Refund & Cancellation Policy"
         description="Understand Shyara Marketing's refund and cancellation policy for digital marketing and technology services, subscriptions, and one-time engagements."
+        shareTitle="Shyara — Refunds"
+        shareDescription="Refund & cancellation policy."
         canonical="/refund-policy"
         keywords="refund policy, cancellation policy, payment terms, Shyara Marketing refund"
       />

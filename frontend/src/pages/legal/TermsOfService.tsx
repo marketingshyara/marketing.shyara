@@ -7,6 +7,8 @@ export default function TermsOfService() {
       <SEO 
         title="Terms of Service"
         description="Read the terms and conditions for using Shyara Marketing services including social media management, advertising, website, and app development."
+        shareTitle="Shyara — Terms"
+        shareDescription="Service terms & conditions."
         canonical="/terms-of-service"
         keywords="terms of service, service agreement, Shyara Marketing terms, terms and conditions"
       />

@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { SOCIAL_SHARE } from "@/constants/socialShare";
 
 interface BreadcrumbItem {
   name: string;
@@ -13,10 +14,15 @@ interface FaqItem {
 interface SEOProps {
   title: string;
   description: string;
+  /** Short title for WhatsApp / Open Graph (keep under ~40 chars). */
+  shareTitle?: string;
+  /** Short blurb for link previews (one line, ~60 chars max). */
+  shareDescription?: string;
   canonical?: string;
   type?: string;
   keywords?: string;
   image?: string;
+  imageAlt?: string;
   noIndex?: boolean;
   breadcrumbs?: BreadcrumbItem[];
   serviceSchema?: {
@@ -28,15 +34,17 @@ interface SEOProps {
 }
 
 const BASE_URL = "https://marketing.shyara.co.in";
-const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;
 
 export function SEO({
   title,
   description,
+  shareTitle,
+  shareDescription,
   canonical,
   type = "website",
   keywords,
-  image = DEFAULT_IMAGE,
+  image = SOCIAL_SHARE.image,
+  imageAlt = SOCIAL_SHARE.imageAlt,
   noIndex = false,
   breadcrumbs,
   serviceSchema,
@@ -45,6 +53,9 @@ export function SEO({
   const fullTitle = title === "Shyara Marketing"
     ? title
     : `${title} | Shyara Marketing`;
+
+  const openGraphTitle = shareTitle ?? fullTitle;
+  const openGraphDescription = shareDescription ?? description;
 
   const canonicalUrl = canonical ? `${BASE_URL}${canonical}` : undefined;
 
@@ -107,22 +118,24 @@ export function SEO({
 
       {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
 
-      {/* Open Graph */}
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
+      {/* Open Graph — short copy for WhatsApp / social previews */}
+      <meta property="og:title" content={openGraphTitle} />
+      <meta property="og:description" content={openGraphDescription} />
       <meta property="og:type" content={type} />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
-      <meta property="og:site_name" content="Shyara Marketing" />
+      <meta property="og:site_name" content={SOCIAL_SHARE.siteName} />
       <meta property="og:locale" content="en_IN" />
       <meta property="og:image" content={image} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content={imageAlt} />
 
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
+      <meta name="twitter:title" content={openGraphTitle} />
+      <meta name="twitter:description" content={openGraphDescription} />
       <meta name="twitter:image" content={image} />
+      <meta name="twitter:image:alt" content={imageAlt} />
 
       {/* BreadcrumbList Schema */}
       {breadcrumbSchema && (

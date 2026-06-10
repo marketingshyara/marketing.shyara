@@ -7,6 +7,8 @@ export default function ServiceDeliveryPolicy() {
       <SEO 
         title="Service Delivery Policy"
         description="Learn how Shyara Marketing delivers digital marketing and technology services including timelines, delivery methods, and support."
+        shareTitle="Shyara — Delivery"
+        shareDescription="How we deliver projects."
         canonical="/service-delivery-policy"
         keywords="service delivery, digital service delivery, online marketing delivery, Shyara Marketing delivery"
       />

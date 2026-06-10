@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build --outDir dist --emptyOutDir",
     "build:ssg": "node scripts/prerender.mjs",
+    "generate:og-image": "node scripts/generate-og-image.mjs",
     "build:dev": "vite build --mode development --outDir dist --emptyOutDir",
     "lint": "eslint .",
     "test": "vitest run",
