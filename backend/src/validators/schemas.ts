@@ -130,13 +130,6 @@ export const setProspectCategoryBodySchema = z
     sampleShared: z.boolean().optional()
   })
   .superRefine((body, ctx) => {
-    if (body.category === ProspectCategory.CALLBACK_REQUESTED && body.callbackAt == null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Callback date and time are required.",
-        path: ["callbackAt"]
-      });
-    }
     if (body.category === ProspectCategory.INTERESTED && body.sampleShared === undefined) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

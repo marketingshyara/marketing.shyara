@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, MessageCircle, Phone, TrendingUp } from "lucide-react";
 import { SITE } from "@/constants/site";
+import { HeroSampleCarousel } from "./HeroSampleCarousel";
 
 const ticker = [
   "Custom Websites",
@@ -158,11 +159,7 @@ export const Hero = () => {
                 yourbusiness.in
               </span>
             </div>
-            <img
-              src="https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=1200&auto=format&fit=crop"
-              alt="Website design preview"
-              className="h-[340px] w-full object-cover"
-            />
+            <HeroSampleCarousel />
           </div>
 
           <motion.div

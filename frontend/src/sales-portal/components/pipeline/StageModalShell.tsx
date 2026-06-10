@@ -8,6 +8,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { portalDialogSurfaceClass } from "../ui/portalDialogStyles";
 
 type Props = {
   open: boolean;
@@ -40,7 +41,8 @@ export function StageModalShell({
       <DialogContent
         {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
-          "flex max-h-[min(90dvh,calc(100dvh-2rem))] w-[calc(100%-1.5rem)] max-w-lg flex-col gap-0 overflow-hidden p-0 touch-manipulation sm:w-full",
+          portalDialogSurfaceClass,
+          "portal-dialog-surface flex max-h-[min(90dvh,calc(100dvh-2rem))] flex-col gap-0 overflow-hidden p-0 touch-manipulation",
           className
         )}
       >

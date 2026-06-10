@@ -164,6 +164,24 @@ d("integration: prospect category", () => {
     await app.close();
   });
 
+  it("allows callback requested without datetime", async () => {
+    const app = await buildApp({ config });
+    const cookie = await repCookie();
+
+    const res = await inject(app, {
+      method: "POST",
+      url: `/api/leads/${leadId}/prospect-category`,
+      headers: { cookie: `${config.cookieName}=${cookie}` },
+      payload: { category: "CALLBACK_REQUESTED" }
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as { lead: { prospectCategory: string; callbackScheduledAt: string | null } };
+    expect(body.lead.prospectCategory).toBe("CALLBACK_REQUESTED");
+    expect(body.lead.callbackScheduledAt).toBeNull();
+
+    await app.close();
+  });
+
   it("stores callback datetime", async () => {
     const app = await buildApp({ config });
     const cookie = await repCookie();

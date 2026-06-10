@@ -124,6 +124,28 @@
   .portal-site .portal-waiting-text {
     @apply text-[#0A0A0A]/70;
   }
+
+  /* Radix portals render on document.body — keep brutal light even in app dark mode */
+  .portal-dialog-surface {
+    color-scheme: light;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 4%;
+    --primary: 0 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 4%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 35%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 4%;
+    --border: 0 0% 4%;
+    --input: 0 0% 4%;
+    --ring: 0 100% 60%;
+  }
 }
 
 @keyframes portal-star-pulse {

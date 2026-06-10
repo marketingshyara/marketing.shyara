@@ -12,6 +12,7 @@ import {
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { portalDialogSurfaceClass } from "./portalDialogStyles";
 
 /** Brutalist destructive actions for portal. */
 export const portalDestructiveButtonClass =
@@ -61,7 +62,12 @@ export function TwoStepDestructiveDialog({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
-      <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-lg border-destructive/35">
+      <AlertDialogContent
+        className={cn(
+          portalDialogSurfaceClass,
+          "portal-dialog-surface gap-4 border-destructive/35 p-6"
+        )}
+      >
         <AlertDialogHeader className="space-y-4 text-left">
           <div className="flex items-start gap-3">
             <span
