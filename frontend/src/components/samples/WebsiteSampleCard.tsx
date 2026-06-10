@@ -12,6 +12,7 @@ import { useInView } from "@/hooks/useInView";
 import { usePreferPosterGrid } from "@/hooks/use-mobile";
 import { useQueuedIframeSrc } from "@/hooks/useQueuedIframeSrc";
 import { sampleAssetUrl } from "@/lib/sampleAssetUrl";
+import { cn } from "@/lib/utils";
 import type { WebsiteSample } from "@/types/samples";
 
 const DESKTOP_ROOT_MARGIN = "280px 0px";
@@ -26,7 +27,13 @@ function SamplePosterPlaceholder({ name }: { name: string }) {
   );
 }
 
-export const WebsiteSampleCard = memo(function WebsiteSampleCard({ sample }: { sample: WebsiteSample }) {
+export const WebsiteSampleCard = memo(function WebsiteSampleCard({
+  sample,
+  variant = "default",
+}: {
+  sample: WebsiteSample;
+  variant?: "default" | "embedded";
+}) {
   const previewRootRef = useRef<HTMLDivElement>(null);
   const usePosterGrid = usePreferPosterGrid();
   const inView = useInView(previewRootRef, {
@@ -109,7 +116,12 @@ export const WebsiteSampleCard = memo(function WebsiteSampleCard({ sample }: { s
     <>
       <article
         data-testid="website-sample-card"
-        className="rounded-xl border border-border bg-card overflow-hidden group hover:shadow-lg transition-shadow"
+        className={cn(
+          "group overflow-hidden transition-shadow",
+          variant === "embedded"
+            ? "rounded-none border-0 bg-transparent shadow-none"
+            : "rounded-xl border border-border bg-card hover:shadow-lg"
+        )}
       >
         {usePosterGrid ? (
           <button

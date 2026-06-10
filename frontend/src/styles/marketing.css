@@ -1,0 +1,55 @@
+@import url("https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500,700,800,900&f[]=satoshi@400,500,700,900&display=swap");
+
+@font-face {
+  font-family: "Tan Paradiso";
+  src:
+    url("../assets/fonts/TAN-PARADISO.otf") format("opentype"),
+    url("../assets/fonts/TAN-PARADISO.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.marketing-site {
+  font-family: "Satoshi", "Plus Jakarta Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.marketing-site .font-heading {
+  font-family: "Cabinet Grotesk", "Bricolage Grotesque", sans-serif;
+}
+
+.marketing-site .font-logo {
+  font-family: "Tan Paradiso", "Tan Pardiso", "Cabinet Grotesk", serif;
+}
+
+.marketing-site ::selection {
+  background: #ff3333;
+  color: #ffffff;
+}
+
+.marketing-site [class*="text-[#FF3333]"]::selection,
+.marketing-site [class*="text-[#FF3333]"] *::selection {
+  background: #0a0a0a;
+  color: #ff3333;
+}
+
+@keyframes marketing-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marketing-site .animate-marquee {
+  animation: marketing-marquee 28s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-site .animate-marquee {
+    animation: none;
+  }
+}

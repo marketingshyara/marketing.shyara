@@ -1,9 +1,6 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
-import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
   const location = useLocation();
@@ -13,37 +10,42 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <Layout>
+    <>
       <SEO
         title="Page Not Found"
         description="The page you are looking for does not exist. Return to Shyara Marketing homepage."
       />
-      <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <div className="flex min-h-[60vh] items-center justify-center px-4 pt-24">
         <div className="text-center">
-          <h1 className="mb-4 text-display font-bold text-foreground">404</h1>
-          <p className="mb-6 text-body text-muted-foreground">
+          <h1 className="font-heading mb-4 text-6xl font-black tracking-tighter">404</h1>
+          <p className="mb-6 text-base text-[#0A0A0A]/70">
             That page does not exist. Try one of these instead:
           </p>
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link to="/">
-              <Button size="lg" className="min-h-11 bg-accent hover:bg-accent/90 text-accent-foreground">
-                Home
-              </Button>
+            <Link
+              to="/"
+              className="inline-flex min-h-11 items-center border-2 border-[#0A0A0A] bg-[#FF3333] px-8 py-3 font-bold uppercase tracking-wide text-white transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_#0a0a0a]"
+            >
+              Home
             </Link>
-            <Link to="/samples">
-              <Button size="lg" variant="outline" className="min-h-11">
-                Samples
-              </Button>
+            <Link
+              to="/work"
+              className="inline-flex min-h-11 items-center border-2 border-[#0A0A0A] bg-white px-8 py-3 font-bold uppercase tracking-wide transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_#0a0a0a]"
+            >
+              Work
             </Link>
-            <Link to="/contact">
-              <Button size="lg" variant="outline" className="min-h-11">
-                Contact
-              </Button>
-            </Link>
+            <a
+              href="https://wa.me/919584661610"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center border-2 border-[#0A0A0A] bg-white px-8 py-3 font-bold uppercase tracking-wide transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_#0a0a0a]"
+            >
+              Contact
+            </a>
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

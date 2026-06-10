@@ -2,10 +2,11 @@ import { expect, test } from "@playwright/test";
 
 test.describe("website samples page", () => {
   test("renders portfolio heading", async ({ page }) => {
-    await page.goto("/samples", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: /website samples/i })).toBeVisible({
+    await page.goto("/work", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("portfolio-headline")).toBeVisible({
       timeout: 60_000,
     });
+    await expect(page.getByText(/don't just take our word for it/i)).toBeVisible();
   });
 
   test("shows template display codes on sample cards", async ({ page }) => {
@@ -77,7 +78,7 @@ test.describe("website samples page", () => {
     }
 
     await page.goto(`${base}/menu`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: /the menu|la carte/i }).first()).toBeVisible({
+    await expect(page.getByRole("heading", { name: /edible botanicals/i }).first()).toBeVisible({
       timeout: 60_000,
     });
   });
