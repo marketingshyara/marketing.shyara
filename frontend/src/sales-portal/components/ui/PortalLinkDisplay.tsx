@@ -50,15 +50,15 @@ export const PortalLinkDisplay = memo(function PortalLinkDisplay({
           rel="noopener noreferrer"
           className={cn(
             "inline-flex min-h-11 min-w-0 flex-1 touch-manipulation items-center gap-2 break-all",
-            "rounded-md border bg-background px-3 py-2.5 text-primary underline-offset-4",
-            "hover:bg-muted/50 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            "border-2 border-[#0A0A0A] bg-white px-3 py-2.5 text-[#FF3333] underline-offset-4",
+            "hover:bg-[#FAFAFA] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3333]"
           )}
         >
           <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
           <span className="text-sm leading-snug">{raw}</span>
         </a>
       ) : (
-        <span className="min-w-0 flex-1 break-all rounded-md border bg-background px-3 py-2.5 text-sm">
+        <span className="min-w-0 flex-1 break-all border-2 border-[#0A0A0A] bg-white px-3 py-2.5 text-sm">
           {raw}
         </span>
       )}
@@ -79,5 +79,7 @@ export const PortalLinkDisplay = memo(function PortalLinkDisplay({
     return row;
   }
 
-  return <div className="rounded-lg border bg-muted/30 p-3">{row}</div>;
+  return (
+    <div className="border-2 border-[#0A0A0A] bg-[#FAFAFA] p-3 shadow-[2px_2px_0_0_#0A0A0A]">{row}</div>
+  );
 });

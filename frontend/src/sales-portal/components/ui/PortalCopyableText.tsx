@@ -44,7 +44,7 @@ export const PortalCopyableText = memo(function PortalCopyableText({
     >
       <span
         className={cn(
-          "inline-flex min-h-11 min-w-0 flex-1 items-center break-all rounded-md border bg-background px-3 py-2.5 text-sm leading-snug",
+          "inline-flex min-h-11 min-w-0 flex-1 items-center break-all border-2 border-[#0A0A0A] bg-white px-3 py-2.5 text-sm leading-snug",
           monospace && "font-mono"
         )}
       >
@@ -67,5 +67,7 @@ export const PortalCopyableText = memo(function PortalCopyableText({
     return row;
   }
 
-  return <div className="rounded-lg border bg-muted/30 p-3">{row}</div>;
+  return (
+    <div className="border-2 border-[#0A0A0A] bg-[#FAFAFA] p-3 shadow-[2px_2px_0_0_#0A0A0A]">{row}</div>
+  );
 });

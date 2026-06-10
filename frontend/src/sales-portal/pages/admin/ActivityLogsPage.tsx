@@ -50,7 +50,7 @@ function ActivityLogRow({ row }: { row: ActivityLog }) {
       <td className="px-4 py-3 text-sm">
         <span>{row.entityType}</span>
         {declineSummary ? (
-          <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">{declineSummary}</p>
+          <p className="mt-1 text-xs portal-waiting-text">{declineSummary}</p>
         ) : null}
         <Collapsible>
           <CollapsibleTrigger className="ml-2 text-xs text-muted-foreground underline-offset-2 hover:underline">

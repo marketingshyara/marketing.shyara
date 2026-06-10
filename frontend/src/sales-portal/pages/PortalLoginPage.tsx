@@ -17,8 +17,9 @@ import {
 } from "../lib/portalPaths";
 import { salesApi } from "../api/salesApi";
 import { toast } from "sonner";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { SignInHelpCard } from "../components/auth/SignInHelpCard";
+import { PortalIntroLoader } from "../components/PortalIntroLoader";
+import { BrutalButton, BrutalCard, BrutalEyebrow } from "../components/brutalist";
 import { cn } from "@/lib/utils";
 import {
   getRememberDevicePreference,
@@ -57,6 +58,7 @@ export function PortalLoginPage() {
   const [lockoutSecondsLeft, setLockoutSecondsLeft] = useState<number | null>(null);
   const [step, setStep] = useState<"email" | "password">("email");
   const [highlightError, setHighlightError] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
 
   const statusPageUrl = (import.meta.env.VITE_STATUS_PAGE_URL as string | undefined)?.trim();
 
@@ -102,49 +104,59 @@ export function PortalLoginPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-background md:grid md:grid-cols-2">
+    <div className="relative min-h-dvh bg-[#FAFAFA] md:grid md:grid-cols-2">
+      {!introDone ? <PortalIntroLoader onComplete={() => setIntroDone(true)} /> : null}
+
       <div
-        className={cn(
-          "relative hidden flex-col justify-between overflow-hidden border-border p-8 text-primary-foreground md:flex",
-          "bg-gradient-to-br from-primary/90 via-primary/75 to-background"
-        )}
+        className="portal-grid-bg relative hidden flex-col justify-between border-r-2 border-[#0A0A0A] bg-white p-8 md:flex"
         aria-hidden
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.14),transparent_50%)] motion-safe:animate-pulse motion-reduce:animate-none" />
-        <div className="relative z-10 space-y-3">
-          <p className="text-sm font-medium uppercase tracking-wide text-primary-foreground/80">Shyara</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-primary-foreground">Sales portal</h1>
+        <div className="space-y-4">
+          <p className="font-logo text-2xl">
+            SHYARA<span className="text-[#FF3333]">.</span>
+          </p>
+          <BrutalEyebrow>Sales portal</BrutalEyebrow>
+          <h1 className="font-heading text-4xl font-black uppercase leading-[0.95] tracking-tight text-[#0A0A0A]">
+            Turn leads
+            <br />
+            into clients
+          </h1>
         </div>
-        <ul className="relative z-10 flex max-w-sm flex-wrap gap-4 text-xs text-primary-foreground/80">
+        <ul className="flex max-w-sm flex-wrap gap-4 text-xs font-bold uppercase tracking-wide text-[#0A0A0A]/70">
           <li className="flex items-center gap-1.5">
-            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+            <ShieldCheck className="h-4 w-4 shrink-0 text-[#FF3333]" aria-hidden />
             <span>HTTPS</span>
           </li>
           <li className="flex items-center gap-1.5">
-            <Lock className="h-4 w-4 shrink-0" aria-hidden />
+            <Lock className="h-4 w-4 shrink-0 text-[#FF3333]" aria-hidden />
             <span>Secure session</span>
           </li>
         </ul>
       </div>
 
       <div className="flex min-h-dvh flex-col">
-        <header className="flex flex-wrap items-center justify-end gap-2 border-b border-border/60 px-3 py-2 md:px-4">
-          <div className="mr-auto flex items-center gap-2 md:hidden">
-            <span className="text-sm font-semibold">Sales portal</span>
-          </div>
-          <ThemeToggle />
+        <header className="flex items-center border-b-2 border-[#0A0A0A] bg-white px-4 py-3 md:hidden">
+          <p className="font-logo text-lg">
+            SHYARA<span className="text-[#FF3333]">.</span>
+          </p>
         </header>
 
-        <div className="flex flex-1 flex-col justify-center px-3 py-8 md:px-10">
-          <div
+        <div
+          className={cn(
+            "flex flex-1 flex-col justify-center px-4 py-8 md:px-10",
+            !introDone && "opacity-0 pointer-events-none"
+          )}
+        >
+          <BrutalCard
             className={cn(
-              "mx-auto w-full max-w-md rounded-xl border bg-card p-6 shadow-card transition-shadow md:p-8",
-              highlightError && "ring-2 ring-destructive/50 motion-safe:animate-pulse"
+              "mx-auto w-full max-w-md transition-shadow",
+              highlightError && "ring-2 ring-[#FF3333] motion-safe:animate-pulse"
             )}
           >
-            <div className="mb-6 space-y-1">
-              <h2 className="text-2xl font-semibold tracking-tight">Sign in</h2>
-              <p className="text-sm text-muted-foreground">Use your Shyara account credentials.</p>
+            <div className="mb-6 space-y-2">
+              <BrutalEyebrow>Sign in</BrutalEyebrow>
+              <h2 className="font-heading text-2xl font-black uppercase tracking-tight">Welcome back</h2>
+              <p className="text-sm text-[#0A0A0A]/60">Use your Shyara account credentials.</p>
             </div>
 
             <ul className="mb-6 space-y-1.5 text-xs text-muted-foreground md:hidden">
@@ -268,9 +280,9 @@ export function PortalLoginPage() {
               </div>
 
               {step === "email" ? (
-                <Button type="submit" className="min-h-11 w-full">
+                <BrutalButton type="submit" className="w-full">
                   Continue
-                </Button>
+                </BrutalButton>
               ) : (
                 <>
                   <div className="flex items-center gap-2">
@@ -318,9 +330,9 @@ export function PortalLoginPage() {
                     password.
                   </p>
 
-                  <Button
+                  <BrutalButton
                     type="submit"
-                    className="min-h-11 w-full"
+                    className="w-full"
                     disabled={login.isPending || (lockoutSecondsLeft != null && lockoutSecondsLeft > 0)}
                   >
                     {login.isPending ? (
@@ -331,7 +343,7 @@ export function PortalLoginPage() {
                     ) : (
                       "Sign in"
                     )}
-                  </Button>
+                  </BrutalButton>
                 </>
               )}
 
@@ -345,33 +357,36 @@ export function PortalLoginPage() {
               )}
             </form>
 
-            <div className="mt-6 flex flex-col gap-2 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+            <div className="mt-6 flex flex-col gap-2 border-t-2 border-[#0A0A0A] pt-4 text-center text-xs text-[#0A0A0A]/60">
               {statusPageUrl ? (
                 <a
                   href={statusPageUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                  className="font-bold text-[#0A0A0A] underline underline-offset-4 hover:text-[#FF3333]"
                 >
                   Service status
                 </a>
               ) : null}
-              <Link to="/privacy-policy" className="hover:text-foreground underline underline-offset-4">
+              <Link
+                to="/privacy-policy"
+                className="font-bold text-[#0A0A0A] underline underline-offset-4 hover:text-[#FF3333]"
+              >
                 Privacy policy
               </Link>
             </div>
 
             <SignInHelpCard className="mt-4" />
 
-            <p className="mt-4 text-center text-sm text-muted-foreground">
+            <p className="mt-4 text-center text-sm text-[#0A0A0A]/60">
               <Link
                 to="/"
-                className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                className="font-bold text-[#0A0A0A] underline underline-offset-4 hover:text-[#FF3333]"
               >
                 Back to website
               </Link>
             </p>
-          </div>
+          </BrutalCard>
         </div>
       </div>
     </div>

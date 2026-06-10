@@ -10,6 +10,14 @@ const REP_PASSWORD = process.env.E2E_REP_PASSWORD ?? "RepPass123!";
 
 const run = process.env.E2E_RUN_SESSION === "1";
 
+test("login intro plays then sign-in form is visible", async ({ page }) => {
+  await page.goto("/portal/login");
+  await expect(page.getByTestId("portal-intro-loader")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Welcome back/i })).toBeVisible({
+    timeout: 10_000
+  });
+});
+
 (run ? test : test.skip)("rep stays logged in after reload on pipeline", async ({ page, request }) => {
   const loginRes = await request.post("/api/auth/login", {
     data: { email: REP_EMAIL, password: REP_PASSWORD, rememberDevice: true }

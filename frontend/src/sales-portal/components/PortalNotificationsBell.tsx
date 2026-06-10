@@ -57,7 +57,7 @@ export function PortalNotificationsBell({ user }: Props) {
           type="button"
           variant="ghost"
           size="icon"
-          className="relative min-h-11 min-w-11 touch-manipulation"
+          className="relative min-h-11 min-w-11 touch-manipulation border-2 border-[#0A0A0A]"
           aria-label={`Notifications${total > 0 ? `, ${total} unread` : ""}`}
           aria-expanded={open}
           aria-haspopup="dialog"

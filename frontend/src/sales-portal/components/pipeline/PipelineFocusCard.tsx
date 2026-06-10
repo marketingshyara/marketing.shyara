@@ -39,9 +39,9 @@ export function PipelineFocusCard({
     <Card
       className={cn(
         "w-full min-w-0 border-2",
-        urgent && "border-primary bg-primary/5",
-        waiting && "border-amber-500/60 bg-amber-500/5",
-        focus.kind === "idle" && "border-muted"
+        urgent && "border-[#FF3333] border-l-[4px] bg-white",
+        waiting && "portal-waiting-banner",
+        focus.kind === "idle" && "border-[#0A0A0A]/20 bg-[#FAFAFA]"
       )}
     >
       <CardHeader className="space-y-2 pb-2">

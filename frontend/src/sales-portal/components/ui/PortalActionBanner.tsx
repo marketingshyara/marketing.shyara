@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { BrutalButton } from "../brutalist";
+import { PORTAL_ACTION_BANNER } from "../../theme/statusColors";
 
 type Props = {
   message: ReactNode;
@@ -22,21 +23,21 @@ export function PortalActionBanner({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-3 px-4 py-3 shadow-[2px_2px_0_0_#0A0A0A] sm:flex-row sm:items-center sm:justify-between",
         variant === "urgent"
-          ? "border-destructive/40 bg-destructive/5"
-          : "border-primary/30 bg-primary/5",
+          ? "border-2 border-[#0A0A0A] border-l-[4px] border-l-[#FF3333] bg-white"
+          : PORTAL_ACTION_BANNER,
         className
       )}
       role="status"
     >
-      <p className="text-sm font-medium">{message}</p>
-      <Button asChild size="sm" className="min-h-11 shrink-0 touch-manipulation">
+      <p className="text-sm font-bold">{message}</p>
+      <BrutalButton asChild className="shrink-0 touch-manipulation text-xs">
         <Link to={actionTo}>
           {actionLabel}
           <ChevronRight className="ml-1 h-4 w-4" aria-hidden />
         </Link>
-      </Button>
+      </BrutalButton>
     </div>
   );
 }

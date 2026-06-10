@@ -431,7 +431,7 @@ export function AdminVerifyModals({
         }
       >
         {!hasVerifiedAdvance(lead) ? (
-          <p className="mb-3 text-xs text-amber-700 dark:text-amber-400">
+          <p className="mb-3 text-xs portal-waiting-text">
             Verify advance payment first.
           </p>
         ) : null}
@@ -504,7 +504,7 @@ export function AdminVerifyModals({
         })()}
         <PortalMetaGrid items={accountsReadyMetaItems(lead)} />
         {accountsReadyMissingGithubHint(lead) ? (
-          <p className="mt-2 text-xs text-amber-700 dark:text-amber-300" role="status">
+          <p className="mt-2 text-xs portal-waiting-text" role="status">
             Rep submission missing GitHub details — ask rep to resubmit.
           </p>
         ) : null}
@@ -630,7 +630,7 @@ export function AdminVerifyModals({
             transfer.
           </p>
           {!finalOk ? (
-            <p className="text-xs text-amber-700 dark:text-amber-400" role="status">
+            <p className="text-xs portal-waiting-text" role="status">
               Verify due payment first.
             </p>
           ) : null}
@@ -733,7 +733,7 @@ export function AdminVerifyModals({
                   missingMessage="Agreed total is missing on this deal."
                 />
                 {estimatedCents != null && estimatedCents !== lead.commission.amountCents ? (
-                  <p className="text-xs text-amber-700 dark:text-amber-300" role="status">
+                  <p className="text-xs portal-waiting-text" role="status">
                     Payout will refresh to {formatMinorUnits(estimatedCents)} when you mark
                     commission paid.
                   </p>

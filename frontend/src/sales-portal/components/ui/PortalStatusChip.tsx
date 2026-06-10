@@ -1,38 +1,19 @@
 import type { LucideIcon } from "lucide-react";
 import { CheckCircle2, CircleDashed, Clock, Lock, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PORTAL_STATUS_STYLES } from "../../theme/statusColors";
 
 export type PortalStatusChipKind = "action" | "waiting" | "complete" | "locked" | "idle";
 
 const KIND_CONFIG: Record<
   PortalStatusChipKind,
-  { label: string; Icon: LucideIcon; className: string }
+  { label: string; Icon: LucideIcon }
 > = {
-  action: {
-    label: "Action needed",
-    Icon: Zap,
-    className: "border-primary/40 bg-primary/10 text-primary"
-  },
-  waiting: {
-    label: "Waiting on admin",
-    Icon: Clock,
-    className: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-  },
-  complete: {
-    label: "Complete",
-    Icon: CheckCircle2,
-    className: "border-muted-foreground/30 bg-muted text-muted-foreground"
-  },
-  locked: {
-    label: "Blocked",
-    Icon: Lock,
-    className: "border-muted-foreground/30 bg-muted text-muted-foreground"
-  },
-  idle: {
-    label: "In progress",
-    Icon: CircleDashed,
-    className: "border-muted-foreground/30 bg-muted text-muted-foreground"
-  }
+  action: { label: "Action needed", Icon: Zap },
+  waiting: { label: "Waiting on admin", Icon: Clock },
+  complete: { label: "Complete", Icon: CheckCircle2 },
+  locked: { label: "Blocked", Icon: Lock },
+  idle: { label: "In progress", Icon: CircleDashed },
 };
 
 type Props = {
@@ -43,19 +24,20 @@ type Props = {
 
 export function PortalStatusChip({ kind, label, className }: Props) {
   const config = KIND_CONFIG[kind];
+  const styles = PORTAL_STATUS_STYLES[kind];
   const Icon = config.Icon;
   const text = label ?? config.label;
 
   return (
     <span
       className={cn(
-        "inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
-        config.className,
+        "inline-flex max-w-full items-center gap-1.5 px-2.5 py-1 text-xs font-bold uppercase tracking-wide",
+        styles.chip,
         className
       )}
       role="status"
     >
-      <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <Icon className={cn("h-3.5 w-3.5 shrink-0", styles.icon)} aria-hidden />
       <span className="truncate">{text}</span>
     </span>
   );

@@ -841,7 +841,7 @@ export function PipelineDetailPage() {
             <>
               <PortalMetaGrid items={accountsReadyMetaItems(lead)} />
               {accountsReadyMissingGithubHint(lead) ? (
-                <p className="text-xs text-amber-700 dark:text-amber-300" role="status">
+                <p className="text-xs portal-waiting-text" role="status">
                   GitHub details were not saved with this submission — contact admin if this looks
                   wrong.
                 </p>
@@ -944,7 +944,7 @@ export function PipelineDetailPage() {
               options={{ templateLabel }}
             />
           ) : readOnlyModal ? (
-            <p className="text-xs text-amber-700 dark:text-amber-300" role="status">
+            <p className="text-xs portal-waiting-text" role="status">
               Payment details are not on file yet — refresh or contact admin if this looks wrong.
             </p>
           ) : (
@@ -1007,7 +1007,7 @@ export function PipelineDetailPage() {
           ) : null;
         })()}
         {!lead.project?.id ? (
-          <p className="mb-2 text-xs text-amber-700 dark:text-amber-400">
+          <p className="mb-2 text-xs portal-waiting-text">
             Available after admin verifies advance payment.
           </p>
         ) : null}

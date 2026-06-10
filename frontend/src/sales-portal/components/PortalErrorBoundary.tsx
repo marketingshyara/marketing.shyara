@@ -38,12 +38,14 @@ export class PortalErrorBoundary extends Component<Props, State> {
       const home = defaultPortalHome(this.props.role ?? "SALES_REP");
       return (
         <div
-          className="mx-auto flex min-h-[50vh] max-w-lg flex-col items-center justify-center gap-4 px-4 text-center"
+          className="mx-auto flex min-h-[50vh] max-w-lg flex-col items-center justify-center gap-4 border-2 border-[#0A0A0A] bg-white px-6 py-8 text-center shadow-[4px_4px_0_0_#0A0A0A]"
           role="alert"
         >
-          <AlertTriangle className="h-10 w-10 text-amber-600" aria-hidden />
-          <h1 className="text-xl font-semibold">Something went wrong</h1>
-          <p className="text-sm text-muted-foreground">
+          <AlertTriangle className="h-10 w-10 text-[#FF3333]" aria-hidden />
+          <h1 className="font-heading text-xl font-black uppercase tracking-tight">
+            Something went wrong
+          </h1>
+          <p className="text-sm text-[#0A0A0A]/60">
             This page hit an unexpected error. You can reload or return to your home screen. If
             this keeps happening, contact support.
           </p>

@@ -38,7 +38,7 @@ export const DealAmountField = memo(function DealAmountField({
         <p className="break-words text-xs text-muted-foreground">{hint}</p>
       ) : null}
       {missing ? (
-        <p className="break-words text-xs text-amber-700 dark:text-amber-300" role="status">
+        <p className="break-words text-xs portal-waiting-text" role="status">
           {missingMessage}
         </p>
       ) : null}

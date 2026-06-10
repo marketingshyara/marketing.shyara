@@ -64,7 +64,7 @@ export const PaymentSubmissionReviewSection = memo(function PaymentSubmissionRev
       ) : null}
       <PortalMetaGrid items={metaItems} />
       {mismatchMessage ? (
-        <p className="break-words text-xs text-amber-700 dark:text-amber-300" role="alert">
+        <p className="break-words text-xs portal-waiting-text" role="alert">
           {mismatchMessage} Refresh and confirm before approving.
         </p>
       ) : null}

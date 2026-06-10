@@ -9,12 +9,11 @@ import {
 } from "../validation/schemas";
 import { errToast, useChangePasswordMutation, useSessionQuery } from "../hooks/useSalesQueries";
 import { PasswordField } from "../components/PasswordField";
-import { Button } from "@/components/ui/button";
 import { ApiError } from "../api/client";
 import { resolvePortalDestination } from "../lib/portalPaths";
 import { passwordCopy } from "../lib/passwordCopy";
 import { toast } from "sonner";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { BrutalButton, BrutalCard, BrutalEyebrow } from "../components/brutalist";
 import { cn } from "@/lib/utils";
 
 type ForcedForm = z.infer<typeof forcedChangePasswordSchema>;
@@ -83,7 +82,7 @@ function ChangePasswordForm({
     >
       {forced ? (
         <div
-          className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm text-foreground"
+          className="border-2 border-[#0A0A0A] border-l-[4px] border-l-[#FF3333] bg-[#FAFAFA] px-3 py-2.5 text-sm text-[#0A0A0A]"
           role="status"
         >
           {passwordCopy.forcedBanner}
@@ -119,7 +118,7 @@ function ChangePasswordForm({
         error={form.formState.errors.confirmPassword}
       />
 
-      <Button type="submit" className="min-h-11 w-full touch-manipulation" disabled={change.isPending}>
+      <BrutalButton type="submit" className="w-full touch-manipulation" disabled={change.isPending}>
         {change.isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
@@ -130,17 +129,17 @@ function ChangePasswordForm({
         ) : (
           passwordCopy.voluntarySubmit
         )}
-      </Button>
+      </BrutalButton>
 
       {!forced && (
-        <Button
+        <BrutalButton
           type="button"
           variant="ghost"
-          className="min-h-11 w-full touch-manipulation"
+          className="w-full touch-manipulation"
           onClick={() => navigate(intendedDestination, { replace: true })}
         >
           Cancel
-        </Button>
+        </BrutalButton>
       )}
     </form>
   );
@@ -175,59 +174,51 @@ export function PortalChangePasswordPage() {
   const forced = data.user.mustChangePassword;
 
   return (
-    <div className="min-h-dvh bg-background md:grid md:grid-cols-2">
+    <div className="min-h-dvh bg-[#FAFAFA] md:grid md:grid-cols-2">
       <div
-        className={cn(
-          "relative hidden flex-col justify-between overflow-hidden border-border p-8 text-primary-foreground md:flex",
-          "bg-gradient-to-br from-primary/90 via-primary/75 to-background"
-        )}
+        className="portal-grid-bg relative hidden flex-col justify-between border-r-2 border-[#0A0A0A] bg-white p-8 md:flex"
         aria-hidden
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.14),transparent_50%)] motion-safe:animate-pulse motion-reduce:animate-none" />
-        <div className="relative z-10 space-y-3">
-          <p className="text-sm font-medium uppercase tracking-wide text-primary-foreground/80">Shyara</p>
-          <h1 className="text-balance text-3xl font-semibold tracking-tight text-primary-foreground">
+        <div className="space-y-4">
+          <p className="font-logo text-2xl">
+            SHYARA<span className="text-[#FF3333]">.</span>
+          </p>
+          <BrutalEyebrow>{forced ? "Required" : "Security"}</BrutalEyebrow>
+          <h1 className="font-heading text-balance text-3xl font-black uppercase leading-tight tracking-tight text-[#0A0A0A]">
             {forced ? passwordCopy.forcedHeroTitle : passwordCopy.voluntaryHeroTitle}
           </h1>
-          <p className="max-w-sm text-sm text-primary-foreground/85">
+          <p className="max-w-sm text-sm text-[#0A0A0A]/70">
             {forced ? passwordCopy.forcedHeroBody : passwordCopy.voluntaryHeroBody}
           </p>
         </div>
-        <ul className="relative z-10 max-w-sm space-y-2 text-xs text-primary-foreground/80">
+        <ul className="max-w-sm space-y-2 text-xs font-bold uppercase tracking-wide text-[#0A0A0A]/70">
           <li className="flex gap-2">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#FF3333]" aria-hidden />
             <span>Passwords are hashed before storage.</span>
           </li>
           <li className="flex gap-2">
-            <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <Lock className="mt-0.5 h-4 w-4 shrink-0 text-[#FF3333]" aria-hidden />
             <span>Your session stays in an httpOnly cookie.</span>
           </li>
         </ul>
       </div>
 
       <main className="flex min-h-dvh flex-col [touch-action:manipulation]">
-        <header className="flex flex-wrap items-center justify-end gap-2 border-b border-border/60 px-3 py-2 md:px-4">
-          <div className="mr-auto flex items-center gap-2 md:hidden">
-            <KeyRound className="h-4 w-4 text-muted-foreground" aria-hidden />
-            <span className="text-sm font-semibold">
-              {forced ? passwordCopy.setYourPassword : passwordCopy.changePassword}
-            </span>
-          </div>
-          <ThemeToggle />
+        <header className="flex items-center border-b-2 border-[#0A0A0A] bg-white px-4 py-3 md:hidden">
+          <KeyRound className="mr-2 h-4 w-4 text-[#FF3333]" aria-hidden />
+          <span className="text-sm font-bold uppercase tracking-wide">
+            {forced ? passwordCopy.setYourPassword : passwordCopy.changePassword}
+          </span>
         </header>
 
-        <div className="flex flex-1 flex-col justify-center px-3 py-8 md:px-10">
-          <div
-            className={cn(
-              "mx-auto w-full max-w-md rounded-xl border bg-card p-6 shadow-card md:p-8",
-              "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-reduce:animate-none"
-            )}
-          >
-            <div className="mb-6 space-y-1">
-              <h2 className="text-balance text-2xl font-semibold tracking-tight">
+        <div className="flex flex-1 flex-col justify-center px-4 py-8 md:px-10">
+          <BrutalCard className="mx-auto w-full max-w-md">
+            <div className="mb-6 space-y-2">
+              <BrutalEyebrow>{forced ? passwordCopy.setYourPassword : passwordCopy.changePassword}</BrutalEyebrow>
+              <h2 className="font-heading text-balance text-2xl font-black uppercase tracking-tight">
                 {forced ? passwordCopy.forcedFormTitle : passwordCopy.voluntaryFormTitle}
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-[#0A0A0A]/60">
                 {forced ? passwordCopy.forcedFormSubtitle : passwordCopy.voluntaryFormSubtitle}
               </p>
             </div>
@@ -248,7 +239,7 @@ export function PortalChangePasswordPage() {
               forced={forced}
               intendedDestination={intendedDestination}
             />
-          </div>
+          </BrutalCard>
         </div>
       </main>
     </div>

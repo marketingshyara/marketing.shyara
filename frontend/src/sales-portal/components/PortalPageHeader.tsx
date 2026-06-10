@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { BrutalEyebrow } from "./brutalist";
 
 type Props = {
   title: string;
@@ -11,6 +12,7 @@ type Props = {
   variant?: "operational" | "config";
   badge?: ReactNode;
   stat?: ReactNode;
+  eyebrow?: string;
 };
 
 export function PortalPageHeader({
@@ -20,7 +22,8 @@ export function PortalPageHeader({
   className,
   variant = "config",
   badge,
-  stat
+  stat,
+  eyebrow
 }: Props) {
   const showDescription = description != null && variant === "config";
 
@@ -28,21 +31,27 @@ export function PortalPageHeader({
     <div
       className={
         className ??
-        "flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        "flex flex-col gap-3 border-b-2 border-[#0A0A0A] pb-4 sm:flex-row sm:items-start sm:justify-between"
       }
     >
-      <div className="min-w-0 space-y-1">
+      <div className="min-w-0 space-y-2">
+        {eyebrow ? <BrutalEyebrow>{eyebrow}</BrutalEyebrow> : null}
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">{title}</h1>
+          <h1 className="font-heading text-xl font-black uppercase tracking-tight md:text-2xl">
+            {title}
+          </h1>
           {badge ? <div className="shrink-0">{badge}</div> : null}
           {stat ? (
-            <Badge variant="secondary" className="font-normal">
+            <Badge
+              variant="secondary"
+              className="border-2 border-[#0A0A0A] font-bold uppercase tracking-wide"
+            >
               {stat}
             </Badge>
           ) : null}
         </div>
         {showDescription ? (
-          <div className="text-sm text-muted-foreground">{description}</div>
+          <div className="text-sm text-[#0A0A0A]/60">{description}</div>
         ) : null}
       </div>
       {toolbar ? <div className={cn("shrink-0")}>{toolbar}</div> : null}

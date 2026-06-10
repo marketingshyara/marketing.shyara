@@ -21,7 +21,7 @@ export function DataStaleToolbar({ dataUpdatedAt, onRefresh, isFetching, disable
       : "—";
 
   return (
-    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+    <div className="flex flex-wrap items-center gap-2 border-2 border-[#0A0A0A]/20 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#0A0A0A]/60">
       <span>Updated {label}</span>
       <Button
         type="button"

@@ -1,15 +1,25 @@
 import type { ReactNode } from "react";
 import { Navigate, Outlet, useLocation, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import { useSessionQuery } from "../hooks/useSalesQueries";
 import { defaultPortalHome, resolvePortalDestination } from "../lib/portalPaths";
 import { normalizePortalReturnCandidate } from "../lib/sanitizeRedirect";
 
 function PortalLoading() {
   return (
-    <div className="flex min-h-[50vh] items-center justify-center gap-2 bg-background" role="status" aria-live="polite">
-      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
-      <span className="text-sm text-muted-foreground">Loading…</span>
+    <div
+      className="flex min-h-[50vh] flex-col items-center justify-center gap-3 bg-[#FAFAFA]"
+      role="status"
+      aria-live="polite"
+    >
+      <span
+        className="portal-loader-star font-logo text-4xl text-[#FF3333]"
+        aria-hidden
+      >
+        ✱
+      </span>
+      <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#0A0A0A]/60">
+        Loading…
+      </span>
     </div>
   );
 }

@@ -64,7 +64,7 @@ export function RepProjectsPage() {
       />
 
       {rep.archivedAt ? (
-        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
+        <p className="border-2 border-[#0A0A0A] bg-[#FAFAFA] px-3 py-2 text-sm text-[#0A0A0A]">
           This rep was removed from the active team. Their converted clients remain here and on{" "}
           <Link to="/portal/projects" className="font-medium underline">
             All clients

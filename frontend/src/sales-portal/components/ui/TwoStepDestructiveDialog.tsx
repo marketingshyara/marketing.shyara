@@ -13,12 +13,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
-/** Solid destructive actions — readable on dark portal backgrounds. */
+/** Brutalist destructive actions for portal. */
 export const portalDestructiveButtonClass =
-  "bg-destructive text-destructive-foreground shadow-sm ring-1 ring-destructive/60 hover:bg-destructive/90 hover:brightness-110";
+  "border-2 border-[#0A0A0A] bg-[#0A0A0A] font-bold uppercase tracking-wide text-white shadow-[2px_2px_0_0_#FF3333] hover:-translate-y-0.5";
 
 export const portalDestructiveIconButtonClass =
-  "text-destructive hover:bg-destructive/15 hover:text-destructive";
+  "text-[#FF3333] hover:bg-[#FF3333]/10 hover:text-[#FF3333]";
 
 type StepContent = {
   title: string;

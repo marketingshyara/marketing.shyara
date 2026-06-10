@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { declineFeedbackMessage } from "../../lib/declineFeedback";
+import { PORTAL_WAITING_BANNER, PORTAL_WAITING_TEXT } from "../../theme/statusColors";
 
 type Props = {
   stageTitle: string;
@@ -14,14 +15,15 @@ export function DeclineFeedbackBanner({ stageTitle, declineNote, className }: Pr
     <div
       role="status"
       className={cn(
-        "rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm",
+        "border-l-[4px] border-l-[#FF3333] px-4 py-3 text-sm shadow-[2px_2px_0_0_#0A0A0A]",
+        PORTAL_WAITING_BANNER,
         className
       )}
     >
-      <p className="font-medium text-amber-950 dark:text-amber-100">
+      <p className="font-bold uppercase tracking-wide">
         {stageTitle} — needs your attention
       </p>
-      <p className="mt-1 text-muted-foreground">{message}</p>
+      <p className={cn("mt-1", PORTAL_WAITING_TEXT)}>{message}</p>
     </div>
   );
 }
@@ -34,8 +36,8 @@ export function DeclineFeedbackInline({
   className?: string;
 }) {
   return (
-    <p className={cn("text-sm text-amber-800 dark:text-amber-200", className)} role="status">
-      <span className="font-medium">Admin declined: </span>
+    <p className={cn("text-sm", PORTAL_WAITING_TEXT, className)} role="status">
+      <span className="font-bold">Admin declined: </span>
       {declineFeedbackMessage(declineNote)}
     </p>
   );

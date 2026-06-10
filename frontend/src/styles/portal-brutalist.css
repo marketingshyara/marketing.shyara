@@ -1,0 +1,149 @@
+@import url("https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500,700,800,900&f[]=satoshi@400,500,700,900&display=swap");
+
+@font-face {
+  font-family: "Tan Paradiso";
+  src:
+    url("../assets/fonts/TAN-PARADISO.otf") format("opentype"),
+    url("../assets/fonts/TAN-PARADISO.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.portal-site {
+  --portal-red: #ff3333;
+  --portal-ink: #0a0a0a;
+  --portal-bg: #fafafa;
+  --portal-surface: #ffffff;
+  --portal-muted: #f0f0f0;
+
+  font-family: "Satoshi", "Plus Jakarta Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
+
+.portal-site .font-heading {
+  font-family: "Cabinet Grotesk", "Bricolage Grotesque", sans-serif;
+}
+
+.portal-site .font-logo {
+  font-family: "Tan Paradiso", "Tan Pardiso", "Cabinet Grotesk", serif;
+}
+
+.portal-site ::selection {
+  background: #ff3333;
+  color: #ffffff;
+}
+
+@layer base {
+  .portal-site {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 4%;
+    --primary: 0 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 4%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 35%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 100% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 4%;
+    --input: 0 0% 4%;
+    --ring: 0 100% 60%;
+    --radius: 0rem;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 4%;
+    --sidebar-primary: 0 100% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 4%;
+    --sidebar-border: 0 0% 4%;
+    --sidebar-ring: 0 100% 60%;
+    --brand-emerald: 0 100% 60%;
+    --brand-amber: 0 0% 35%;
+  }
+}
+
+@layer components {
+  .portal-brutal-card {
+    @apply border-2 border-[#0A0A0A] bg-white shadow-[4px_4px_0_0_#0A0A0A];
+  }
+
+  .portal-brutal-btn-primary {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 border-2 border-[#0A0A0A] bg-[#FF3333] px-6 font-bold uppercase tracking-wide text-white transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3333] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .portal-brutal-btn-secondary {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 border-2 border-[#0A0A0A] bg-white px-6 font-bold uppercase tracking-wide text-[#0A0A0A] transition-all hover:-translate-y-0.5 hover:bg-[#0A0A0A] hover:text-white hover:shadow-[4px_4px_0_0_#0A0A0A] disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .portal-brutal-input {
+    @apply min-h-11 w-full border-2 border-[#0A0A0A] bg-white px-3 text-sm outline-none ring-0 placeholder:text-[#0A0A0A]/40 focus-visible:border-[#FF3333] focus-visible:ring-2 focus-visible:ring-[#FF3333]/30;
+  }
+
+  .portal-brutal-eyebrow {
+    @apply text-[10px] font-bold uppercase tracking-[0.28em] text-[#FF3333];
+  }
+
+  .portal-grid-bg {
+    background-image:
+      linear-gradient(#0a0a0a14 1px, transparent 1px),
+      linear-gradient(90deg, #0a0a0a14 1px, transparent 1px);
+    background-size: clamp(20px, 4vw, 32px) clamp(20px, 4vw, 32px);
+  }
+
+  .portal-nav-active {
+    @apply border-l-[3px] border-[#FF3333] bg-[#FAFAFA] font-bold text-[#0A0A0A];
+  }
+
+  .portal-site .rounded-lg,
+  .portal-site .rounded-md,
+  .portal-site .rounded-xl {
+    border-radius: 0;
+  }
+
+  .portal-site [data-state="active"].portal-segment {
+    @apply border-2 border-[#0A0A0A] bg-[#FF3333] font-bold text-white shadow-[2px_2px_0_0_#0A0A0A];
+  }
+
+  .portal-site .bg-card {
+    @apply border-2 border-[#0A0A0A] shadow-[4px_4px_0_0_#0A0A0A];
+  }
+
+  .portal-site .portal-waiting-banner {
+    @apply border-2 border-[#0A0A0A] bg-[#FAFAFA] text-[#0A0A0A];
+  }
+
+  .portal-site .portal-waiting-text {
+    @apply text-[#0A0A0A]/70;
+  }
+}
+
+@keyframes portal-star-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.92);
+  }
+}
+
+.portal-site .portal-loader-star {
+  animation: portal-star-pulse 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-site .portal-loader-star {
+    animation: none;
+  }
+}

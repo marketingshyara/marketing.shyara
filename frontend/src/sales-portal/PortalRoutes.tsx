@@ -25,7 +25,7 @@ import { AllProjectsPage } from "./pages/admin/AllProjectsPage";
 import { ActivityLogsPage } from "./pages/admin/ActivityLogsPage";
 import { PendingPaymentsPage } from "./pages/admin/PendingPaymentsPage";
 import { CommissionPage } from "./pages/CommissionPage";
-import { Button } from "@/components/ui/button";
+import { BrutalButton } from "./components/brutalist";
 import { ShieldAlert, SearchX } from "lucide-react";
 import { useSessionQuery } from "./hooks/useSalesQueries";
 import { RoleAwareRedirect } from "./components/RoleAwareRedirect";
@@ -41,15 +41,15 @@ function NoAccessPage() {
     (location.state as { from?: string } | null)?.from
   );
   return (
-    <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-4 text-center">
-      <ShieldAlert className="h-10 w-10 text-amber-600" aria-hidden />
-      <h1 className="text-2xl font-semibold">You Do Not Have Access</h1>
-      <p className="text-sm text-muted-foreground">
+    <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-4 border-2 border-[#0A0A0A] bg-white p-8 text-center shadow-[4px_4px_0_0_#0A0A0A]">
+      <ShieldAlert className="h-10 w-10 text-[#FF3333]" aria-hidden />
+      <h1 className="font-heading text-2xl font-black uppercase tracking-tight">You do not have access</h1>
+      <p className="text-sm text-[#0A0A0A]/60">
         This section is only available to administrators.
       </p>
-      <Button asChild className="min-h-11">
-        <Link to={from}>Go Back</Link>
-      </Button>
+      <BrutalButton asChild>
+        <Link to={from}>Go back</Link>
+      </BrutalButton>
     </div>
   );
 }
@@ -58,12 +58,12 @@ function NotFoundPage() {
   const { data } = useSessionQuery();
   const home = defaultPortalHome(data?.user?.role ?? "SALES_REP");
   return (
-    <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-4 text-center">
-      <SearchX className="h-10 w-10 text-muted-foreground" aria-hidden />
-      <h1 className="text-2xl font-semibold">Page Not Found</h1>
-      <Button asChild className="min-h-11">
+    <div className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-4 border-2 border-[#0A0A0A] bg-white p-8 text-center shadow-[4px_4px_0_0_#0A0A0A]">
+      <SearchX className="h-10 w-10 text-[#0A0A0A]/40" aria-hidden />
+      <h1 className="font-heading text-2xl font-black uppercase tracking-tight">Page not found</h1>
+      <BrutalButton asChild>
         <Link to={home}>Go to home</Link>
-      </Button>
+      </BrutalButton>
     </div>
   );
 }
@@ -112,14 +112,6 @@ export function PortalRoutes() {
             />
             <Route
               path="leads/*"
-              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/team" />}
-            />
-            <Route
-              path="projects"
-              element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/team" />}
-            />
-            <Route
-              path="projects/*"
               element={<RoleAwareRedirect repTo="/portal/pipeline" adminTo="/portal/team" />}
             />
             <Route

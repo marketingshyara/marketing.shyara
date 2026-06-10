@@ -16,12 +16,12 @@ export function PortalWhyBlocked({ reasons, className }: Props) {
 
   return (
     <Collapsible className={cn("pt-1", className)}>
-      <CollapsibleTrigger className="group flex min-h-11 w-full items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground touch-manipulation">
+      <CollapsibleTrigger className="group flex min-h-11 w-full items-center gap-1 text-xs font-bold uppercase tracking-wide text-[#0A0A0A]/60 hover:text-[#FF3333] touch-manipulation">
         <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
         Why blocked?
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <ul className="mt-1 list-inside list-disc space-y-0.5 pl-1 text-xs text-muted-foreground">
+        <ul className="mt-1 list-inside list-disc space-y-0.5 border-l-2 border-[#FF3333] pl-2 text-xs text-[#0A0A0A]/70">
           {reasons.map((r) => (
             <li key={r}>{r}</li>
           ))}

@@ -441,11 +441,11 @@ export function SettingsPage() {
 
           <TabsContent value="system" className="space-y-6 mt-0">
         <Collapsible defaultOpen={false}>
-          <Card className="border-amber-500/40">
+          <Card className="border-[#FF3333]">
             <CardHeader className="pb-2">
               <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden />
+                  <AlertTriangle className="h-4 w-4 text-[#FF3333]" aria-hidden />
                   <CardTitle className="text-base">Advanced / emergency controls</CardTitle>
                 </div>
                 <ChevronDown className="h-4 w-4 shrink-0" aria-hidden />

@@ -67,7 +67,7 @@ export const PaymentMethodSharePanel = memo(function PaymentMethodSharePanel({
   if (!hasShareValue && !hasQr) {
     return (
       <div
-        className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-950 dark:text-amber-100"
+        className="flex gap-2 border-2 border-[#0A0A0A] bg-[#FAFAFA] p-3 text-sm text-[#0A0A0A]"
         role="status"
       >
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
@@ -90,7 +90,7 @@ export const PaymentMethodSharePanel = memo(function PaymentMethodSharePanel({
         linkHref ? (
           <PortalLinkDisplay url={shareValue} copyLabel="Payment link" variant="plain" />
         ) : (
-          <p className="text-xs text-amber-700 dark:text-amber-300" role="status">
+          <p className="text-xs portal-waiting-text" role="status">
             Payment URL in settings is invalid. Ask admin to fix it in Portal Settings.
           </p>
         )
