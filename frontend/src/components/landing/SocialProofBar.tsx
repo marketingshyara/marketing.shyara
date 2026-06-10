@@ -8,27 +8,27 @@ import {
 } from "framer-motion";
 import { BrushStroke } from "@/components/landing/BrushStroke";
 
-/** Extra viewport scroll while the proof panel stays pinned (paint + brief hold). */
-const PIN_SCROLL_DVH = 200;
+/** Extra scroll while pinned — ends when the last stroke finishes (no hold). */
+const PIN_SCROLL_DVH = 150;
 
 const stats = [
   {
     value: "50+",
     label: "Scaling brands trust us",
     direction: "ltr" as const,
-    range: [0.05, 0.24] as const,
+    range: [0.04, 0.3] as const,
   },
   {
     value: "100+",
     label: "Projects delivered",
     direction: "rtl" as const,
-    range: [0.2, 0.39] as const,
+    range: [0.24, 0.52] as const,
   },
   {
     value: "5+",
     label: "Years building digital solutions",
     direction: "ltr" as const,
-    range: [0.35, 0.54] as const,
+    range: [0.44, 1] as const,
   },
 ];
 
