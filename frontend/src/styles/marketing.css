@@ -75,4 +75,14 @@
   .marketing-site .animate-marquee {
     animation: none;
   }
+
+  html:has(.marketing-site) {
+    scroll-behavior: auto;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.marketing-site):not(.lenis) {
+    scroll-behavior: smooth;
+  }
 }
