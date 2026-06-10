@@ -1,14 +1,14 @@
 import { Link, Navigate, useParams } from "react-router-dom";
-
-const RESERVED_PIPELINE_SLUGS: Record<string, string> = {
-  new: "/portal/pipeline/new",
-  "not-interested": "/portal/pipeline/not-interested"
-};
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { useLeadQuery, useSessionQuery } from "../../hooks/useSalesQueries";
 import { PipelineDetailPage } from "./PipelineDetailPage";
+
+const RESERVED_PIPELINE_SLUGS: Record<string, string> = {
+  new: "/portal/pipeline/new",
+  "not-interested": "/portal/pipeline?view=leads&prospectCategory=NOT_INTERESTED"
+};
 
 function AdminPipelineDetailRedirect({ leadId }: { leadId: string | undefined }) {
   const leadQr = useLeadQuery(leadId, !!leadId);

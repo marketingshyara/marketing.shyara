@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { format } from "date-fns";
 import { Plus, Search } from "lucide-react";
 import { useDebounced } from "../../hooks/useDebounced";
 import { useLeadsQuery } from "../../hooks/useSalesQueries";
@@ -11,10 +12,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
-import { MarkNotInterestedButton } from "../../components/pipeline/MarkNotInterestedButton";
+import { SetProspectCategoryDialog } from "../../components/pipeline/SetProspectCategoryDialog";
+import { ProspectCategoryBadge } from "../../components/pipeline/ProspectCategoryBadge";
 import { PipelineListSummary } from "../../components/pipeline/PipelineListSummary";
-import { canMarkNotInterested } from "../../lib/leadNotInterested";
+import {
+  PROSPECT_CATEGORIES,
+  canChangeProspectCategory,
+  prospectCategoryLabel,
+  prospectCategoryShortLabel
+} from "../../lib/leadProspectCategory";
 import { listStatusChip } from "../../lib/pipelineCopy";
+import type { ProspectCategory } from "../../types";
 import { cn } from "@/lib/utils";
 
 const VIEW_TABS = ["leads", "clients", "completed"] as const;
@@ -24,23 +32,32 @@ function isViewTab(v: string | null): v is ViewTab {
   return v === "leads" || v === "clients" || v === "completed";
 }
 
+function isProspectCategory(v: string | null): v is ProspectCategory {
+  return PROSPECT_CATEGORIES.includes(v as ProspectCategory);
+}
+
 function tabLabel(v: ViewTab): string {
   if (v === "leads") return "Prospects";
   if (v === "clients") return "Active clients";
   return "Settled";
 }
 
-function emptyMessage(tab: ViewTab): string {
-  if (tab === "leads") return "No prospects yet.";
-  if (tab === "clients") return "No active clients yet.";
-  return "No settled projects yet.";
+function emptyMessage(tab: ViewTab, category: ProspectCategory): string {
+  if (tab !== "leads") {
+    if (tab === "clients") return "No active clients yet.";
+    return "No settled projects yet.";
+  }
+  return `No prospects in ${prospectCategoryLabel(category).toLowerCase()}.`;
 }
 
 export function PipelineListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlView = searchParams.get("view");
+  const urlCategory = searchParams.get("prospectCategory");
   const initialTab = isViewTab(urlView) ? urlView : "leads";
+  const initialCategory = isProspectCategory(urlCategory) ? urlCategory : "NEW_LEAD";
   const [tab, setTab] = useState<ViewTab>(initialTab);
+  const [prospectCategory, setProspectCategory] = useState<ProspectCategory>(initialCategory);
   const [page, setPage] = useState(1);
   const pageSize = 20;
   const [searchInput, setSearchInput] = useState("");
@@ -50,34 +67,91 @@ export function PipelineListPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [tab, searchTrimmed]);
+  }, [tab, prospectCategory, searchTrimmed]);
 
   useEffect(() => {
-    if (isViewTab(urlView)) {
-      setTab(urlView);
-    }
-  }, [urlView]);
+    if (isViewTab(urlView)) setTab(urlView);
+    if (isProspectCategory(urlCategory)) setProspectCategory(urlCategory);
+  }, [urlView, urlCategory]);
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
+    const viewMatches = next.get("view") === tab;
+    const categoryMatches =
+      tab !== "leads"
+        ? !next.has("prospectCategory")
+        : next.get("prospectCategory") === prospectCategory;
+    if (viewMatches && categoryMatches) return;
+
     next.set("view", tab);
+    if (tab === "leads") {
+      next.set("prospectCategory", prospectCategory);
+    } else {
+      next.delete("prospectCategory");
+    }
     setSearchParams(next, { replace: true });
-  }, [tab, searchParams, setSearchParams]);
+  }, [tab, prospectCategory, searchParams, setSearchParams]);
 
   const { data, isLoading, isError, isFetching, dataUpdatedAt, refetch } = useLeadsQuery({
     page,
     pageSize,
     view: tab,
+    prospectCategory: tab === "leads" ? prospectCategory : undefined,
     search: searchTooShort ? undefined : searchTrimmed || undefined,
     enabled: !searchTooShort
   });
 
-  const notInterestedCountQr = useLeadsQuery({
+  const countNewLead = useLeadsQuery({
     page: 1,
     pageSize: 1,
-    view: "not_interested"
+    view: "leads",
+    prospectCategory: "NEW_LEAD",
+    enabled: tab === "leads"
   });
-  const notInterestedTotal = notInterestedCountQr.data?.total ?? 0;
+  const countCallback = useLeadsQuery({
+    page: 1,
+    pageSize: 1,
+    view: "leads",
+    prospectCategory: "CALLBACK_REQUESTED",
+    enabled: tab === "leads"
+  });
+  const countNoAnswer = useLeadsQuery({
+    page: 1,
+    pageSize: 1,
+    view: "leads",
+    prospectCategory: "NO_ANSWER",
+    enabled: tab === "leads"
+  });
+  const countInterested = useLeadsQuery({
+    page: 1,
+    pageSize: 1,
+    view: "leads",
+    prospectCategory: "INTERESTED",
+    enabled: tab === "leads"
+  });
+  const countFollowUp = useLeadsQuery({
+    page: 1,
+    pageSize: 1,
+    view: "leads",
+    prospectCategory: "FOLLOW_UP",
+    enabled: tab === "leads"
+  });
+  const countNotInterested = useLeadsQuery({
+    page: 1,
+    pageSize: 1,
+    view: "leads",
+    prospectCategory: "NOT_INTERESTED",
+    enabled: tab === "leads"
+  });
+
+  const categoryCounts: Record<ProspectCategory, number> = {
+    NEW_LEAD: countNewLead.data?.total ?? 0,
+    CALLBACK_REQUESTED: countCallback.data?.total ?? 0,
+    NO_ANSWER: countNoAnswer.data?.total ?? 0,
+    INTERESTED: countInterested.data?.total ?? 0,
+    FOLLOW_UP: countFollowUp.data?.total ?? 0,
+    NOT_INTERESTED: countNotInterested.data?.total ?? 0
+  };
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
 
@@ -121,17 +195,38 @@ export function PipelineListPage() {
             Add prospect
           </Link>
         </Button>
-        <Button asChild variant="outline" className="min-h-11 gap-2">
-          <Link to="/portal/pipeline/not-interested">
-            Not interested
-            {notInterestedTotal > 0 ? (
-              <Badge variant="secondary" className="tabular-nums">
-                {notInterestedTotal > 99 ? "99+" : notInterestedTotal}
-              </Badge>
-            ) : null}
-          </Link>
-        </Button>
       </div>
+
+      {tab === "leads" ? (
+        <div
+          className="flex flex-wrap gap-1 rounded-lg border bg-muted/30 p-1"
+          role="tablist"
+          aria-label="Prospect categories"
+        >
+          {PROSPECT_CATEGORIES.map((category) => {
+            const count = categoryCounts[category];
+            return (
+              <Button
+                key={category}
+                type="button"
+                role="tab"
+                aria-selected={prospectCategory === category}
+                variant={prospectCategory === category ? "secondary" : "ghost"}
+                className="min-h-11 gap-2 text-xs sm:text-sm"
+                onClick={() => setProspectCategory(category)}
+              >
+                <span className="hidden sm:inline">{prospectCategoryLabel(category)}</span>
+                <span className="sm:hidden">{prospectCategoryShortLabel(category)}</span>
+                {count > 0 ? (
+                  <Badge variant="secondary" className="tabular-nums">
+                    {count > 99 ? "99+" : count}
+                  </Badge>
+                ) : null}
+              </Button>
+            );
+          })}
+        </div>
+      ) : null}
 
       <div className="space-y-2">
         <Label htmlFor="pipeline-search">Search</Label>
@@ -167,7 +262,9 @@ export function PipelineListPage() {
         <div className="min-w-0 space-y-2">
           {data?.items.length === 0 ? (
             <div className="space-y-3 py-8 text-center">
-              <p className="text-sm text-muted-foreground">{emptyMessage(tab)}</p>
+              <p className="text-sm text-muted-foreground">
+                {emptyMessage(tab, prospectCategory)}
+              </p>
               {tab === "leads" ? (
                 <Button className="min-h-11" asChild>
                   <Link to="/portal/pipeline/new">
@@ -189,26 +286,35 @@ export function PipelineListPage() {
                 pendingAdmin: false
               };
               const statusChip = listStatusChip(summary, undefined, "rep");
-              const markable = tab === "leads" && canMarkNotInterested(lead);
+              const categoryChangeable = tab === "leads" && canChangeProspectCategory(lead);
+              const callbackHint =
+                lead.prospectCategory === "CALLBACK_REQUESTED" && lead.callbackScheduledAt
+                  ? format(new Date(lead.callbackScheduledAt), "d MMM, h:mm a")
+                  : null;
               return (
-                <PipelineListSummary
-                  key={lead.id}
-                  clientName={lead.clientName}
-                  summary={summary}
-                  agreedTotalCents={lead.agreedTotalCents}
-                  href={`/portal/pipeline/${lead.id}`}
-                  statusChip={statusChip}
-                  trailingAction={
-                    markable ? (
-                      <MarkNotInterestedButton
-                        leadId={lead.id}
-                        clientName={lead.clientName}
-                        variant="listRow"
-                        onMarked={() => void refetch()}
-                      />
-                    ) : null
-                  }
-                />
+                <div key={lead.id} className="space-y-2">
+                  <ProspectCategoryBadge lead={lead} />
+                  <PipelineListSummary
+                    clientName={lead.clientName}
+                    summary={summary}
+                    agreedTotalCents={lead.agreedTotalCents}
+                    href={`/portal/pipeline/${lead.id}`}
+                    statusChip={statusChip}
+                    detailLine={callbackHint ? <span>{callbackHint}</span> : undefined}
+                    trailingAction={
+                      categoryChangeable ? (
+                        <SetProspectCategoryDialog
+                          leadId={lead.id}
+                          clientName={lead.clientName}
+                          lead={lead}
+                          variant="listRow"
+                          triggerLabel="Set category"
+                          onUpdated={() => void refetch()}
+                        />
+                      ) : null
+                    }
+                  />
+                </div>
               );
             })
           )}

@@ -150,10 +150,22 @@ d("integration: not interested prospects", () => {
       headers: { cookie: `${config.cookieName}=${cookie}` }
     });
     const archivedBody = archived.json() as {
-      items: { id: string; notInterestedNote: string | null }[];
+      items: { id: string; prospectCategory: string }[];
     };
     expect(archivedBody.items.some((i) => i.id === leadId)).toBe(true);
-    expect(archivedBody.items.find((i) => i.id === leadId)?.notInterestedNote).toBe("No budget");
+    expect(archivedBody.items.find((i) => i.id === leadId)?.prospectCategory).toBe(
+      "NOT_INTERESTED"
+    );
+
+    const events = await inject(app, {
+      method: "GET",
+      url: `/api/leads/${leadId}/prospect-category-events?page=1&pageSize=10`,
+      headers: { cookie: `${config.cookieName}=${cookie}` }
+    });
+    const eventsBody = events.json() as {
+      items: { category: string; note: string | null }[];
+    };
+    expect(eventsBody.items[0]?.note).toBe("No budget");
 
     await app.close();
   });
@@ -231,7 +243,7 @@ d("integration: not interested prospects", () => {
     });
     expect(again.statusCode).toBe(409);
     const body = again.json() as { error: { code: string } };
-    expect(body.error.code).toBe("ALREADY_NOT_INTERESTED");
+    expect(body.error.code).toBe("SAME_PROSPECT_CATEGORY");
 
     await inject(app, {
       method: "POST",

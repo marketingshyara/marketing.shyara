@@ -1,5 +1,10 @@
 import type { Lead } from "@prisma/client";
-import { LeadStatus, PaymentKind, PaymentVerificationStatus } from "@prisma/client";
+import {
+  LeadStatus,
+  PaymentKind,
+  PaymentVerificationStatus,
+  ProspectCategory
+} from "@prisma/client";
 import { HttpError } from "../errors/httpError.js";
 import type { PortalSettingsValues } from "../validators/schemas.js";
 
@@ -9,11 +14,14 @@ import type { PortalSettingsValues } from "../validators/schemas.js";
  * payment kind, etc.); this guard only enforces the global "do not touch terminals" rule.
  */
 export function assertLeadMutable(lead: Lead, settings: PortalSettingsValues): void {
-  if (lead.notInterestedAt != null && lead.convertedAt == null) {
+  if (
+    lead.convertedAt == null &&
+    lead.prospectCategory === ProspectCategory.NOT_INTERESTED
+  ) {
     throw new HttpError(
       400,
       "LEAD_NOT_INTERESTED",
-      "This prospect is marked not interested. Restore them to Prospects before making changes."
+      "This prospect is marked not interested. Change their category before making changes."
     );
   }
   if (settings.terminalNoMutationStatuses.includes(lead.status)) {

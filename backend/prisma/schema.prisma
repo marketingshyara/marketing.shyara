@@ -48,6 +48,15 @@ enum ActivityAction {
   SETTINGS_UPDATE
 }
 
+enum ProspectCategory {
+  NEW_LEAD
+  CALLBACK_REQUESTED
+  NO_ANSWER
+  INTERESTED
+  FOLLOW_UP
+  NOT_INTERESTED
+}
+
 model WebsiteTemplate {
   id          String  @id
   slug        String  @unique
@@ -76,7 +85,7 @@ model User {
 
   leadsCreated   Lead[]          @relation("LeadCreatedBy")
   leadsAssigned  Lead[]          @relation("LeadAssignedTo")
-  leadsMarkedNotInterested Lead[] @relation("LeadNotInterestedBy")
+  prospectCategoryEvents LeadProspectCategoryEvent[] @relation("ProspectCategoryEventBy")
   paymentsMarked LeadPayment[]   @relation("PaymentMarkedBy")
   paymentsVerified LeadPayment[] @relation("PaymentVerifiedBy")
   commissions    Commission[]    @relation("CommissionRep")
@@ -123,20 +132,20 @@ model Lead {
   repoTransferVerifiedAt  DateTime?
   /** Per-stage admin decline context keyed by pipeline stage (e.g. accounts_ready). */
   stageDeclineNotes    Json?
-  notInterestedAt      DateTime?
-  notInterestedNote    String?
-  notInterestedByUserId String?
+  prospectCategory     ProspectCategory @default(NEW_LEAD)
+  callbackScheduledAt  DateTime?
+  interestedSampleShared Boolean?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
   createdBy   User           @relation("LeadCreatedBy", fields: [createdByUserId], references: [id])
   assignedTo  User?          @relation("LeadAssignedTo", fields: [assignedToUserId], references: [id])
-  notInterestedBy User?      @relation("LeadNotInterestedBy", fields: [notInterestedByUserId], references: [id], onDelete: SetNull)
   websiteTemplate WebsiteTemplate? @relation(fields: [websiteTemplateId], references: [id], onDelete: SetNull)
   payments    LeadPayment[]
   project     Project?
   commission  Commission?
   notifications PortalNotification[]
+  prospectCategoryEvents LeadProspectCategoryEvent[]
 
   @@index([status])
   @@index([createdByUserId])
@@ -144,8 +153,25 @@ model Lead {
   @@index([createdAt])
   @@index([websiteTemplateId])
   @@index([convertedAt])
-  @@index([notInterestedAt])
+  @@index([prospectCategory])
   @@index([assignedToUserId, createdAt])
+  @@index([assignedToUserId, prospectCategory])
+}
+
+model LeadProspectCategoryEvent {
+  id              String           @id @default(cuid())
+  leadId          String
+  category        ProspectCategory
+  note            String?
+  callbackAt      DateTime?
+  sampleShared    Boolean?
+  createdAt       DateTime         @default(now())
+  createdByUserId String
+
+  lead      Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdBy User @relation("ProspectCategoryEventBy", fields: [createdByUserId], references: [id])
+
+  @@index([leadId, createdAt])
 }
 
 model PortalSettings {

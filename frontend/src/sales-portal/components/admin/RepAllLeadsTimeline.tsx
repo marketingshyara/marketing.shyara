@@ -11,6 +11,7 @@ import { useTeamRepLeadsQuery } from "../../hooks/useSalesQueries";
 import { QueryErrorAlert } from "../QueryErrorAlert";
 import { PortalStatusChip, type PortalStatusChipKind } from "../ui/PortalStatusChip";
 import { leadStatusLabel } from "../../lib/copy";
+import { prospectCategoryLabel } from "../../lib/leadProspectCategory";
 import type { RepLeadDisposition, TeamRepLeadItem } from "../../types";
 
 type Props = {
@@ -128,7 +129,9 @@ export function RepAllLeadsTimeline({ repId }: Props) {
                         <p className="font-medium">{lead.clientName}</p>
                         <p className="text-xs text-muted-foreground">
                           Added {format(new Date(lead.createdAt), "h:mm a")}
-                          {lead.notInterestedNote ? ` · ${lead.notInterestedNote}` : ""}
+                          {lead.convertedAt == null
+                            ? ` · ${prospectCategoryLabel(lead.prospectCategory)}`
+                            : ""}
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">

@@ -6,6 +6,8 @@ import type {
   CommissionsListResponse,
   Lead,
   LeadDetailResponse,
+  LeadProspectCategoryEvent,
+  ProspectCategory,
   PaymentShareMethodKey,
   LeadPayment,
   LeadPaymentWithRelations,
@@ -87,6 +89,7 @@ export const salesApi = {
     page?: number;
     pageSize?: number;
     view?: "leads" | "not_interested" | "clients" | "completed";
+    prospectCategory?: ProspectCategory;
     status?: LeadStatus;
     search?: string;
     from?: Date;
@@ -97,6 +100,7 @@ export const salesApi = {
     if (params.page != null) q.set("page", String(params.page));
     if (params.pageSize != null) q.set("pageSize", String(params.pageSize));
     if (params.view) q.set("view", params.view);
+    if (params.prospectCategory) q.set("prospectCategory", params.prospectCategory);
     if (params.status) q.set("status", params.status);
     if (params.search) q.set("search", params.search);
     if (params.from) q.set("from", params.from.toISOString());
@@ -111,9 +115,32 @@ export const salesApi = {
   createLead: (body: Record<string, unknown>) =>
     apiJson<{ lead: Lead }>("POST", "/leads", body),
 
+  setProspectCategory: (
+    id: string,
+    body: {
+      category: ProspectCategory;
+      note?: string | null;
+      callbackAt?: string;
+      sampleShared?: boolean;
+    }
+  ) => apiJson<{ lead: Lead }>("POST", `/leads/${id}/prospect-category`, body),
+
+  prospectCategoryEvents: (id: string, params?: { page?: number; pageSize?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.page != null) q.set("page", String(params.page));
+    if (params?.pageSize != null) q.set("pageSize", String(params.pageSize));
+    const qs = q.toString();
+    return apiJson<Paginated<LeadProspectCategoryEvent>>(
+      "GET",
+      `/leads/${id}/prospect-category-events${qs ? `?${qs}` : ""}`
+    );
+  },
+
+  /** @deprecated Use setProspectCategory with NOT_INTERESTED */
   markNotInterested: (id: string, body?: { note?: string }) =>
     apiJson<{ lead: Lead }>("POST", `/leads/${id}/not-interested`, body ?? {}),
 
+  /** @deprecated Use setProspectCategory with another category */
   restoreLeadInterest: (id: string) =>
     apiJson<{ lead: Lead }>("POST", `/leads/${id}/restore-interest`),
 

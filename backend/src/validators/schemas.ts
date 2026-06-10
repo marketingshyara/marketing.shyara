@@ -1,4 +1,10 @@
-import { LeadStatus, PaymentKind, PaymentVerificationStatus, UserRole } from "@prisma/client";
+import {
+  LeadStatus,
+  PaymentKind,
+  PaymentVerificationStatus,
+  ProspectCategory,
+  UserRole
+} from "@prisma/client";
 import { z } from "zod";
 import {
   defaultPaymentShareMethods,
@@ -78,8 +84,10 @@ export const pipelineStageKeySchema = z.enum([
 
 export const leadsListQuerySchema = paginationQuerySchema
   .extend({
-    /** `leads` = active prospects; `not_interested` = archived prospects; `clients` / `completed` = converted */
+    /** `leads` = unconverted prospects; `not_interested` = NOT_INTERESTED alias; `clients` / `completed` = converted */
     view: z.enum(["leads", "not_interested", "clients", "completed"]).optional(),
+    /** Filter prospects by disposition when `view` is `leads` or `not_interested`. */
+    prospectCategory: z.nativeEnum(ProspectCategory).optional(),
     /** Admin-only: filter pipeline by assigned sales rep. */
     assignedToUserId: z.string().cuid().optional(),
     /** Ignored when `view` is `clients` or `completed` (view applies status filters). */
@@ -104,8 +112,45 @@ export const leadsListQuerySchema = paginationQuerySchema
   )
   .refine((q) => q.view !== "not_interested" || !q.status, {
     message: "status filter is not supported with view=not_interested."
+  })
+  .refine(
+    (q) =>
+      !q.prospectCategory ||
+      !q.view ||
+      q.view === "leads" ||
+      q.view === "not_interested",
+    { message: "prospectCategory is only supported with view=leads or view=not_interested." }
+  );
+
+export const setProspectCategoryBodySchema = z
+  .object({
+    category: z.nativeEnum(ProspectCategory),
+    note: z.string().trim().max(500).optional().nullable(),
+    callbackAt: z.coerce.date().optional(),
+    sampleShared: z.boolean().optional()
+  })
+  .superRefine((body, ctx) => {
+    if (body.category === ProspectCategory.CALLBACK_REQUESTED && body.callbackAt == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Callback date and time are required.",
+        path: ["callbackAt"]
+      });
+    }
+    if (body.category === ProspectCategory.INTERESTED && body.sampleShared === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Website sample shared status is required.",
+        path: ["sampleShared"]
+      });
+    }
   });
 
+export type SetProspectCategoryBody = z.infer<typeof setProspectCategoryBodySchema>;
+
+export const prospectCategoryEventsQuerySchema = paginationQuerySchema;
+
+/** @deprecated Use setProspectCategoryBodySchema with category NOT_INTERESTED */
 export const markNotInterestedBodySchema = z.object({
   note: z.string().trim().max(500).optional().nullable()
 });

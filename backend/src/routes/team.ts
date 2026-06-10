@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { LeadStatus, UserRole } from "@prisma/client";
+import { LeadStatus, ProspectCategory, UserRole } from "@prisma/client";
 import { z } from "zod";
 import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
@@ -11,11 +11,13 @@ import { teamRepLeadsQuerySchema } from "../validators/schemas.js";
 
 function repLeadDisposition(lead: {
   convertedAt: Date | null;
-  notInterestedAt: Date | null;
+  prospectCategory: ProspectCategory;
   status: LeadStatus;
 }): "prospect" | "not_interested" | "client" | "settled" {
   if (lead.convertedAt == null) {
-    return lead.notInterestedAt != null ? "not_interested" : "prospect";
+    return lead.prospectCategory === ProspectCategory.NOT_INTERESTED
+      ? "not_interested"
+      : "prospect";
   }
   return lead.status === LeadStatus.COMMISSION_PAID ? "settled" : "client";
 }
@@ -196,8 +198,9 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
           status: lead.status,
           createdAt: lead.createdAt,
           convertedAt: lead.convertedAt,
-          notInterestedAt: lead.notInterestedAt,
-          notInterestedNote: lead.notInterestedNote,
+          prospectCategory: lead.prospectCategory,
+          callbackScheduledAt: lead.callbackScheduledAt,
+          interestedSampleShared: lead.interestedSampleShared,
           disposition,
           pipelineSummary
         };

@@ -125,9 +125,13 @@ export function errToast(e: unknown, qc?: QueryClient) {
     if (e.code === "LEAD_NOT_INTERESTED") {
       toast.error(
         e.message ||
-          "This prospect is marked not interested. Restore them to Prospects before making changes."
+          "This prospect is marked not interested. Change category on the lead detail page to continue."
       );
       if (qc) invalidateQueryPrefixes(qc, ["lead", "leads"]);
+      return;
+    }
+    if (e.code === "SAME_PROSPECT_CATEGORY") {
+      toast.error(e.message || "No change to save — category or sample status is already set.");
       return;
     }
     if (e.code === "ALREADY_NOT_INTERESTED") {
@@ -146,7 +150,7 @@ export function errToast(e: unknown, qc?: QueryClient) {
       return;
     }
     if (e.code === "LEAD_ALREADY_CONVERTED") {
-      toast.error(e.message || "Converted clients cannot be marked not interested.");
+      toast.error(e.message || "Converted clients cannot change prospect category.");
       return;
     }
     if (e.code === "LEAD_HAS_VERIFIED_PAYMENT") {
@@ -362,6 +366,7 @@ export function useLeadsQuery(params: {
   page: number;
   pageSize: number;
   view?: "leads" | "not_interested" | "clients" | "completed";
+  prospectCategory?: import("../types").ProspectCategory;
   status?: LeadStatus;
   search?: string;
   from?: Date;
@@ -385,35 +390,84 @@ export function useLeadQuery(id: string | undefined, enabled = true) {
   });
 }
 
+function invalidateProspectCategoryQueries(qc: ReturnType<typeof useQueryClient>, leadId: string) {
+  void qc.invalidateQueries({ queryKey: qk.lead(leadId) });
+  void qc.invalidateQueries({ queryKey: ["prospect-category-events", leadId] });
+  qc.invalidateQueries({ queryKey: ["leads"] });
+  void qc.invalidateQueries({ queryKey: ["team-reps"] });
+  void qc.invalidateQueries({ queryKey: ["team-rep"] });
+  void qc.invalidateQueries({ queryKey: ["team-rep-leads"] });
+  invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "admin-projects"]);
+}
+
+export function useProspectCategoryEventsQuery(leadId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ["prospect-category-events", leadId ?? ""],
+    queryFn: () => salesApi.prospectCategoryEvents(leadId!, { page: 1, pageSize: 50 }),
+    enabled: !!leadId && enabled
+  });
+}
+
+export function useSetProspectCategoryMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      leadId,
+      sampleOnly: _sampleOnly,
+      ...body
+    }: {
+      leadId: string;
+      category: import("../types").ProspectCategory;
+      note?: string | null;
+      callbackAt?: string;
+      sampleShared?: boolean;
+      /** When true, only the Interested sample flag changed (same category). */
+      sampleOnly?: boolean;
+    }) => salesApi.setProspectCategory(leadId, body),
+    onSuccess: (data, { leadId, category, sampleOnly }) => {
+      const existing = qc.getQueryData<import("../types").LeadDetailResponse>(qk.lead(leadId));
+      if (existing?.lead) {
+        qc.setQueryData(qk.lead(leadId), {
+          ...existing,
+          lead: { ...existing.lead, ...data.lead }
+        });
+      }
+      invalidateProspectCategoryQueries(qc, leadId);
+      if (sampleOnly) {
+        toast.success("Sample status updated");
+      } else if (category === "NOT_INTERESTED") {
+        toast.success("Moved to Not interested");
+      } else if (category === "INTERESTED") {
+        toast.success("Marked as Interested");
+      } else {
+        toast.success("Category updated");
+      }
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+/** @deprecated Use useSetProspectCategoryMutation */
 export function useMarkNotInterestedMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ leadId, note }: { leadId: string; note?: string }) =>
       salesApi.markNotInterested(leadId, note ? { note } : {}),
     onSuccess: (_data, { leadId }) => {
-      void qc.invalidateQueries({ queryKey: qk.lead(leadId) });
-      qc.invalidateQueries({ queryKey: ["leads"] });
-      void qc.invalidateQueries({ queryKey: ["team-reps"] });
-      void qc.invalidateQueries({ queryKey: ["team-rep"] });
-      void qc.invalidateQueries({ queryKey: ["team-rep-leads"] });
-      invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "admin-projects"]);
+      invalidateProspectCategoryQueries(qc, leadId);
       toast.success("Moved to Not interested");
     },
     onError: (e) => errToast(e, qc)
   });
 }
 
+/** @deprecated Use useSetProspectCategoryMutation */
 export function useRestoreLeadInterestMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: salesApi.restoreLeadInterest,
     onSuccess: (_data, leadId) => {
-      void qc.invalidateQueries({ queryKey: qk.lead(leadId) });
-      qc.invalidateQueries({ queryKey: ["leads"] });
-      void qc.invalidateQueries({ queryKey: ["team-reps"] });
-      void qc.invalidateQueries({ queryKey: ["team-rep"] });
-      void qc.invalidateQueries({ queryKey: ["team-rep-leads"] });
-      invalidateQueryPrefixes(qc, ["commissions", "activity-logs", "admin-projects"]);
+      invalidateProspectCategoryQueries(qc, leadId);
       toast.success("Restored to Prospects");
     },
     onError: (e) => errToast(e, qc)

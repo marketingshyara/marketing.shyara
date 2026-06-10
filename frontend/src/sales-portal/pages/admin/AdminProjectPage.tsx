@@ -8,6 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DeclineFeedbackBanner } from "../../components/pipeline/DeclineFeedbackBanner";
 import { NotInterestedArchiveBanner } from "../../components/pipeline/NotInterestedArchiveBanner";
+import { ProspectCategoryTimeline } from "../../components/pipeline/ProspectCategoryTimeline";
+import { InterestedSampleStatusCard } from "../../components/pipeline/InterestedSampleStatusCard";
+import { ProspectCategoryBadge } from "../../components/pipeline/ProspectCategoryBadge";
+import { SetProspectCategoryDialog } from "../../components/pipeline/SetProspectCategoryDialog";
+import {
+  canChangeProspectCategory,
+  prospectCategoryLabel
+} from "../../lib/leadProspectCategory";
 import { PortalMetaGrid } from "../../components/ui/PortalMetaGrid";
 import { PipelineFocusCard } from "../../components/pipeline/PipelineFocusCard";
 import { findDeclineFeedbackStage } from "../../lib/declineFeedback";
@@ -442,7 +450,7 @@ export function AdminProjectPage() {
   const rejectable = activeStage ? STAGE_REJECTABLE[activeStage] : undefined;
   const declineFeedback = findDeclineFeedbackStage(stages);
 
-  if (!lead.convertedAt && lead.notInterestedAt) {
+  if (!lead.convertedAt && lead.prospectCategory === "NOT_INTERESTED") {
     return (
       <div className="mx-auto max-w-2xl space-y-6">
         <nav className="text-sm text-muted-foreground" aria-label="Breadcrumb">
@@ -479,7 +487,12 @@ export function AdminProjectPage() {
           </p>
         </div>
 
-        <NotInterestedArchiveBanner lead={lead} actorMode="admin" />
+        <NotInterestedArchiveBanner lead={lead} actorMode="admin" onRestored={() => void leadQr.refetch()} />
+
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold uppercase tracking-wide">Category history</h2>
+          <ProspectCategoryTimeline leadId={lead.id} />
+        </section>
 
         <PortalMetaGrid
           items={[
@@ -528,13 +541,42 @@ export function AdminProjectPage() {
         />
       </div>
 
-      <div>
+      <div className="space-y-2">
         <h1 className="text-xl font-semibold md:text-2xl">{lead.clientName}</h1>
         <p className="text-sm text-muted-foreground">
           {lead.convertedAt ? "Client" : "Prospect"} · {leadStatusLabel(lead.status)}
           {lead.agreedTotalCents != null ? ` · ${formatMinorUnits(lead.agreedTotalCents)}` : ""}
         </p>
+        {!lead.convertedAt ? (
+          <p className="text-sm">
+            Category: <span className="font-semibold">{prospectCategoryLabel(lead.prospectCategory)}</span>
+          </p>
+        ) : null}
+        {!lead.convertedAt ? <ProspectCategoryBadge lead={lead} /> : null}
+        {!lead.convertedAt && canChangeProspectCategory(lead) ? (
+          <SetProspectCategoryDialog
+            leadId={lead.id}
+            clientName={lead.clientName}
+            lead={lead}
+            triggerLabel="Change category"
+            onUpdated={() => void leadQr.refetch()}
+          />
+        ) : null}
       </div>
+
+      {!lead.convertedAt ? (
+        <>
+          <InterestedSampleStatusCard
+            lead={lead}
+            onUpdated={() => void leadQr.refetch()}
+            readOnly={false}
+          />
+          <section className="space-y-2">
+            <h2 className="text-sm font-bold uppercase tracking-wide">Category history</h2>
+            <ProspectCategoryTimeline leadId={lead.id} />
+          </section>
+        </>
+      ) : null}
 
       {declineFeedback ? (
         <DeclineFeedbackBanner

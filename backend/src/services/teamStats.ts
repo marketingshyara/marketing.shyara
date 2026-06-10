@@ -2,6 +2,7 @@ import {
   LeadStatus,
   PaymentKind,
   PaymentVerificationStatus,
+  ProspectCategory,
   type PrismaClient
 } from "@prisma/client";
 
@@ -31,10 +32,18 @@ export async function getRepDashboardStats(
     needsAdminAction
   ] = await Promise.all([
       prisma.lead.count({
-        where: { ...assigned, convertedAt: null, notInterestedAt: null }
+        where: {
+          ...assigned,
+          convertedAt: null,
+          prospectCategory: { not: ProspectCategory.NOT_INTERESTED }
+        }
       }),
       prisma.lead.count({
-        where: { ...assigned, convertedAt: null, notInterestedAt: { not: null } }
+        where: {
+          ...assigned,
+          convertedAt: null,
+          prospectCategory: ProspectCategory.NOT_INTERESTED
+        }
       }),
       prisma.lead.count({
         where: {

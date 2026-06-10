@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { DealAmountField } from "../../components/pipeline/DealAmountField";
@@ -37,10 +37,17 @@ import {
   pendingPaymentForKind
 } from "../../components/pipeline/paymentSubmissionMetaItems";
 import { PaymentSubmissionReviewSection } from "../../components/pipeline/PaymentSubmissionReviewSection";
-import { MarkNotInterestedButton } from "../../components/pipeline/MarkNotInterestedButton";
+import { SetProspectCategoryDialog } from "../../components/pipeline/SetProspectCategoryDialog";
 import { NotInterestedArchiveBanner } from "../../components/pipeline/NotInterestedArchiveBanner";
+import { InterestedSampleStatusCard } from "../../components/pipeline/InterestedSampleStatusCard";
+import { ProspectCategoryTimeline } from "../../components/pipeline/ProspectCategoryTimeline";
+import { ProspectCategoryBadge } from "../../components/pipeline/ProspectCategoryBadge";
 import { RepDemoPreviewLink } from "../../components/pipeline/RepDemoPreviewLink";
-import { canMarkNotInterested } from "../../lib/leadNotInterested";
+import {
+  canChangeProspectCategory,
+  isProspectArchived,
+  prospectCategoryLabel
+} from "../../lib/leadProspectCategory";
 import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
@@ -87,7 +94,6 @@ import { WebsiteTemplateField } from "../../components/pipeline/WebsiteTemplateF
 
 export function PipelineDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const leadQr = useLeadQuery(id);
   const settingsQr = usePortalSettingsQuery();
   const tplQr = useWebsiteTemplatesQuery(true);
@@ -201,11 +207,11 @@ export function PipelineDetailPage() {
     );
   }
 
-  if (!lead.convertedAt && lead.notInterestedAt) {
+  if (!lead.convertedAt && isProspectArchived(lead)) {
     return (
       <div className="mx-auto max-w-2xl space-y-6">
         <Button variant="ghost" className="min-h-11 w-fit -ml-2" asChild>
-          <Link to="/portal/pipeline/not-interested">
+          <Link to="/portal/pipeline?view=leads&prospectCategory=NOT_INTERESTED">
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
             Not interested
           </Link>
@@ -218,9 +224,12 @@ export function PipelineDetailPage() {
           lead={lead}
           onRestored={() => {
             void leadQr.refetch();
-            navigate("/portal/pipeline", { replace: true });
           }}
         />
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold uppercase tracking-wide">Category history</h2>
+          <ProspectCategoryTimeline leadId={lead.id} />
+        </section>
         <PortalMetaGrid
           items={[
             { label: "Phone", value: lead.clientPhone ?? "—" },
@@ -338,23 +347,40 @@ export function PipelineDetailPage() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="space-y-2">
           <h1 className="text-xl font-semibold md:text-2xl">{lead.clientName}</h1>
           <p className="text-sm text-muted-foreground">
             {lead.convertedAt ? "Client" : "Lead"} · {leadStatusLabel(lead.status)}
           </p>
+          {!lead.convertedAt ? (
+            <p className="text-sm">
+              Category: <span className="font-semibold">{prospectCategoryLabel(lead.prospectCategory)}</span>
+            </p>
+          ) : null}
+          {!lead.convertedAt ? <ProspectCategoryBadge lead={lead} /> : null}
         </div>
-        {canMarkNotInterested(lead) ? (
-          <MarkNotInterestedButton
+        {!lead.convertedAt && canChangeProspectCategory(lead) ? (
+          <SetProspectCategoryDialog
             leadId={lead.id}
             clientName={lead.clientName}
-            variant="outline"
-            onMarked={() => navigate("/portal/pipeline", { replace: true })}
+            lead={lead}
+            triggerLabel="Change category"
+            onUpdated={() => void leadQr.refetch()}
           />
-        ) : !lead.convertedAt ? null : (
-          <p className="text-xs text-muted-foreground">Converted clients cannot be marked not interested.</p>
-        )}
+        ) : lead.convertedAt ? (
+          <p className="text-xs text-muted-foreground">Converted clients use the pipeline stages below.</p>
+        ) : null}
       </div>
+
+      {!lead.convertedAt ? (
+        <>
+          <InterestedSampleStatusCard lead={lead} onUpdated={() => void leadQr.refetch()} />
+          <section className="space-y-2">
+            <h2 className="text-sm font-bold uppercase tracking-wide">Category history</h2>
+            <ProspectCategoryTimeline leadId={lead.id} />
+          </section>
+        </>
+      ) : null}
 
       {settingsQr.isError ? (
         <QueryErrorAlert

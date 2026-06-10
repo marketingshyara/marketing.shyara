@@ -5,6 +5,7 @@ import {
   PaymentKind,
   PaymentVerificationStatus,
   Prisma,
+  ProspectCategory,
   UserRole
 } from "@prisma/client";
 import type { User } from "@prisma/client";
@@ -43,12 +44,18 @@ import {
 } from "../services/stageLocks.js";
 import { PortalNotificationKind } from "@prisma/client";
 import {
+  setLeadProspectCategory,
+  seedNewLeadProspectCategoryEvent
+} from "../services/leadProspectCategory.js";
+import {
   convertLeadBodySchema,
   createLeadBodySchema,
   leadsListQuerySchema,
   markNotInterestedBodySchema,
   markPaymentBodySchema,
   patchLeadBodySchema,
+  prospectCategoryEventsQuerySchema,
+  setProspectCategoryBodySchema,
   transitionBodySchema
 } from "../validators/schemas.js";
 
@@ -108,13 +115,24 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
               ? { status: query.status }
               : {};
 
+      const effectiveCategory =
+        query.view === "not_interested"
+          ? ProspectCategory.NOT_INTERESTED
+          : query.prospectCategory;
+
       const filters = {
-        ...(query.view === "leads"
-          ? { convertedAt: null, notInterestedAt: null }
+        ...(query.view === "leads" || query.view === "not_interested"
+          ? {
+              convertedAt: null,
+              ...(effectiveCategory
+                ? { prospectCategory: effectiveCategory }
+                : query.view === "leads"
+                  ? { prospectCategory: { not: ProspectCategory.NOT_INTERESTED } }
+                  : {})
+            }
           : {}),
-        ...(query.view === undefined ? { notInterestedAt: null } : {}),
-        ...(query.view === "not_interested"
-          ? { convertedAt: null, notInterestedAt: { not: null } }
+        ...(query.view === undefined
+          ? { prospectCategory: { not: ProspectCategory.NOT_INTERESTED } }
           : {}),
         ...(query.view === "clients" || query.view === "completed"
           ? { convertedAt: { not: null } }
@@ -214,21 +232,26 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         agreedTotalCents = body.agreedTotalCents;
       }
 
-      const lead = await app.prisma.lead.create({
-        data: {
-          createdByUserId: user.id,
-          assignedToUserId,
-          clientName: body.clientName,
-          clientEmail: body.clientEmail ?? undefined,
-          clientPhone: body.clientPhone ?? undefined,
-          notes: body.notes ?? undefined,
-          advanceAmountCents,
-          finalQuoteCents,
-          agreedTotalCents,
-          websiteTemplateId: body.websiteTemplateId ?? undefined,
-          status: LeadStatus.NEW
-        },
-        include: { websiteTemplate: true }
+      const lead = await app.prisma.$transaction(async (tx) => {
+        const row = await tx.lead.create({
+          data: {
+            createdByUserId: user.id,
+            assignedToUserId,
+            clientName: body.clientName,
+            clientEmail: body.clientEmail ?? undefined,
+            clientPhone: body.clientPhone ?? undefined,
+            notes: body.notes ?? undefined,
+            advanceAmountCents,
+            finalQuoteCents,
+            agreedTotalCents,
+            websiteTemplateId: body.websiteTemplateId ?? undefined,
+            status: LeadStatus.NEW,
+            prospectCategory: ProspectCategory.NEW_LEAD
+          },
+          include: { websiteTemplate: true }
+        });
+        await seedNewLeadProspectCategoryEvent(tx, row.id, user.id);
+        return row;
       });
 
       await logActivity({
@@ -298,10 +321,75 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
   );
 
   app.post(
+    "/api/leads/:id/prospect-category",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      const user = request.currentUser!;
+      const { id } = request.params as { id: string };
+      const body = setProspectCategoryBodySchema.parse(request.body ?? {});
+
+      const lead = await app.prisma.lead.findUnique({
+        where: { id },
+        include: { payments: true, project: true }
+      });
+      if (!lead) {
+        throw new HttpError(404, "NOT_FOUND", "Lead not found.");
+      }
+      assertLeadAccess(lead, user);
+
+      const updated = await setLeadProspectCategory({
+        prisma: app.prisma,
+        lead,
+        user,
+        body,
+        request
+      });
+
+      return reply.send({ lead: updated });
+    }
+  );
+
+  app.get(
+    "/api/leads/:id/prospect-category-events",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      const user = request.currentUser!;
+      const { id } = request.params as { id: string };
+      const query = prospectCategoryEventsQuerySchema.parse(request.query);
+
+      const lead =
+        user.role === UserRole.ADMIN
+          ? await app.prisma.lead.findUnique({ where: { id } })
+          : await app.prisma.lead.findFirst({
+              where: { id, ...repLeadScope(user.id) }
+            });
+      if (!lead) {
+        throw new HttpError(404, "NOT_FOUND", "Lead not found.");
+      }
+
+      const where = { leadId: id };
+      const total = await app.prisma.leadProspectCategoryEvent.count({ where });
+      const page = clampPage(query.page, query.pageSize, total);
+      const skip = (page - 1) * query.pageSize;
+      const items = await app.prisma.leadProspectCategoryEvent.findMany({
+        where,
+        skip,
+        take: query.pageSize,
+        orderBy: { createdAt: "desc" },
+        include: {
+          createdBy: { select: { id: true, displayName: true, email: true } }
+        }
+      });
+
+      return reply.send({ items, page, pageSize: query.pageSize, total });
+    }
+  );
+
+  /** @deprecated Use POST /api/leads/:id/prospect-category with category NOT_INTERESTED */
+  app.post(
     "/api/leads/:id/not-interested",
     { preHandler: [requireUser] },
     async (request, reply) => {
-      requireSalesRep(request);
       const user = request.currentUser!;
       const { id } = request.params as { id: string };
       const body = markNotInterestedBodySchema.parse(request.body ?? {});
@@ -314,150 +402,48 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         throw new HttpError(404, "NOT_FOUND", "Lead not found.");
       }
       assertLeadAccess(lead, user);
-      if (lead.notInterestedAt != null) {
-        throw new HttpError(409, "ALREADY_NOT_INTERESTED", "This prospect is already marked not interested.");
-      }
-      assertLeadNotInterestedEligible(lead);
 
-      const note = body.note?.trim() ? body.note.trim() : null;
-      const now = new Date();
-
-      const updated = await app.prisma.$transaction(async (tx) => {
-        const claim = await tx.lead.updateMany({
-          where: {
-            id,
-            notInterestedAt: null,
-            convertedAt: null,
-            updatedAt: lead.updatedAt
-          },
-          data: {
-            notInterestedAt: now,
-            notInterestedNote: note,
-            notInterestedByUserId: user.id
-          }
-        });
-        if (claim.count === 0) {
-          const current = await tx.lead.findUnique({ where: { id } });
-          if (current?.notInterestedAt != null) {
-            throw new HttpError(
-              409,
-              "ALREADY_NOT_INTERESTED",
-              "This prospect is already marked not interested."
-            );
-          }
-          throw new HttpError(409, "CONCURRENT_MODIFICATION", "Lead was modified concurrently.");
-        }
-
-        const row = await tx.lead.findUniqueOrThrow({
-          where: { id },
-          include: { payments: { orderBy: { markedAt: "desc" } }, project: true }
-        });
-        await logActivity({
-          prisma: app.prisma,
-          tx,
-          userId: user.id,
-          action: ActivityAction.UPDATE,
-          entityType: "Lead",
-          entityId: id,
-          before: {
-            clientName: lead.clientName,
-            notInterestedAt: lead.notInterestedAt,
-            notInterestedNote: lead.notInterestedNote
-          },
-          after: {
-            clientName: row.clientName,
-            notInterestedAt: row.notInterestedAt,
-            notInterestedNote: row.notInterestedNote
-          },
-          request
-        });
-        return row;
+      const updated = await setLeadProspectCategory({
+        prisma: app.prisma,
+        lead,
+        user,
+        body: {
+          category: ProspectCategory.NOT_INTERESTED,
+          note: body.note ?? undefined
+        },
+        request
       });
 
       return reply.send({ lead: updated });
     }
   );
 
+  /** @deprecated Use POST /api/leads/:id/prospect-category with another category */
   app.post(
     "/api/leads/:id/restore-interest",
     { preHandler: [requireUser] },
     async (request, reply) => {
-      requireSalesRep(request);
       const user = request.currentUser!;
       const { id } = request.params as { id: string };
 
       const lead = await app.prisma.lead.findUnique({
         where: { id },
-        include: { payments: { orderBy: { markedAt: "desc" } }, project: true }
+        include: { payments: true, project: true }
       });
       if (!lead) {
         throw new HttpError(404, "NOT_FOUND", "Lead not found.");
       }
       assertLeadAccess(lead, user);
-      if (lead.notInterestedAt == null) {
+      if (lead.prospectCategory !== ProspectCategory.NOT_INTERESTED) {
         throw new HttpError(400, "NOT_NOT_INTERESTED", "This prospect is not marked not interested.");
       }
-      if (lead.convertedAt != null) {
-        throw new HttpError(400, "LEAD_ALREADY_CONVERTED", "Converted clients cannot be restored from not interested.");
-      }
 
-      const updated = await app.prisma.$transaction(async (tx) => {
-        const claim = await tx.lead.updateMany({
-          where: {
-            id,
-            notInterestedAt: { not: null },
-            convertedAt: null,
-            updatedAt: lead.updatedAt
-          },
-          data: {
-            notInterestedAt: null,
-            notInterestedNote: null,
-            notInterestedByUserId: null
-          }
-        });
-        if (claim.count === 0) {
-          const current = await tx.lead.findUnique({ where: { id } });
-          if (current?.notInterestedAt == null) {
-            throw new HttpError(
-              400,
-              "NOT_NOT_INTERESTED",
-              "This prospect is not marked not interested."
-            );
-          }
-          if (current?.convertedAt != null) {
-            throw new HttpError(
-              400,
-              "LEAD_ALREADY_CONVERTED",
-              "Converted clients cannot be restored from not interested."
-            );
-          }
-          throw new HttpError(409, "CONCURRENT_MODIFICATION", "Lead was modified concurrently.");
-        }
-
-        const row = await tx.lead.findUniqueOrThrow({
-          where: { id },
-          include: { payments: { orderBy: { markedAt: "desc" } }, project: true }
-        });
-        await logActivity({
-          prisma: app.prisma,
-          tx,
-          userId: user.id,
-          action: ActivityAction.UPDATE,
-          entityType: "Lead",
-          entityId: id,
-          before: {
-            clientName: lead.clientName,
-            notInterestedAt: lead.notInterestedAt,
-            notInterestedNote: lead.notInterestedNote
-          },
-          after: {
-            clientName: row.clientName,
-            notInterestedAt: null,
-            notInterestedNote: null
-          },
-          request
-        });
-        return row;
+      const updated = await setLeadProspectCategory({
+        prisma: app.prisma,
+        lead,
+        user,
+        body: { category: ProspectCategory.NEW_LEAD },
+        request
       });
 
       return reply.send({ lead: updated });

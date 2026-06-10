@@ -1,8 +1,8 @@
-import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import type { Lead } from "../../types";
-import { RestoreLeadButton } from "./RestoreLeadButton";
+import { isProspectArchived } from "../../lib/leadProspectCategory";
+import { SetProspectCategoryDialog } from "./SetProspectCategoryDialog";
 import { cn } from "@/lib/utils";
 import { PORTAL_WAITING_BANNER, PORTAL_WAITING_TEXT } from "../../theme/statusColors";
 
@@ -14,7 +14,7 @@ type Props = {
 };
 
 export function NotInterestedArchiveBanner({ lead, onRestored, actorMode = "rep" }: Props) {
-  if (lead.notInterestedAt == null) return null;
+  if (!isProspectArchived(lead)) return null;
 
   return (
     <div className={cn("space-y-3 px-4 py-3 shadow-[2px_2px_0_0_#0A0A0A]", PORTAL_WAITING_BANNER)} role="status">
@@ -22,30 +22,36 @@ export function NotInterestedArchiveBanner({ lead, onRestored, actorMode = "rep"
         <p className="font-bold uppercase tracking-wide text-[#0A0A0A]">Marked not interested</p>
         <p>
           {actorMode === "admin"
-            ? "Archived by the rep. They must restore it to their Prospects list before pipeline work can continue."
-            : "Hidden from your active Prospects list. Restore to continue working this prospect."}
+            ? "Archived by the rep. Change category to resume pipeline work."
+            : "Hidden from your active Prospects sub-tabs. Change category to continue working this prospect."}
         </p>
-        <p className="text-xs">
-          Marked {format(new Date(lead.notInterestedAt), "d MMM yyyy, h:mm a")}
-        </p>
-        {lead.notInterestedNote ? (
-          <p className="text-sm">
-            <span className="font-bold">Note:</span> {lead.notInterestedNote}
-          </p>
-        ) : null}
       </div>
       {actorMode === "rep" ? (
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <RestoreLeadButton
+          <SetProspectCategoryDialog
             leadId={lead.id}
             clientName={lead.clientName}
-            onRestored={onRestored}
+            lead={lead}
+            defaultCategory="FOLLOW_UP"
+            triggerLabel="Change category"
+            onUpdated={() => onRestored?.()}
           />
           <Button asChild variant="ghost" className="min-h-11 font-bold uppercase">
-            <Link to="/portal/pipeline/not-interested">View not interested list</Link>
+            <Link to="/portal/pipeline?view=leads&prospectCategory=NOT_INTERESTED">
+              View not interested list
+            </Link>
           </Button>
         </div>
-      ) : null}
+      ) : (
+        <SetProspectCategoryDialog
+          leadId={lead.id}
+          clientName={lead.clientName}
+          lead={lead}
+          defaultCategory="FOLLOW_UP"
+          triggerLabel="Change category"
+          onUpdated={() => onRestored?.()}
+        />
+      )}
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   LeadStatus,
-  PaymentVerificationStatus
+  PaymentVerificationStatus,
+  ProspectCategory
 } from "@prisma/client";
 import {
   assertLeadMutable,
@@ -73,7 +74,7 @@ describe("assertLeadMutable on not interested prospects", () => {
         {
           status: LeadStatus.NEW,
           convertedAt: null,
-          notInterestedAt: new Date()
+          prospectCategory: ProspectCategory.NOT_INTERESTED
         } as Parameters<typeof assertLeadMutable>[0],
         settings
       )
@@ -83,7 +84,7 @@ describe("assertLeadMutable on not interested prospects", () => {
         {
           status: LeadStatus.NEW,
           convertedAt: null,
-          notInterestedAt: new Date()
+          prospectCategory: ProspectCategory.NOT_INTERESTED
         } as Parameters<typeof assertLeadMutable>[0],
         settings
       );

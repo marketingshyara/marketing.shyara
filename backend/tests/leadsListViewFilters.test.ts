@@ -1,4 +1,4 @@
-import { LeadStatus } from "@prisma/client";
+import { LeadStatus, ProspectCategory } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import { leadsListQuerySchema } from "../src/validators/schemas.js";
 
@@ -31,6 +31,27 @@ describe("leadsListQuerySchema view filters", () => {
         pageSize: 20,
         view: "clients",
         status: LeadStatus.DEPLOYED
+      })
+    ).toThrow();
+  });
+
+  it("accepts prospectCategory with view=leads", () => {
+    const q = leadsListQuerySchema.parse({
+      page: 1,
+      pageSize: 20,
+      view: "leads",
+      prospectCategory: ProspectCategory.INTERESTED
+    });
+    expect(q.prospectCategory).toBe(ProspectCategory.INTERESTED);
+  });
+
+  it("rejects prospectCategory with view=clients", () => {
+    expect(() =>
+      leadsListQuerySchema.parse({
+        page: 1,
+        pageSize: 20,
+        view: "clients",
+        prospectCategory: ProspectCategory.NEW_LEAD
       })
     ).toThrow();
   });

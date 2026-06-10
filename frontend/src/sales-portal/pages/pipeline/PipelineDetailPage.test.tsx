@@ -23,7 +23,8 @@ vi.mock("../../hooks/useSalesQueries", () => ({
   useConvertLeadMutation: (...args: unknown[]) => useConvertLeadMutation(...args),
   useMarkPaymentMutation: (...args: unknown[]) => useMarkPaymentMutation(...args),
   usePatchProjectMutation: (...args: unknown[]) => usePatchProjectMutation(...args),
-  useMarkNotInterestedMutation: () => ({ mutate: vi.fn(), isPending: false })
+  useSetProspectCategoryMutation: () => ({ mutate: vi.fn(), isPending: false }),
+  useProspectCategoryEventsQuery: () => ({ data: { items: [] }, isLoading: false, isError: false })
 }));
 
 const mockLead: Lead = {
@@ -41,6 +42,9 @@ const mockLead: Lead = {
   websiteTemplateId: null,
   contentReceivedAt: null,
   convertedAt: null,
+  prospectCategory: "NEW_LEAD",
+  callbackScheduledAt: null,
+  interestedSampleShared: null,
   whatsappGroupLink: null,
   whatsappVerifiedAt: null,
   demoFinalizedAt: null,

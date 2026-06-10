@@ -22,7 +22,23 @@ const run = process.env.E2E_RUN_PIPELINE === "1";
   await expect(page.getByRole("heading", { name: /Pipeline/i })).toBeVisible();
 });
 
-(run ? test : test.skip)("not interested page loads for rep", async ({ page, request }) => {
+(run ? test : test.skip)("prospect category sub-tabs load for rep", async ({ page, request }) => {
+  const loginRes = await request.post("/api/auth/login", {
+    data: { email: REP_EMAIL, password: REP_PASSWORD }
+  });
+  if (!loginRes.ok()) {
+    test.skip();
+    return;
+  }
+  await page.goto("/portal/pipeline?view=leads&prospectCategory=NOT_INTERESTED");
+  await expect(page.getByRole("tablist", { name: "Prospect categories" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /Not interested/i })).toBeVisible();
+});
+
+(run ? test : test.skip)("legacy not-interested URL redirects to category sub-tab", async ({
+  page,
+  request
+}) => {
   const loginRes = await request.post("/api/auth/login", {
     data: { email: REP_EMAIL, password: REP_PASSWORD }
   });
@@ -31,7 +47,7 @@ const run = process.env.E2E_RUN_PIPELINE === "1";
     return;
   }
   await page.goto("/portal/pipeline/not-interested");
-  await expect(page.getByRole("heading", { name: /Not interested/i })).toBeVisible();
+  await expect(page).toHaveURL(/prospectCategory=NOT_INTERESTED/);
 });
 
 (run ? test : test.skip)("legacy leads URL redirects to pipeline", async ({ page, request }) => {

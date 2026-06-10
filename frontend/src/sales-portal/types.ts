@@ -13,6 +13,14 @@ export type PaymentKind = "ADVANCE" | "FINAL";
 
 export type PaymentVerificationStatus = "PENDING" | "VERIFIED" | "REJECTED";
 
+export type ProspectCategory =
+  | "NEW_LEAD"
+  | "CALLBACK_REQUESTED"
+  | "NO_ANSWER"
+  | "INTERESTED"
+  | "FOLLOW_UP"
+  | "NOT_INTERESTED";
+
 export type ActivityAction =
   | "LOGIN"
   | "LOGOUT"
@@ -146,8 +154,9 @@ export interface Lead {
   websiteTemplateId: string | null;
   contentReceivedAt: string | null;
   convertedAt: string | null;
-  notInterestedAt?: string | null;
-  notInterestedNote?: string | null;
+  prospectCategory: ProspectCategory;
+  callbackScheduledAt: string | null;
+  interestedSampleShared: boolean | null;
   clientDetailsSubmittedAt: string | null;
   clientDetailsVerifiedAt: string | null;
   whatsappGroupLink: string | null;
@@ -260,14 +269,27 @@ export interface TeamRepSummary {
 
 export type RepLeadDisposition = "prospect" | "not_interested" | "client" | "settled";
 
+export interface LeadProspectCategoryEvent {
+  id: string;
+  leadId: string;
+  category: ProspectCategory;
+  note: string | null;
+  callbackAt: string | null;
+  sampleShared: boolean | null;
+  createdAt: string;
+  createdByUserId: string;
+  createdBy: Pick<SessionUser, "id" | "displayName" | "email">;
+}
+
 export interface TeamRepLeadItem {
   id: string;
   clientName: string;
   status: LeadStatus;
   createdAt: string;
   convertedAt: string | null;
-  notInterestedAt: string | null;
-  notInterestedNote: string | null;
+  prospectCategory: ProspectCategory;
+  callbackScheduledAt: string | null;
+  interestedSampleShared: boolean | null;
   disposition: RepLeadDisposition;
   pipelineSummary: LeadPipelineSummary | null;
 }
