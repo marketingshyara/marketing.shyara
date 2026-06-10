@@ -16,7 +16,7 @@ export const SOCIAL_SHARE = {
   },
   contact: {
     title: "Shyara — Contact",
-    description: "Message us on WhatsApp, email, or phone.",
+    description: "Message us on WhatsApp or email.",
   },
   legal: {
     title: "Shyara — Legal",

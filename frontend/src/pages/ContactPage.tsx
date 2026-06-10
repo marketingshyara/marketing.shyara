@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Clock, Mail, MessageCircle, Phone } from "lucide-react";
+import { Clock, Mail, MessageCircle } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { SOCIAL_SHARE } from "@/constants/socialShare";
 import { SITE } from "@/constants/site";
@@ -55,13 +55,13 @@ export default function ContactPage() {
             </ul>
           </motion.div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
             <motion.article
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 }}
               data-testid="contact-channel-whatsapp"
-              className="flex flex-col border-2 border-[#0A0A0A] bg-white p-8 shadow-[6px_6px_0px_0px_#0a0a0a] lg:col-span-1"
+              className="flex min-h-[280px] flex-col border-2 border-[#0A0A0A] bg-white p-8 shadow-[6px_6px_0px_0px_#0a0a0a] md:min-h-[300px]"
             >
               <MessageCircle className="text-[#25D366]" size={32} strokeWidth={2.5} />
               <h2 className="mt-5 font-heading text-xl font-black tracking-tight">
@@ -77,7 +77,7 @@ export default function ContactPage() {
                 type="button"
                 data-testid="contact-whatsapp-btn"
                 onClick={() => openWhatsApp(contactWhatsAppMessages.main)}
-                className="mt-8 inline-flex w-fit items-center gap-2 bg-[#25D366] px-6 py-4 font-bold uppercase tracking-wide text-white transition-all hover:-translate-y-0.5 hover:bg-[#1DA851] hover:shadow-[4px_4px_0px_0px_#0a0a0a]"
+                className="mt-8 inline-flex w-full items-center justify-center gap-2 bg-[#25D366] px-6 py-4 font-bold uppercase tracking-wide text-white transition-all hover:-translate-y-0.5 hover:bg-[#1DA851] hover:shadow-[4px_4px_0px_0px_#0a0a0a] sm:w-fit sm:justify-start"
               >
                 <MessageCircle size={18} strokeWidth={2.5} />
                 {channels.whatsapp.action}
@@ -89,7 +89,7 @@ export default function ContactPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
               data-testid="contact-channel-email"
-              className="flex flex-col border-2 border-[#0A0A0A] bg-white p-8 shadow-[6px_6px_0px_0px_#0a0a0a]"
+              className="flex min-h-[280px] flex-col border-2 border-[#0A0A0A] bg-white p-8 shadow-[6px_6px_0px_0px_#0a0a0a] md:min-h-[300px]"
             >
               <Mail className="text-[#FF3333]" size={32} strokeWidth={2.5} />
               <h2 className="mt-5 font-heading text-xl font-black tracking-tight">
@@ -105,45 +105,32 @@ export default function ContactPage() {
               <p className="mt-4 flex-1 text-sm leading-relaxed text-[#0A0A0A]/70">
                 {channels.email.hint}
               </p>
-            </motion.article>
-
-            <motion.article
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-              data-testid="contact-channel-phone"
-              className="flex flex-col border-2 border-[#0A0A0A] bg-white p-8 shadow-[6px_6px_0px_0px_#0a0a0a]"
-            >
-              <Phone className="text-[#0A0A0A]/70" size={32} strokeWidth={2.5} />
-              <h2 className="mt-5 font-heading text-xl font-black tracking-tight">Call us</h2>
               <a
-                href={`tel:${SITE.phone.replace(/\s/g, "")}`}
-                data-testid="contact-phone-link"
-                className="mt-4 font-bold text-[#0A0A0A] underline decoration-[#FF3333]/40 underline-offset-4 transition-colors hover:text-[#FF3333]"
+                href={`mailto:${SITE.email}`}
+                className="mt-8 inline-flex w-full items-center justify-center border-2 border-[#0A0A0A] px-6 py-4 font-bold uppercase tracking-wide text-[#0A0A0A] transition-all hover:-translate-y-0.5 hover:border-[#FF3333] hover:text-[#FF3333] hover:shadow-[4px_4px_0px_0px_#0a0a0a] sm:w-fit sm:justify-start"
               >
-                {SITE.phone}
+                Send email
               </a>
-              <p className="mt-4 flex-1 text-sm leading-relaxed text-[#0A0A0A]/70">
-                Prefer a quick call? Reach us during business hours.
-              </p>
-            </motion.article>
-
-            <motion.article
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              data-testid="contact-channel-hours"
-              className="flex flex-col border-2 border-[#0A0A0A] bg-[#0A0A0A] p-8 text-white shadow-[6px_6px_0px_0px_#ff3333] md:col-span-2 lg:col-span-3"
-            >
-              <Clock className="text-[#FF3333]" size={32} strokeWidth={2.5} />
-              <h2 className="mt-5 font-heading text-xl font-black tracking-tight">
-                {channels.hours.title}
-              </h2>
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
-                {channels.hours.body}
-              </p>
             </motion.article>
           </div>
+
+          <motion.article
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            data-testid="contact-channel-hours"
+            className="mx-auto mt-6 flex max-w-4xl flex-col border-2 border-[#0A0A0A] bg-[#0A0A0A] p-8 text-white shadow-[6px_6px_0px_0px_#ff3333] md:flex-row md:items-center md:gap-8"
+          >
+            <Clock className="shrink-0 text-[#FF3333]" size={32} strokeWidth={2.5} />
+            <div>
+              <h2 className="font-heading text-xl font-black tracking-tight md:mt-0">
+                {channels.hours.title}
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-white/75 md:mt-2 md:text-base">
+                {channels.hours.body}
+              </p>
+            </div>
+          </motion.article>
         </div>
       </section>
 

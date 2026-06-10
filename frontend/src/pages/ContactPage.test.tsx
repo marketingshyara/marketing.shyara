@@ -24,9 +24,11 @@ describe("ContactPage", () => {
     expect(screen.getByTestId("contact-channel-whatsapp")).toBeInTheDocument();
     expect(screen.getByTestId("contact-email-link")).toHaveAttribute(
       "href",
-      "mailto:marketing.shyara@gmail.com"
+      "mailto:sales@shyara.co.in"
     );
-    expect(screen.getByText(/We are not sure what our website should include/i)).toBeInTheDocument();
+    expect(screen.queryByTestId("contact-channel-phone")).not.toBeInTheDocument();
+    expect(screen.getByText(/What should our website include/i)).toBeInTheDocument();
+    expect(screen.getByText(/How much does a website cost/i)).toBeInTheDocument();
   });
 
   it("opens WhatsApp with the contact page message", async () => {
