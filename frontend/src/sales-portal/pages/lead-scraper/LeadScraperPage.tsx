@@ -191,7 +191,18 @@ export function LeadScraperPage() {
               `Sweep stopped early — ${data.categoriesCompleted ?? "?"}/${data.totalCategories ?? SWEEP_CATEGORY_COUNT} categories (quota limit).`
             );
           } else if (data.totalResults === 0) {
-            toast.message("No new places found for you this search.");
+            const orgHidden = data.orgUnavailableCount ?? 0;
+            if (orgHidden > 0) {
+              toast.message(
+                `No new places for you — ${orgHidden} result${orgHidden === 1 ? "" : "s"} already claimed by other reps or in pipeline.`
+              );
+            } else {
+              toast.message("No new places found for you this search.");
+            }
+          } else if ((data.orgUnavailableCount ?? 0) > 0) {
+            toast.message(
+              `${data.orgUnavailableCount} place${data.orgUnavailableCount === 1 ? "" : "s"} hidden — already claimed by another rep or in pipeline.`
+            );
           }
         }
       }
@@ -241,8 +252,9 @@ export function LeadScraperPage() {
 
   const usage = usageQuery.data;
   const isSweep = !keyword.trim();
-  const quotaBlocked =
-    usage != null && (usage.user.remaining <= 0 || usage.global.remaining <= 0);
+  const userQuotaBlocked = usage != null && usage.user.remaining <= 0;
+  const orgQuotaBlocked = usage != null && usage.global.remaining <= 0;
+  const quotaBlocked = userQuotaBlocked || orgQuotaBlocked;
   const sweepLowQuota =
     usage != null &&
     !quotaBlocked &&
@@ -250,7 +262,7 @@ export function LeadScraperPage() {
   const searchDisabled = searchMutation.isPending || quotaBlocked;
 
   const quotaWarning =
-    usage && !quotaBlocked && (usage.user.remaining <= 5 || usage.global.remaining <= 10);
+    usage && !quotaBlocked && usage.user.remaining > 0 && usage.user.remaining <= 5;
 
   const pastPageRows = pastQuery.data?.leads ?? [];
 
@@ -278,11 +290,8 @@ export function LeadScraperPage() {
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#FF3333]" aria-hidden />
           <p>
-            {usage!.user.remaining <= 0
-              ? "Your monthly search limit is used up."
-              : usage!.global.remaining <= 0
-                ? "Organization search pool is exhausted."
-                : `${usage!.user.remaining} personal searches left${usage!.global.remaining <= 10 ? ` · org pool ${usage!.global.remaining} left` : ""}. Contact admin if you need more.`}
+            {usage!.user.remaining} search{usage!.user.remaining === 1 ? "" : "es"} left this
+            month. Contact admin if you need more.
           </p>
         </div>
       )}
@@ -294,10 +303,9 @@ export function LeadScraperPage() {
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#FF3333]" aria-hidden />
           <p>
-            {usage!.global.remaining <= 0
-              ? `Organization search pool exhausted (${usage!.global.used}/${usage!.global.limit}). Resets on ${usage!.resetsOn}.`
-              : `Monthly search limit reached (${usage!.user.used}/${usage!.user.limit}). Resets on ${usage!.resetsOn}.`}{" "}
-            Contact admin for buffer pool access.
+            {userQuotaBlocked
+              ? `Monthly search limit reached (${usage!.user.used}/${usage!.user.limit}). Resets on ${usage!.resetsOn}. Contact admin for more searches.`
+              : "Searches are temporarily unavailable. Contact admin — they can restore access or adjust your quota."}
           </p>
         </div>
       )}

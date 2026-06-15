@@ -19,6 +19,8 @@ export type ScraperSearchResponse = {
   rawResultCount: number;
   totalResults: number;
   duplicateCount?: number;
+  /** Places already claimed by another rep or in pipeline — hidden from this search. */
+  orgUnavailableCount?: number;
   noWebsiteCount: number;
   searchedAt?: string;
   ageInDays?: number;

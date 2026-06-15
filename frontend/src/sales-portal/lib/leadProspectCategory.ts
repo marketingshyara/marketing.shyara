@@ -61,6 +61,9 @@ export function canMarkNotInterested(lead: LeadProspectShape): boolean {
   return true;
 }
 
+/** Mirrors server assertLeadDeletable — same rules as not-interested eligibility. */
+export const canDeleteLead = canMarkNotInterested;
+
 export function canChangeProspectCategory(lead: LeadProspectShape): boolean {
   if (lead.convertedAt != null) return false;
   if (lead.status === "COMMISSION_PAID") return false;

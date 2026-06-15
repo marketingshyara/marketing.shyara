@@ -1,5 +1,7 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import type { ScraperPlaceResult } from "./types.js";
+
+export type PlaceClaimResult = "claimed" | "already_mine" | "taken_by_other" | "in_pipeline";
 
 export async function upsertScraperPlace(
   prisma: PrismaClient,
@@ -36,27 +38,68 @@ export async function upsertScraperPlace(
   });
 }
 
+export async function isPlaceInPipeline(
+  prisma: PrismaClient,
+  placeId: string
+): Promise<boolean> {
+  const row = await prisma.lead.findUnique({
+    where: { googlePlaceId: placeId },
+    select: { id: true }
+  });
+  return !!row;
+}
+
+export async function getPlaceClaimUserId(
+  prisma: PrismaClient,
+  placeId: string
+): Promise<string | null> {
+  const row = await prisma.leadScraperPlaceView.findUnique({
+    where: { placeId },
+    select: { userId: true }
+  });
+  return row?.userId ?? null;
+}
+
 export async function hasUserSeenPlace(
   prisma: PrismaClient,
   userId: string,
   placeId: string
 ): Promise<boolean> {
-  const row = await prisma.leadScraperPlaceView.findUnique({
-    where: { userId_placeId: { userId, placeId } }
-  });
-  return !!row;
+  const ownerId = await getPlaceClaimUserId(prisma, placeId);
+  return ownerId === userId;
 }
 
-export async function markUserSeenPlace(
+/** First rep to claim a place owns it org-wide; pipeline imports block all reps. */
+export async function tryClaimPlaceForUser(
   prisma: PrismaClient,
   userId: string,
   placeId: string
-): Promise<void> {
-  await prisma.leadScraperPlaceView.upsert({
-    where: { userId_placeId: { userId, placeId } },
-    create: { userId, placeId },
-    update: { viewedAt: new Date() }
+): Promise<PlaceClaimResult> {
+  if (await isPlaceInPipeline(prisma, placeId)) {
+    return "in_pipeline";
+  }
+
+  const existing = await prisma.leadScraperPlaceView.findUnique({
+    where: { placeId },
+    select: { userId: true }
   });
+  if (existing) {
+    return existing.userId === userId ? "already_mine" : "taken_by_other";
+  }
+
+  try {
+    await prisma.leadScraperPlaceView.create({
+      data: { userId, placeId }
+    });
+    return "claimed";
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const ownerId = await getPlaceClaimUserId(prisma, placeId);
+      if (ownerId === userId) return "already_mine";
+      return "taken_by_other";
+    }
+    throw err;
+  }
 }
 
 export async function persistSearchResultsForUser(
@@ -64,22 +107,28 @@ export async function persistSearchResultsForUser(
   userId: string,
   leads: ScraperPlaceResult[],
   sourceSearchCacheId: string | null
-): Promise<{ newLeads: ScraperPlaceResult[]; duplicateCount: number }> {
+): Promise<{
+  newLeads: ScraperPlaceResult[];
+  duplicateCount: number;
+  orgUnavailableCount: number;
+}> {
   const newLeads: ScraperPlaceResult[] = [];
   let duplicateCount = 0;
+  let orgUnavailableCount = 0;
 
   for (const lead of leads) {
     await upsertScraperPlace(prisma, lead, sourceSearchCacheId);
-    const seen = await hasUserSeenPlace(prisma, userId, lead.placeId);
-    if (!seen) {
-      await markUserSeenPlace(prisma, userId, lead.placeId);
+    const claim = await tryClaimPlaceForUser(prisma, userId, lead.placeId);
+    if (claim === "claimed") {
       newLeads.push(lead);
-    } else {
+    } else if (claim === "already_mine") {
       duplicateCount++;
+    } else {
+      orgUnavailableCount++;
     }
   }
 
-  return { newLeads, duplicateCount };
+  return { newLeads, duplicateCount, orgUnavailableCount };
 }
 
 export type PastPlacesQuery = {

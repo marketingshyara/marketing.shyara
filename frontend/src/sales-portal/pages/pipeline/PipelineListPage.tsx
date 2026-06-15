@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { Plus, Search } from "lucide-react";
@@ -6,6 +6,7 @@ import { useDebounced } from "../../hooks/useDebounced";
 import { useLeadsQuery } from "../../hooks/useSalesQueries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,11 +14,13 @@ import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
 import { PortalPageHeader } from "../../components/PortalPageHeader";
 import { SetProspectCategoryDialog } from "../../components/pipeline/SetProspectCategoryDialog";
+import { DeleteLeadsDialog } from "../../components/pipeline/DeleteLeadsDialog";
 import { ProspectCategoryBadge } from "../../components/pipeline/ProspectCategoryBadge";
 import { PipelineListSummary } from "../../components/pipeline/PipelineListSummary";
 import {
   PROSPECT_CATEGORIES,
   canChangeProspectCategory,
+  canDeleteLead,
   prospectCategoryLabel,
   prospectCategoryShortLabel
 } from "../../lib/leadProspectCategory";
@@ -61,6 +64,7 @@ export function PipelineListPage() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
   const [searchInput, setSearchInput] = useState("");
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
   const search = useDebounced(searchInput, 300);
   const searchTrimmed = search.trim();
   const searchTooShort = searchTrimmed.length > 0 && searchTrimmed.length < 2;
@@ -68,6 +72,10 @@ export function PipelineListPage() {
   useEffect(() => {
     setPage(1);
   }, [tab, prospectCategory, searchTrimmed]);
+
+  useEffect(() => {
+    setSelectedLeadIds(new Set());
+  }, [tab, prospectCategory, page, searchTrimmed]);
 
   useEffect(() => {
     if (isViewTab(urlView)) setTab(urlView);
@@ -154,6 +162,41 @@ export function PipelineListPage() {
   };
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
+
+  const deletableOnPage = useMemo(
+    () => (data?.items ?? []).filter((lead) => canDeleteLead(lead)),
+    [data?.items]
+  );
+  const selectedIds = useMemo(
+    () => [...selectedLeadIds].filter((id) => deletableOnPage.some((l) => l.id === id)),
+    [selectedLeadIds, deletableOnPage]
+  );
+  const selectedNames = useMemo(
+    () =>
+      selectedIds
+        .map((id) => data?.items.find((l) => l.id === id)?.clientName)
+        .filter((n): n is string => Boolean(n)),
+    [selectedIds, data?.items]
+  );
+  const allDeletableSelected =
+    deletableOnPage.length > 0 && deletableOnPage.every((l) => selectedLeadIds.has(l.id));
+
+  const toggleLeadSelection = (leadId: string) => {
+    setSelectedLeadIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(leadId)) next.delete(leadId);
+      else next.add(leadId);
+      return next;
+    });
+  };
+
+  const toggleAllDeletable = (checked: boolean) => {
+    if (!checked) {
+      setSelectedLeadIds(new Set());
+      return;
+    }
+    setSelectedLeadIds(new Set(deletableOnPage.map((l) => l.id)));
+  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
@@ -248,6 +291,32 @@ export function PipelineListPage() {
         ) : null}
       </div>
 
+      {tab === "leads" && deletableOnPage.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 px-3 py-2">
+          <label className="flex min-h-11 items-center gap-2 text-sm font-medium">
+            <Checkbox
+              checked={allDeletableSelected}
+              onCheckedChange={(c) => toggleAllDeletable(c === true)}
+              aria-label="Select all deletable prospects on this page"
+            />
+            Select all on page
+          </label>
+          {selectedIds.length > 0 ? (
+            <DeleteLeadsDialog
+              leadIds={selectedIds}
+              clientNames={selectedNames}
+              variant="destructive"
+              onDeleted={() => {
+                setSelectedLeadIds(new Set());
+                void refetch();
+              }}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">Select prospects to delete</p>
+          )}
+        </div>
+      ) : null}
+
       {isError ? (
         <QueryErrorAlert message="Could not load pipeline." onRetry={() => void refetch()} />
       ) : null}
@@ -287,6 +356,7 @@ export function PipelineListPage() {
               };
               const statusChip = listStatusChip(summary, undefined, "rep");
               const categoryChangeable = tab === "leads" && canChangeProspectCategory(lead);
+              const deletable = tab === "leads" && canDeleteLead(lead);
               const callbackHint =
                 lead.prospectCategory === "CALLBACK_REQUESTED" && lead.callbackScheduledAt
                   ? format(new Date(lead.callbackScheduledAt), "d MMM, h:mm a")
@@ -294,26 +364,53 @@ export function PipelineListPage() {
               return (
                 <div key={lead.id} className="space-y-2">
                   <ProspectCategoryBadge lead={lead} />
-                  <PipelineListSummary
-                    clientName={lead.clientName}
-                    summary={summary}
-                    agreedTotalCents={lead.agreedTotalCents}
-                    href={`/portal/pipeline/${lead.id}`}
-                    statusChip={statusChip}
-                    detailLine={callbackHint ? <span>{callbackHint}</span> : undefined}
-                    trailingAction={
-                      categoryChangeable ? (
-                        <SetProspectCategoryDialog
-                          leadId={lead.id}
-                          clientName={lead.clientName}
-                          lead={lead}
-                          variant="listRow"
-                          triggerLabel="Set category"
-                          onUpdated={() => void refetch()}
+                  <div className="flex min-w-0 items-stretch gap-2">
+                    {deletable ? (
+                      <div className="flex shrink-0 items-center px-1">
+                        <Checkbox
+                          checked={selectedLeadIds.has(lead.id)}
+                          onCheckedChange={() => toggleLeadSelection(lead.id)}
+                          aria-label={`Select ${lead.clientName}`}
+                          className="min-h-11 min-w-11"
                         />
-                      ) : null
-                    }
-                  />
+                      </div>
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <PipelineListSummary
+                        clientName={lead.clientName}
+                        summary={summary}
+                        agreedTotalCents={lead.agreedTotalCents}
+                        href={`/portal/pipeline/${lead.id}`}
+                        statusChip={statusChip}
+                        detailLine={callbackHint ? <span>{callbackHint}</span> : undefined}
+                        trailingAction={
+                          deletable || categoryChangeable ? (
+                            <div className="flex w-full flex-col gap-2 sm:w-auto">
+                              {categoryChangeable ? (
+                                <SetProspectCategoryDialog
+                                  leadId={lead.id}
+                                  clientName={lead.clientName}
+                                  lead={lead}
+                                  variant="listRow"
+                                  triggerLabel="Set category"
+                                  onUpdated={() => void refetch()}
+                                />
+                              ) : null}
+                              {deletable ? (
+                                <DeleteLeadsDialog
+                                  leadIds={[lead.id]}
+                                  clientNames={[lead.clientName]}
+                                  variant="listRow"
+                                  triggerLabel="Delete"
+                                  onDeleted={() => void refetch()}
+                                />
+                              ) : null}
+                            </div>
+                          ) : null
+                        }
+                      />
+                    </div>
+                  </div>
                 </div>
               );
             })

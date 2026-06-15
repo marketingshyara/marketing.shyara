@@ -141,6 +141,15 @@ export const salesApi = {
   markNotInterested: (id: string, body?: { note?: string }) =>
     apiJson<{ lead: Lead }>("POST", `/leads/${id}/not-interested`, body ?? {}),
 
+  deleteLead: (id: string) => apiJson<{ deleted: true; id: string }>("DELETE", `/leads/${id}`),
+
+  bulkDeleteLeads: (body: { ids: string[] }) =>
+    apiJson<{ deleted: string[]; failed: Array<{ id: string; code: string; message: string }> }>(
+      "POST",
+      "/leads/bulk-delete",
+      body
+    ),
+
   /** @deprecated Use setProspectCategory with another category */
   restoreLeadInterest: (id: string) =>
     apiJson<{ lead: Lead }>("POST", `/leads/${id}/restore-interest`),

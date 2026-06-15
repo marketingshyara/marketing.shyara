@@ -149,6 +149,10 @@ export const markNotInterestedBodySchema = z.object({
   note: z.string().trim().max(500).optional().nullable()
 });
 
+export const bulkDeleteLeadsBodySchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(100)
+});
+
 export const teamRepLeadsQuerySchema = paginationQuerySchema
   .extend({
     search: z.preprocess(

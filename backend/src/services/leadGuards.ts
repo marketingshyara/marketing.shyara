@@ -95,5 +95,5 @@ export function assertLeadNotInterestedEligible(lead: LeadProspectDispositionChe
   }
 }
 
-/** @deprecated Use assertLeadNotInterestedEligible — hard delete is disabled for reps. */
+/** Same eligibility as marking not interested — unconverted, no verified payment, no project. */
 export const assertLeadDeletable = assertLeadNotInterestedEligible;

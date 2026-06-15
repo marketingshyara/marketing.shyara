@@ -7,6 +7,11 @@ import { prisma } from "../../src/lib/prisma.js";
 import { inject } from "../helpers/inject.js";
 import { ensureUserQuotaRow, reserveSearchQuota } from "../../src/services/leadScraper/leadScraperQuota.js";
 import { importScraperPlacesToPipeline } from "../../src/services/leadScraper/leadScraperImportService.js";
+import {
+  persistSearchResultsForUser,
+  tryClaimPlaceForUser
+} from "../../src/services/leadScraper/leadScraperPlacesStore.js";
+import type { ScraperPlaceResult } from "../../src/services/leadScraper/types.js";
 
 const run = Boolean(process.env.DATABASE_URL && process.env.SESSION_SECRET);
 const d = run ? describe : describe.skip;
@@ -14,16 +19,26 @@ const d = run ? describe : describe.skip;
 d("integration: lead scraper", () => {
   let adminId: string;
   let repId: string;
+  let otherRepId: string;
   const repEmail = "it-scraper-rep@test.local";
+  const otherRepEmail = "it-scraper-other@test.local";
   const adminEmail = "it-scraper-admin@test.local";
   const testPlaceId = "places/ChIJ_scraper_test_place";
+  const exclusivePlaceId = "places/ChIJ_scraper_exclusive_place";
 
   beforeAll(async () => {
     await prisma.user.deleteMany({
-      where: { email: { in: [adminEmail, repEmail] } }
+      where: { email: { in: [adminEmail, repEmail, otherRepEmail] } }
     });
-    await prisma.lead.deleteMany({ where: { googlePlaceId: testPlaceId } });
-    await prisma.leadScraperPlace.deleteMany({ where: { placeId: testPlaceId } });
+    await prisma.lead.deleteMany({
+      where: { googlePlaceId: { in: [testPlaceId, exclusivePlaceId] } }
+    });
+    await prisma.leadScraperPlaceView.deleteMany({
+      where: { placeId: { in: [testPlaceId, exclusivePlaceId] } }
+    });
+    await prisma.leadScraperPlace.deleteMany({
+      where: { placeId: { in: [testPlaceId, exclusivePlaceId] } }
+    });
 
     const admin = await prisma.user.create({
       data: {
@@ -45,6 +60,16 @@ d("integration: lead scraper", () => {
     });
     repId = rep.id;
 
+    const otherRep = await prisma.user.create({
+      data: {
+        email: otherRepEmail,
+        passwordHash: await bcrypt.hash("RepPass123!", 10),
+        role: UserRole.SALES_REP,
+        displayName: "Scraper IT Other Rep"
+      }
+    });
+    otherRepId = otherRep.id;
+
     await prisma.leadScraperPlace.create({
       data: {
         placeId: testPlaceId,
@@ -62,13 +87,19 @@ d("integration: lead scraper", () => {
   });
 
   afterAll(async () => {
-    await prisma.lead.deleteMany({ where: { googlePlaceId: testPlaceId } });
-    await prisma.leadScraperPlaceView.deleteMany({ where: { placeId: testPlaceId } });
-    await prisma.leadScraperPlace.deleteMany({ where: { placeId: testPlaceId } });
-    await prisma.leadScraperUserQuota.deleteMany({
-      where: { userId: { in: [adminId, repId] } }
+    await prisma.lead.deleteMany({
+      where: { googlePlaceId: { in: [testPlaceId, exclusivePlaceId] } }
     });
-    await prisma.user.deleteMany({ where: { id: { in: [adminId, repId] } } });
+    await prisma.leadScraperPlaceView.deleteMany({
+      where: { placeId: { in: [testPlaceId, exclusivePlaceId] } }
+    });
+    await prisma.leadScraperPlace.deleteMany({
+      where: { placeId: { in: [testPlaceId, exclusivePlaceId] } }
+    });
+    await prisma.leadScraperUserQuota.deleteMany({
+      where: { userId: { in: [adminId, repId, otherRepId] } }
+    });
+    await prisma.user.deleteMany({ where: { id: { in: [adminId, repId, otherRepId] } } });
     await prisma.$disconnect();
   });
 
@@ -164,6 +195,42 @@ d("integration: lead scraper", () => {
     expect(body.granted).toBe(5);
     expect(body.newLimit).toBeGreaterThanOrEqual(config.leadScraper.repDefaultQuota + 5);
     await app.close();
+  });
+
+  it("org-wide place claim blocks second rep from seeing the same place", async () => {
+    const sample: ScraperPlaceResult = {
+      placeId: exclusivePlaceId,
+      name: "Exclusive Cafe",
+      address: "Exclusive Street",
+      phone: "+91 9876501234",
+      businessStatus: "OPERATIONAL",
+      category: "Restaurant",
+      hasWebsite: false,
+      websiteUrl: null,
+      mapsUrl: "https://maps.example.com/exclusive"
+    };
+
+    const first = await persistSearchResultsForUser(prisma, repId, [sample], null);
+    expect(first.newLeads).toHaveLength(1);
+
+    const second = await persistSearchResultsForUser(prisma, otherRepId, [sample], null);
+    expect(second.newLeads).toHaveLength(0);
+    expect(second.orgUnavailableCount).toBe(1);
+
+    const claim = await tryClaimPlaceForUser(prisma, otherRepId, exclusivePlaceId);
+    expect(claim).toBe("taken_by_other");
+  });
+
+  it("second rep import skips place claimed by first rep", async () => {
+    const otherRep = await prisma.user.findUniqueOrThrow({ where: { id: otherRepId } });
+    const result = await importScraperPlacesToPipeline(
+      prisma,
+      otherRep,
+      [exclusivePlaceId],
+      { headers: {}, ip: "127.0.0.1" } as never
+    );
+    expect(result.imported).toHaveLength(0);
+    expect(result.failed.some((f) => f.placeId === exclusivePlaceId)).toBe(true);
   });
 
   it("reserveSearchQuota updates user and global usage atomically", async () => {

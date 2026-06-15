@@ -56,8 +56,10 @@ import {
   patchLeadBodySchema,
   prospectCategoryEventsQuerySchema,
   setProspectCategoryBodySchema,
-  transitionBodySchema
+  transitionBodySchema,
+  bulkDeleteLeadsBodySchema
 } from "../validators/schemas.js";
+import { bulkDeleteLeadsForUser, deleteLeadForUser } from "../services/leadDelete.js";
 
 function repLeadScope(userId: string) {
   return {
@@ -311,12 +313,28 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
   app.delete(
     "/api/leads/:id",
     { preHandler: [requireUser] },
-    async (_request, _reply) => {
-      throw new HttpError(
-        403,
-        "LEAD_DELETE_DISABLED",
-        "Prospects cannot be deleted. Mark them as not interested instead."
-      );
+    async (request, reply) => {
+      const user = request.currentUser!;
+      assertSalesRepActor(user);
+      const { id } = request.params as { id: string };
+      const result = await deleteLeadForUser(app.prisma, user, id, request);
+      if (!result.ok) {
+        const status = result.code === "NOT_FOUND" ? 404 : 400;
+        throw new HttpError(status, result.code, result.message);
+      }
+      return reply.send({ deleted: true, id: result.id });
+    }
+  );
+
+  app.post(
+    "/api/leads/bulk-delete",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      const user = request.currentUser!;
+      assertSalesRepActor(user);
+      const body = bulkDeleteLeadsBodySchema.parse(request.body ?? {});
+      const result = await bulkDeleteLeadsForUser(app.prisma, user, body.ids, request);
+      return reply.send(result);
     }
   );
 

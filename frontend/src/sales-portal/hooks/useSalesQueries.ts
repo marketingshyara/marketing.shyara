@@ -69,8 +69,17 @@ export function errToast(e: unknown, qc?: QueryClient) {
       toast.error("Enter a valid link (e.g. https://example.com or example.com).");
       return;
     }
-    if (e.code === "QUOTA_EXCEEDED" || e.code === "GLOBAL_QUOTA_EXCEEDED") {
+    if (e.code === "QUOTA_EXCEEDED") {
       toast.error(e.message);
+      if (qc) {
+        void qc.invalidateQueries({ queryKey: qk.leadScraperUsage });
+      }
+      return;
+    }
+    if (e.code === "GLOBAL_QUOTA_EXCEEDED") {
+      toast.error(
+        "Searches are temporarily unavailable. Contact admin — they can restore access or adjust your quota."
+      );
       if (qc) {
         void qc.invalidateQueries({ queryKey: qk.leadScraperUsage });
       }
@@ -154,10 +163,14 @@ export function errToast(e: unknown, qc?: QueryClient) {
       toast.error(e.message || "This prospect is not marked not interested.");
       return;
     }
-    if (e.code === "LEAD_DELETE_DISABLED") {
+    if (e.code === "LEAD_HAS_PROJECT") {
       toast.error(
-        e.message || "Prospects cannot be deleted. Mark them as not interested instead."
+        e.message || "Cannot delete a prospect that already has a project."
       );
+      return;
+    }
+    if (e.code === "LEAD_NOT_INTERESTED") {
+      toast.error(e.message || "Change category before deleting this prospect.");
       return;
     }
     if (e.code === "LEAD_ALREADY_CONVERTED") {
@@ -452,6 +465,39 @@ export function useSetProspectCategoryMutation() {
         toast.success("Marked as Interested");
       } else {
         toast.success("Category updated");
+      }
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+export function useDeleteLeadMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: salesApi.deleteLead,
+    onSuccess: (_data, leadId) => {
+      invalidateQueryPrefixes(qc, ["leads", "lead"]);
+      void qc.invalidateQueries({ queryKey: ["lead", leadId] });
+      toast.success("Prospect deleted");
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+export function useBulkDeleteLeadsMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: salesApi.bulkDeleteLeads,
+    onSuccess: (data) => {
+      invalidateQueryPrefixes(qc, ["leads", "lead"]);
+      const n = data.deleted.length;
+      if (n > 0) {
+        toast.success(n === 1 ? "1 prospect deleted" : `${n} prospects deleted`);
+      }
+      if (data.failed.length > 0 && n === 0) {
+        toast.error(`Could not delete — ${data.failed[0]?.message ?? "not eligible"}`);
+      } else if (data.failed.length > 0) {
+        toast.message(`${data.failed.length} could not be deleted (converted or has payments).`);
       }
     },
     onError: (e) => errToast(e, qc)
@@ -951,6 +997,24 @@ export function useLeadScraperImportMutation() {
       const n = data.imported.length;
       if (n > 0) {
         toast.success(n === 1 ? "1 lead added to pipeline" : `${n} leads added to pipeline`);
+      }
+      if (data.skipped.length > 0) {
+        if (n === 0) {
+          toast.error(
+            data.skipped.length === 1
+              ? "Not imported — already in pipeline or claimed by another rep."
+              : `${data.skipped.length} not imported — already in pipeline or claimed by another rep.`
+          );
+        } else {
+          toast.message(`${data.skipped.length} skipped (already in pipeline).`);
+        }
+      }
+      if (data.failed.length > 0) {
+        toast.error(
+          data.failed.length === 1
+            ? `Import failed: ${data.failed[0]!.reason}`
+            : `${data.failed.length} imports failed (missing or invalid phone).`
+        );
       }
       if (data.failed.length === 0 && data.skipped.length === 0 && n === 0) {
         toast.message("Nothing was imported.");

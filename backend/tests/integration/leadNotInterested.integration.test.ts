@@ -102,17 +102,30 @@ d("integration: not interested prospects", () => {
     return cookie.value;
   }
 
-  it("rep DELETE returns LEAD_DELETE_DISABLED", async () => {
+  it("rep can delete own unconverted prospect", async () => {
+    const temp = await prisma.lead.create({
+      data: {
+        clientName: "Delete Me Test",
+        status: LeadStatus.NEW,
+        createdByUserId: repId,
+        assignedToUserId: repId
+      }
+    });
+
     const app = await buildApp({ config });
     const cookie = await repCookie();
     const del = await inject(app, {
       method: "DELETE",
-      url: `/api/leads/${leadId}`,
+      url: `/api/leads/${temp.id}`,
       headers: { cookie: `${config.cookieName}=${cookie}` }
     });
-    expect(del.statusCode).toBe(403);
-    const body = del.json() as { error: { code: string } };
-    expect(body.error.code).toBe("LEAD_DELETE_DISABLED");
+    expect(del.statusCode).toBe(200);
+    const body = del.json() as { deleted: boolean; id: string };
+    expect(body.deleted).toBe(true);
+    expect(body.id).toBe(temp.id);
+
+    const gone = await prisma.lead.findUnique({ where: { id: temp.id } });
+    expect(gone).toBeNull();
     await app.close();
   });
 

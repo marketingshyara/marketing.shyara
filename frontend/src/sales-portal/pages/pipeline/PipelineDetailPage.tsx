@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { DealAmountField } from "../../components/pipeline/DealAmountField";
@@ -38,6 +38,7 @@ import {
 } from "../../components/pipeline/paymentSubmissionMetaItems";
 import { PaymentSubmissionReviewSection } from "../../components/pipeline/PaymentSubmissionReviewSection";
 import { SetProspectCategoryDialog } from "../../components/pipeline/SetProspectCategoryDialog";
+import { DeleteLeadsDialog } from "../../components/pipeline/DeleteLeadsDialog";
 import { NotInterestedArchiveBanner } from "../../components/pipeline/NotInterestedArchiveBanner";
 import { InterestedSampleStatusCard } from "../../components/pipeline/InterestedSampleStatusCard";
 import { ProspectCategoryTimeline } from "../../components/pipeline/ProspectCategoryTimeline";
@@ -45,6 +46,7 @@ import { ProspectCategoryBadge } from "../../components/pipeline/ProspectCategor
 import { RepDemoPreviewLink } from "../../components/pipeline/RepDemoPreviewLink";
 import {
   canChangeProspectCategory,
+  canDeleteLead,
   isProspectArchived,
   prospectCategoryLabel
 } from "../../lib/leadProspectCategory";
@@ -94,6 +96,7 @@ import { WebsiteTemplateField } from "../../components/pipeline/WebsiteTemplateF
 
 export function PipelineDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const leadQr = useLeadQuery(id);
   const settingsQr = usePortalSettingsQuery();
   const tplQr = useWebsiteTemplatesQuery(true);
@@ -359,17 +362,28 @@ export function PipelineDetailPage() {
           ) : null}
           {!lead.convertedAt ? <ProspectCategoryBadge lead={lead} /> : null}
         </div>
-        {!lead.convertedAt && canChangeProspectCategory(lead) ? (
-          <SetProspectCategoryDialog
-            leadId={lead.id}
-            clientName={lead.clientName}
-            lead={lead}
-            triggerLabel="Change category"
-            onUpdated={() => void leadQr.refetch()}
-          />
-        ) : lead.convertedAt ? (
-          <p className="text-xs text-muted-foreground">Converted clients use the pipeline stages below.</p>
-        ) : null}
+        <div className="flex flex-col gap-2 sm:items-end">
+          {!lead.convertedAt && canChangeProspectCategory(lead) ? (
+            <SetProspectCategoryDialog
+              leadId={lead.id}
+              clientName={lead.clientName}
+              lead={lead}
+              triggerLabel="Change category"
+              onUpdated={() => void leadQr.refetch()}
+            />
+          ) : lead.convertedAt ? (
+            <p className="text-xs text-muted-foreground">Converted clients use the pipeline stages below.</p>
+          ) : null}
+          {!lead.convertedAt && canDeleteLead(lead) ? (
+            <DeleteLeadsDialog
+              leadIds={[lead.id]}
+              clientNames={[lead.clientName]}
+              variant="destructive"
+              triggerLabel="Delete prospect"
+              onDeleted={() => navigate("/portal/pipeline?view=leads&prospectCategory=NEW_LEAD")}
+            />
+          ) : null}
+        </div>
       </div>
 
       {!lead.convertedAt ? (

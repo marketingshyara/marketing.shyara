@@ -83,6 +83,7 @@ export type LeadScraperSearchResponse = {
   rawResultCount: number;
   totalResults: number;
   duplicateCount?: number;
+  orgUnavailableCount?: number;
   noWebsiteCount: number;
   searchedAt?: string;
   ageInDays?: number;
