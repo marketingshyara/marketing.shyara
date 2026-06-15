@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { Plus, Search } from "lucide-react";
 import { useDebounced } from "../../hooks/useDebounced";
-import { useLeadsQuery } from "../../hooks/useSalesQueries";
+import { useLeadsQuery, usePortalSettingsQuery } from "../../hooks/useSalesQueries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -151,6 +151,9 @@ export function PipelineListPage() {
     prospectCategory: "NOT_INTERESTED",
     enabled: tab === "leads"
   });
+
+  const repSettingsQr = usePortalSettingsQuery();
+  const isModelBRep = repSettingsQr.data?.settings.commissionModel === "MODEL_B";
 
   const categoryCounts: Record<ProspectCategory, number> = {
     NEW_LEAD: countNewLead.data?.total ?? 0,
@@ -382,6 +385,7 @@ export function PipelineListPage() {
                         agreedTotalCents={lead.agreedTotalCents}
                         href={`/portal/pipeline/${lead.id}`}
                         statusChip={statusChip}
+                        isModelBRep={isModelBRep}
                         detailLine={callbackHint ? <span>{callbackHint}</span> : undefined}
                         trailingAction={
                           deletable || categoryChangeable ? (

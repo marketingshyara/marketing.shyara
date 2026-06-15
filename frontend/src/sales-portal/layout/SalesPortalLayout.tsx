@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { Separator } from "@/components/ui/separator";
 import { userRoleLabel } from "../lib/copy";
+import { isModelBRepUser } from "../lib/modelBRepUi";
 import { defaultPortalHome } from "../lib/portalPaths";
 import { passwordCopy } from "../lib/passwordCopy";
 
@@ -96,11 +97,11 @@ export function SalesPortalLayout() {
   const isAdmin = user?.role === "ADMIN";
   const repSettingsQr = usePortalSettingsQuery(!isAdmin && user?.role === "SALES_REP");
   const repNavItems = useMemo(() => {
-    const isModelB = repSettingsQr.data?.settings.commissionModel === "MODEL_B";
+    const isModelB = isModelBRepUser(user, repSettingsQr.data?.settings);
     return REP_NAV.map((item) =>
       item.to === "/portal/commission" && isModelB ? { ...item, label: "Payouts" } : item
     );
-  }, [repSettingsQr.data?.settings.commissionModel]);
+  }, [user, repSettingsQr.data?.settings]);
   const navItems = isAdmin ? ADMIN_NAV : repNavItems;
   const homePath = user ? defaultPortalHome(user.role) : "/portal/pipeline";
   const pendingCount = usePendingActionsCountQuery(isAdmin);

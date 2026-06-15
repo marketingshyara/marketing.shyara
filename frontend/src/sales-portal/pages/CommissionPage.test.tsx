@@ -97,6 +97,73 @@ describe("CommissionPage", () => {
     expect(screen.getByText("rish1")).toBeInTheDocument();
   });
 
+  it("Model B rep sees Payouts title and Completed filter", () => {
+    useSessionQuery.mockReturnValue({
+      data: { user: { role: "SALES_REP", id: "r1", commissionModel: "MODEL_B" } }
+    });
+    usePortalSettingsQuery.mockReturnValue({
+      data: {
+        settings: {
+          commissionModel: "MODEL_B",
+          minAgreedTotalCents: 799_900,
+          commissionRateBps: 50,
+          commissionRounding: "bankers",
+          performanceBonusBps: 500,
+          performanceBonusAfterCompletedSales: 10,
+          advancePaymentShareBps: 5000,
+          templatesCatalogUrl: "",
+          tutorialLinks: [],
+          painPointsByCategory: [],
+          paymentShareMethods: [],
+          milestoneTarget: 5,
+          milestoneAmountCents: 1_000_000,
+          perDealAfterCents: 200_000
+        }
+      },
+      isLoading: false
+    });
+    useCommissionsQuery.mockReturnValue({
+      data: {
+        items: [
+          {
+            ...listItem,
+            amountCents: 200_000,
+            expectedAmountCents: null
+          }
+        ],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+        summary: {
+          total: 1,
+          siteLive: 1,
+          calculated: 1,
+          paid: 1,
+          milestone: {
+            deployedCount: 6,
+            milestoneTarget: 5,
+            paidEarningsCents: 1_200_000,
+            nextPayoutHint: "Your next site-live sale earns you ₹2,000.",
+            milestoneReady: false,
+            milestoneReadyLeadId: null
+          }
+        }
+      },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      dataUpdatedAt: Date.now(),
+      refetch: vi.fn()
+    });
+    renderPage();
+    expect(screen.getByRole("heading", { name: "Payouts" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Completed" })).toBeInTheDocument();
+    expect(screen.queryByText("Commission rate")).not.toBeInTheDocument();
+    expect(screen.getByText("Payout type")).toBeInTheDocument();
+    expect(screen.getByText("Your milestone progress")).toBeInTheDocument();
+    expect(screen.queryByText(/Earned so far/i)).not.toBeInTheDocument();
+  });
+
   it("admin view shows Commissions title and rep subline", () => {
     useSessionQuery.mockReturnValue({
       data: { user: { role: "ADMIN", id: "a1" } }

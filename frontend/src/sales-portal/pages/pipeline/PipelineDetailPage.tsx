@@ -84,7 +84,13 @@ import {
 } from "../../lib/commissionEstimate";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { Badge } from "@/components/ui/badge";
-import { leadStatusLabel } from "../../lib/copy";
+import {
+  modelBRepPipelineStages,
+  modelBRepPayoutAmountsFromSettings,
+  modelBRepPayoutStatusLabel,
+  modelBRepShowsPipelinePayout,
+  repLeadStatusLabel
+} from "../../lib/modelBRepUi";
 import { IndianMobileField } from "../../components/IndianMobileField";
 import { isValidIndianMobile, normalizeIndianMobileInput } from "../../lib/indianMobilePhone";
 import {
@@ -161,6 +167,17 @@ export function PipelineDetailPage() {
   const performanceBonusHint =
     settings && !isModelBRep ? performanceBonusProgramHint(settings) : null;
   const milestone = commissionsQr.data?.summary?.milestone;
+  const pipelineStages = useMemo(
+    () => (isModelBRep ? modelBRepPipelineStages(stages) : stages),
+    [isModelBRep, stages]
+  );
+  const showModelBPipelinePayout =
+    isModelBRep &&
+    modelBRepShowsPipelinePayout(
+      lead?.commission,
+      milestone,
+      modelBRepPayoutAmountsFromSettings(settings ?? {})
+    );
   const agreedTotalCents = parseRupeeInputToCents(agreedRupees);
   const convertSplit = useMemo(() => {
     if (lead?.convertedAt) return null;
@@ -374,7 +391,8 @@ export function PipelineDetailPage() {
         <div className="space-y-2">
           <h1 className="text-xl font-semibold md:text-2xl">{lead.clientName}</h1>
           <p className="text-sm text-muted-foreground">
-            {lead.convertedAt ? "Client" : "Lead"} · {leadStatusLabel(lead.status)}
+            {lead.convertedAt ? "Client" : "Lead"} ·{" "}
+            {repLeadStatusLabel(lead.status, isModelBRep)}
           </p>
           {!lead.convertedAt ? (
             <p className="text-sm">
@@ -432,7 +450,7 @@ export function PipelineDetailPage() {
       ) : null}
 
       <PipelineFocusCard
-        stages={stages}
+        stages={pipelineStages}
         actorMode="rep"
         onPrimaryAction={handleStageClick}
         onViewSubmission={handleStageClick}
@@ -440,32 +458,32 @@ export function PipelineDetailPage() {
       />
 
       <PipelineStepsAccordion
-        stages={stages}
+        stages={pipelineStages}
         actorMode="rep"
         onStageClick={handleStageClick}
         repPreviewUrl={demoPreviewUrl}
       />
 
       {isModelBRep && milestone ? (
-        <div className="space-y-2">
-          <MilestoneProgressCard milestone={milestone} />
-          {!lead.commission ? (
-            <p className="text-xs text-muted-foreground px-1">{milestone.nextPayoutHint}</p>
-          ) : null}
-        </div>
+        <MilestoneProgressCard milestone={milestone} />
       ) : null}
 
-      {lead.commission && (
+      {(showModelBPipelinePayout || (!isModelBRep && lead.commission)) && lead.commission ? (
         <div className="rounded-lg border p-4 text-sm space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium">
-              {isModelBRep ? "Payout" : "Commission"}: {formatMinorUnits(lead.commission.amountCents)}
+              {isModelBRep ? "Payout" : "Commission"}:{" "}
+              {formatMinorUnits(lead.commission.amountCents)}
               {!isModelBRep
                 ? formatPerformanceBonusSuffix(lead.commission.bonusCents, settings)
                 : null}
             </p>
             <Badge variant={lead.commission.isPaid ? "default" : "secondary"}>
-              {lead.commission.isPaid ? "Paid" : "Pending payout"}
+              {isModelBRep
+                ? modelBRepPayoutStatusLabel(lead.commission.isPaid)
+                : lead.commission.isPaid
+                  ? "Paid"
+                  : "Pending payout"}
             </Badge>
           </div>
           {commissionHint ? (
@@ -480,7 +498,7 @@ export function PipelineDetailPage() {
             </Link>
           </Button>
         </div>
-      )}
+      ) : null}
 
       <StageModalShell
         open={activeStage === "lead_capture"}

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { formatMinorUnits } from "../../lib/money";
-import { stageShortTitle } from "../../lib/pipelineCopy";
+import { modelBRepPipelineStepLine } from "../../lib/modelBRepUi";
 import type { LeadPipelineSummary } from "../../types";
 import { PortalStatusChip, type PortalStatusChipKind } from "../ui/PortalStatusChip";
 
@@ -15,6 +15,8 @@ type Props = {
   trailingAction?: ReactNode;
   /** Optional second line (e.g. rep name on admin all-clients list). */
   detailLine?: ReactNode;
+  /** Model B reps see payout terminology on the commission step. */
+  isModelBRep?: boolean;
 };
 
 export function PipelineListSummary({
@@ -24,9 +26,14 @@ export function PipelineListSummary({
   href,
   statusChip,
   trailingAction,
-  detailLine
+  detailLine,
+  isModelBRep = false
 }: Props) {
-  const stepLine = stageShortTitle(summary.currentStageKey, summary.currentStageTitle);
+  const stepLine = modelBRepPipelineStepLine(
+    summary.currentStageKey,
+    summary.currentStageTitle,
+    isModelBRep
+  );
 
   return (
     <div

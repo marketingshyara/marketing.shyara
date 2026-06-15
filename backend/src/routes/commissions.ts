@@ -25,7 +25,8 @@ import {
   getDeployedOrdinalForLead,
   getRepCommissionModel,
   isMilestonePayoutReady,
-  MODEL_B_MILESTONE_AMOUNT_CENTS
+  MODEL_B_MILESTONE_AMOUNT_CENTS,
+  MODEL_B_PER_DEAL_AFTER_CENTS
 } from "../services/commissionModel.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
 import {
@@ -44,6 +45,20 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
       const user = request.currentUser!;
       const query = commissionsListQuerySchema.parse(request.query);
 
+      let viewerModel: CommissionModel | null = null;
+      if (user.role === UserRole.SALES_REP) {
+        viewerModel = await getRepCommissionModel(app.prisma, user.id);
+      }
+
+      const modelBRepAmountFilter =
+        user.role === UserRole.SALES_REP && viewerModel === CommissionModel.MODEL_B
+          ? {
+              amountCents: {
+                in: [MODEL_B_MILESTONE_AMOUNT_CENTS, MODEL_B_PER_DEAL_AFTER_CENTS]
+              }
+            }
+          : {};
+
       const where =
         user.role === UserRole.ADMIN
           ? {
@@ -51,7 +66,8 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
             }
           : {
               repUserId: user.id,
-              ...(query.isPaid !== undefined ? { isPaid: query.isPaid } : {})
+              ...(query.isPaid !== undefined ? { isPaid: query.isPaid } : {}),
+              ...modelBRepAmountFilter
             };
 
       const total = await app.prisma.commission.count({ where });
@@ -67,11 +83,6 @@ export async function registerCommissionRoutes(app: FastifyInstance): Promise<vo
       const page = clampPage(query.page, query.pageSize, total);
       const skip = (page - 1) * query.pageSize;
       const settings = await getPortalSettings(app.prisma);
-
-      let viewerModel: CommissionModel | null = null;
-      if (user.role === UserRole.SALES_REP) {
-        viewerModel = await getRepCommissionModel(app.prisma, user.id);
-      }
 
       const rows = await app.prisma.commission.findMany({
         where,

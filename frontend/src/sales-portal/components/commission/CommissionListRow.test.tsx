@@ -68,4 +68,22 @@ describe("CommissionListRow", () => {
     renderRow("admin");
     expect(screen.getByText(/Rep: Rishabh/i)).toBeInTheDocument();
   });
+
+  it("Model B rep row hides commission rate and uses Completed status", () => {
+    render(
+      <MemoryRouter>
+        <CommissionListRow
+          row={{ ...row, amountCents: 200_000, expectedAmountCents: null }}
+          settings={{ ...settings, commissionModel: "MODEL_B", perDealAfterCents: 200_000 }}
+          actorMode="rep"
+          rateLabel="0.50%"
+          repUsesModelB
+        />
+      </MemoryRouter>
+    );
+    expect(screen.queryByText("Commission rate")).not.toBeInTheDocument();
+    expect(screen.getByText("Payout type")).toBeInTheDocument();
+    expect(screen.getByText("Fixed per-deal")).toBeInTheDocument();
+    expect(screen.getByText(/Completed on May 12, 2026/i)).toBeInTheDocument();
+  });
 });

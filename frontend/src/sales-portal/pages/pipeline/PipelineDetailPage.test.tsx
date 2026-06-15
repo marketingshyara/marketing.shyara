@@ -14,18 +14,24 @@ const usePatchLeadMutation = vi.fn();
 const useConvertLeadMutation = vi.fn();
 const useMarkPaymentMutation = vi.fn();
 const usePatchProjectMutation = vi.fn();
+const useCommissionsQuery = vi.fn();
 
-vi.mock("../../hooks/useSalesQueries", () => ({
-  useLeadQuery: (...args: unknown[]) => useLeadQuery(...args),
-  usePortalSettingsQuery: (...args: unknown[]) => usePortalSettingsQuery(...args),
-  useWebsiteTemplatesQuery: (...args: unknown[]) => useWebsiteTemplatesQuery(...args),
-  usePatchLeadMutation: (...args: unknown[]) => usePatchLeadMutation(...args),
-  useConvertLeadMutation: (...args: unknown[]) => useConvertLeadMutation(...args),
-  useMarkPaymentMutation: (...args: unknown[]) => useMarkPaymentMutation(...args),
-  usePatchProjectMutation: (...args: unknown[]) => usePatchProjectMutation(...args),
-  useSetProspectCategoryMutation: () => ({ mutate: vi.fn(), isPending: false }),
-  useProspectCategoryEventsQuery: () => ({ data: { items: [] }, isLoading: false, isError: false })
-}));
+vi.mock("../../hooks/useSalesQueries", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../hooks/useSalesQueries")>();
+  return {
+    ...actual,
+    useLeadQuery: (...args: unknown[]) => useLeadQuery(...args),
+    usePortalSettingsQuery: (...args: unknown[]) => usePortalSettingsQuery(...args),
+    useCommissionsQuery: (...args: unknown[]) => useCommissionsQuery(...args),
+    useWebsiteTemplatesQuery: (...args: unknown[]) => useWebsiteTemplatesQuery(...args),
+    usePatchLeadMutation: (...args: unknown[]) => usePatchLeadMutation(...args),
+    useConvertLeadMutation: (...args: unknown[]) => useConvertLeadMutation(...args),
+    useMarkPaymentMutation: (...args: unknown[]) => useMarkPaymentMutation(...args),
+    usePatchProjectMutation: (...args: unknown[]) => usePatchProjectMutation(...args),
+    useSetProspectCategoryMutation: () => ({ mutate: vi.fn(), isPending: false }),
+    useProspectCategoryEventsQuery: () => ({ data: { items: [] }, isLoading: false, isError: false })
+  };
+});
 
 const mockLead: Lead = {
   id: "lead-1",
@@ -102,6 +108,12 @@ describe("PipelineDetailPage", () => {
     useConvertLeadMutation.mockReturnValue(mutationStub());
     useMarkPaymentMutation.mockReturnValue(mutationStub());
     usePatchProjectMutation.mockReturnValue(mutationStub());
+    useCommissionsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn()
+    });
     usePortalSettingsQuery.mockReturnValue({
       data: {
         settings: {

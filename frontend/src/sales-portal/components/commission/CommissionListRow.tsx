@@ -19,6 +19,7 @@ import {
   MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT,
   MODEL_B_PER_DEAL_AFTER_CENTS_DEFAULT
 } from "../../lib/copy";
+import { modelBRepPayoutStatusLabel } from "../../lib/modelBRepUi";
 import { formatMinorUnits } from "../../lib/money";
 
 type Props = {
@@ -26,21 +27,36 @@ type Props = {
   settings: CommissionValidationSettings;
   actorMode: "rep" | "admin";
   rateLabel: string;
+  /** Rep-facing Model B layout even for legacy percentage rows */
+  repUsesModelB?: boolean;
 };
 
-const STAGE_LABELS = ["Site live", "Calculated", "Paid"] as const;
+function stageLabels(isModelBDisplay: boolean): readonly [string, string, string] {
+  return isModelBDisplay
+    ? (["Site live", "Calculated", "Completed"] as const)
+    : (["Site live", "Calculated", "Paid"] as const);
+}
 
-function StageStrip({ row }: { row: CommissionListItem }) {
+function StageStrip({
+  row,
+  isModelBDisplay
+}: {
+  row: CommissionListItem;
+  isModelBDisplay: boolean;
+}) {
   const stage = commissionRowStage(row);
   const done = [stage.siteLive, stage.calculated, stage.paid];
+  const labels = stageLabels(isModelBDisplay);
 
   return (
     <div
       className="flex flex-wrap gap-1.5"
       role="list"
-      aria-label="Commission progress for this deal"
+      aria-label={
+        isModelBDisplay ? "Payout progress for this deal" : "Commission progress for this deal"
+      }
     >
-      {STAGE_LABELS.map((label, i) => (
+      {labels.map((label, i) => (
         <span
           key={label}
           role="listitem"
@@ -58,16 +74,25 @@ function StageStrip({ row }: { row: CommissionListItem }) {
   );
 }
 
-export function CommissionListRow({ row, settings, actorMode, rateLabel }: Props) {
+export function CommissionListRow({
+  row,
+  settings,
+  actorMode,
+  rateLabel,
+  repUsesModelB = false
+}: Props) {
   const rowModel =
     row.rowCommissionModel ?? row.rep.commissionModel ?? settings.commissionModel ?? "MODEL_A";
-  const isModelB = rowModel === "MODEL_B";
-  const rowSettings = isModelB ? { ...settings, commissionModel: "MODEL_B" as const } : settings;
+  const isModelBDisplay =
+    repUsesModelB || (actorMode !== "rep" && rowModel === "MODEL_B");
+  const rowSettings = isModelBDisplay
+    ? { ...settings, commissionModel: "MODEL_B" as const }
+    : settings;
   const issues = rowIntegrityIssues(row, rowSettings);
   const href = commissionDetailHref(row, actorMode);
   const paidLabel = formatCommissionPaidAt(row.paidAt);
   const payoutTypeLabel = (() => {
-    if (!isModelB) return null;
+    if (!isModelBDisplay) return null;
     const milestoneCents =
       settings.milestoneAmountCents ?? MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT;
     const perDealCents =
@@ -100,16 +125,14 @@ export function CommissionListRow({ row, settings, actorMode, rateLabel }: Props
             <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
           </div>
 
-          <StageStrip row={row} />
+          <StageStrip row={row} isModelBDisplay={isModelBDisplay} />
 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
-            {!isModelB ? (
-              <div>
-                <dt className="text-xs text-muted-foreground">Deal amount</dt>
-                <dd className="font-medium tabular-nums">{dealAmount}</dd>
-              </div>
-            ) : null}
-            {!isModelB ? (
+            <div>
+              <dt className="text-xs text-muted-foreground">Deal amount</dt>
+              <dd className="font-medium tabular-nums">{dealAmount}</dd>
+            </div>
+            {!isModelBDisplay ? (
               <div>
                 <dt className="text-xs text-muted-foreground">Commission rate</dt>
                 <dd className="font-medium">{rateLabel}</dd>
@@ -124,7 +147,7 @@ export function CommissionListRow({ row, settings, actorMode, rateLabel }: Props
               <dt className="text-xs text-muted-foreground">Payout</dt>
               <dd className="font-semibold tabular-nums">
                 {formatMinorUnits(row.amountCents)}
-                {!isModelB ? formatPerformanceBonusSuffix(row.bonusCents, settings) : null}
+                {!isModelBDisplay ? formatPerformanceBonusSuffix(row.bonusCents, settings) : null}
               </dd>
             </div>
             <div>
@@ -132,10 +155,18 @@ export function CommissionListRow({ row, settings, actorMode, rateLabel }: Props
               <dd className="flex flex-col items-start gap-1">
                 <PortalStatusChip
                   kind={row.isPaid ? "complete" : "waiting"}
-                  label={row.isPaid ? "Paid" : "Pending payout"}
+                  label={
+                    isModelBDisplay
+                      ? modelBRepPayoutStatusLabel(row.isPaid)
+                      : row.isPaid
+                        ? "Paid"
+                        : "Pending payout"
+                  }
                 />
                 {paidLabel ? (
-                  <span className="text-xs text-muted-foreground">Paid on {paidLabel}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {isModelBDisplay ? "Completed on" : "Paid on"} {paidLabel}
+                  </span>
                 ) : null}
               </dd>
             </div>

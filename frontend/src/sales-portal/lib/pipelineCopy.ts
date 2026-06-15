@@ -43,6 +43,9 @@ const SHORT_TITLES: Record<PipelineStageKey, string> = {
 };
 
 export function stageShortTitle(key: PipelineStageKey, fallbackTitle?: string): string {
+  if (key === "commission" && fallbackTitle) {
+    return fallbackTitle;
+  }
   return SHORT_TITLES[key] ?? fallbackTitle ?? key;
 }
 

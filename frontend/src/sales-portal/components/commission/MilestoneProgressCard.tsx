@@ -44,14 +44,16 @@ export function MilestoneProgressCard({
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <span>
-          Earned so far:{" "}
-          <span className="font-medium tabular-nums">
-            {formatMinorUnits(milestone.paidEarningsCents)}
+      {variant === "admin" ? (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <span>
+            Earned so far:{" "}
+            <span className="font-medium tabular-nums">
+              {formatMinorUnits(milestone.paidEarningsCents)}
+            </span>
           </span>
-        </span>
-      </div>
+        </div>
+      ) : null}
       <p className="text-xs text-muted-foreground">{milestone.nextPayoutHint}</p>
       {variant === "admin" && milestone.milestoneReady ? (
         <p className="text-xs font-medium text-primary">

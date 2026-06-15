@@ -20,6 +20,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
+  modelBRepPayoutFilterLabel,
+  modelBRepPayoutPageTitle,
+  isModelBRepSettings
+} from "../lib/modelBRepUi";
+import {
   commissionValidationSettings,
   type CommissionValidationSettings
 } from "../lib/commissionList";
@@ -59,7 +64,7 @@ export function CommissionPage() {
   }, [actorMode, repSettingsQr.data, adminSettingsQr.data]);
 
   const isModelBRep =
-    actorMode === "rep" && repSettingsQr.data?.settings.commissionModel === "MODEL_B";
+    actorMode === "rep" && isModelBRepSettings(repSettingsQr.data?.settings);
 
   const rateLabel =
     validationSettings && !isModelBRep
@@ -68,7 +73,13 @@ export function CommissionPage() {
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
 
-  const pageTitle = actorMode === "admin" ? "Commissions" : "Commission";
+  const listItems = data?.items ?? [];
+
+  const pageTitle = isModelBRep
+    ? modelBRepPayoutPageTitle()
+    : actorMode === "admin"
+      ? "Commissions"
+      : "Commission";
   const pageDescription =
     actorMode === "admin"
       ? "All rep payouts with deal basis and payout status."
@@ -99,9 +110,9 @@ export function CommissionPage() {
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter by payout status">
         {(
           [
-            ["all", "All"],
-            ["pending", "Pending"],
-            ["paid", "Paid"]
+            ["all", isModelBRep ? modelBRepPayoutFilterLabel("all") : "All"],
+            ["pending", isModelBRep ? modelBRepPayoutFilterLabel("pending") : "Pending"],
+            ["paid", isModelBRep ? modelBRepPayoutFilterLabel("paid") : "Paid"]
           ] as const
         ).map(([key, label]) => (
           <Button
@@ -134,10 +145,13 @@ export function CommissionPage() {
       ) : null}
 
       {isError ? (
-        <QueryErrorAlert message="Could not load commission." onRetry={() => void refetch()} />
+        <QueryErrorAlert
+          message={isModelBRep ? "Could not load payouts." : "Could not load commission."}
+          onRetry={() => void refetch()}
+        />
       ) : isLoading || settingsLoading || !validationSettings ? (
         <Skeleton className="h-40 w-full" />
-      ) : (data?.items.length ?? 0) === 0 ? (
+      ) : (listItems.length ?? 0) === 0 ? (
         <PortalEmptyState
           icon={IndianRupee}
           title={isModelBRep ? "No payouts yet" : "No commission yet"}
@@ -151,20 +165,21 @@ export function CommissionPage() {
         />
       ) : (
         <ul className="space-y-3">
-          {data!.items.map((row) => (
+          {listItems.map((row) => (
             <li key={row.id}>
               <CommissionListRow
                 row={row}
                 settings={validationSettings}
                 actorMode={actorMode}
                 rateLabel={rateLabel ?? "—"}
+                repUsesModelB={isModelBRep}
               />
             </li>
           ))}
         </ul>
       )}
 
-      {(data?.items.length ?? 0) > 0 ? (
+      {listItems.length > 0 ? (
         <div className="flex items-center justify-between gap-2">
           <Button
             type="button"

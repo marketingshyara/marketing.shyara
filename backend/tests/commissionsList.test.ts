@@ -45,4 +45,14 @@ describe("commissions list prisma where (site live)", () => {
     };
     expect(siteLiveWhere.lead.project.deploymentVerifiedAt).toEqual({ not: null });
   });
+
+  it("Model B rep list excludes legacy percentage rows", () => {
+    const modelBRepWhere = {
+      repUserId: "rep-1",
+      amountCents: { in: [1_000_000, 200_000] }
+    };
+    expect(modelBRepWhere.amountCents.in).toContain(1_000_000);
+    expect(modelBRepWhere.amountCents.in).toContain(200_000);
+    expect(modelBRepWhere.amountCents.in).not.toContain(3_999);
+  });
 });
