@@ -12,22 +12,22 @@ function leadStub(partial: Partial<Lead>): Lead {
 }
 
 describe("commissionAmountCents", () => {
-  it("uses agreed total and default 20% bps (bankers rounding)", () => {
+  it("uses agreed total and default 25% bps (bankers rounding)", () => {
     const lead = leadStub({ agreedTotalCents: 100_000 });
-    expect(commissionAmountCents(lead, 50_000, defaultSettings)).toBe(20_000);
+    expect(commissionAmountCents(lead, 50_000, defaultSettings)).toBe(25_000);
     const leadSmall = leadStub({ agreedTotalCents: 99 });
-    expect(commissionAmountCents(leadSmall, 99, defaultSettings)).toBe(20);
+    expect(commissionAmountCents(leadSmall, 99, defaultSettings)).toBe(25);
   });
 
   it("ignores verified final payment amount (always agreed total)", () => {
     const lead = leadStub({ agreedTotalCents: 799_900 });
-    expect(commissionAmountCents(lead, 399_950, defaultSettings)).toBe(159_980);
+    expect(commissionAmountCents(lead, 399_950, defaultSettings)).toBe(199_975);
   });
 
   it("respects floor rounding when configured", () => {
     const settings = portalSettingsSchema.parse({ commissionRounding: "floor" });
     const lead = leadStub({ agreedTotalCents: 99 });
-    expect(commissionAmountCents(lead, 99, settings)).toBe(19);
+    expect(commissionAmountCents(lead, 99, settings)).toBe(24);
   });
 
   it("rounds exact halves to even with bankers", () => {

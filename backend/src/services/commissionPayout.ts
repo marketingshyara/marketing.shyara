@@ -1,4 +1,5 @@
 import {
+  CommissionModel,
   LeadStatus,
   PaymentKind,
   PaymentVerificationStatus,
@@ -9,6 +10,13 @@ import { getPortalSettings } from "./settings.js";
 import { getPipelineStages } from "./pipeline.js";
 import { computeCommissionAmountCents } from "./commissionRules.js";
 import type { PortalSettingsValues } from "../validators/schemas.js";
+import {
+  computeCommissionAmountForRep,
+  getDeployedOrdinalForLead,
+  getRepCommissionModel,
+  shouldUpsertCommissionOnDeploymentVerify
+} from "./commissionModel.js";
+import { resolveEffectiveCommissionRowModel } from "./commissionRules.js";
 
 const leadDetailInclude = {
   payments: { orderBy: { markedAt: "desc" as const } },
@@ -91,7 +99,28 @@ export async function syncUnpaidCommissionAmount(
   });
   if (!commission || commission.isPaid) return null;
 
-  const amountCents = computeCommissionAmountCents(commission.lead, settings);
+  const repModel = await getRepCommissionModel(tx, commission.repUserId);
+  const deployedOrdinal = await getDeployedOrdinalForLead(
+    tx,
+    commission.repUserId,
+    leadId
+  );
+  const rowModel = resolveEffectiveCommissionRowModel(
+    repModel,
+    commission.lead,
+    commission,
+    settings,
+    deployedOrdinal
+  );
+  const amountCents =
+    rowModel === CommissionModel.MODEL_A
+      ? computeCommissionAmountCents(commission.lead, settings)
+      : computeCommissionAmountForRep(
+          commission.lead,
+          rowModel,
+          settings,
+          deployedOrdinal
+        );
   if (amountCents !== commission.amountCents) {
     await tx.commission.update({
       where: { leadId },

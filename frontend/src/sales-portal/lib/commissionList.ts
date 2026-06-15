@@ -12,7 +12,11 @@ export type CommissionValidationSettings = Pick<
   | "commissionRateBps"
   | "commissionRounding"
   | "performanceBonusBps"
->;
+> & {
+  commissionModel?: "MODEL_A" | "MODEL_B";
+  milestoneAmountCents?: number;
+  perDealAfterCents?: number;
+};
 
 export type CommissionRowStage = {
   siteLive: boolean;
@@ -33,6 +37,18 @@ export function commissionValidationSettings(
   repSettings: RepPortalSettings,
   adminSettings?: PortalSettingsValues | null
 ): CommissionValidationSettings {
+  if (repSettings.commissionModel === "MODEL_B") {
+    return {
+      commissionModel: "MODEL_B",
+      minAgreedTotalCents: repSettings.minAgreedTotalCents,
+      commissionRateBps: 0,
+      commissionRounding: "bankers",
+      performanceBonusBps: 0,
+      milestoneAmountCents:
+        repSettings.milestoneAmountCents ?? 1_000_000,
+      perDealAfterCents: repSettings.perDealAfterCents ?? 200_000
+    };
+  }
   const rounding =
     repSettings.commissionRounding ??
     adminSettings?.commissionRounding;
@@ -40,8 +56,9 @@ export function commissionValidationSettings(
     throw new Error("commissionRounding is required from portal settings");
   }
   return {
+    commissionModel: "MODEL_A",
     minAgreedTotalCents: repSettings.minAgreedTotalCents,
-    commissionRateBps: repSettings.commissionRateBps,
+    commissionRateBps: repSettings.commissionRateBps ?? adminSettings?.commissionRateBps ?? 0,
     commissionRounding: rounding,
     performanceBonusBps:
       repSettings.performanceBonusBps ?? adminSettings?.performanceBonusBps ?? 0
@@ -86,6 +103,9 @@ export function commissionDataIssues(
   row: CommissionListItem,
   settings: CommissionValidationSettings
 ): string[] {
+  if (settings.commissionModel === "MODEL_B") {
+    return row.integrityIssues ?? [];
+  }
   const issues: string[] = [];
   const base = row.lead.agreedTotalCents;
   const minCommission = minimumExpectedCommissionCents(settings);

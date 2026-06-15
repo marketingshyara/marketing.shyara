@@ -19,7 +19,8 @@ import {
 import {
   useSessionQuery,
   useLogoutMutation,
-  usePendingActionsCountQuery
+  usePendingActionsCountQuery,
+  usePortalSettingsQuery
 } from "../hooks/useSalesQueries";
 import { PortalNotificationsBell } from "../components/PortalNotificationsBell";
 import { PortalErrorBoundary } from "../components/PortalErrorBoundary";
@@ -34,7 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Separator } from "@/components/ui/separator";
 import { userRoleLabel } from "../lib/copy";
 import { defaultPortalHome } from "../lib/portalPaths";
@@ -93,7 +94,14 @@ export function SalesPortalLayout() {
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
   const isAdmin = user?.role === "ADMIN";
-  const navItems = isAdmin ? ADMIN_NAV : REP_NAV;
+  const repSettingsQr = usePortalSettingsQuery(!isAdmin && user?.role === "SALES_REP");
+  const repNavItems = useMemo(() => {
+    const isModelB = repSettingsQr.data?.settings.commissionModel === "MODEL_B";
+    return REP_NAV.map((item) =>
+      item.to === "/portal/commission" && isModelB ? { ...item, label: "Payouts" } : item
+    );
+  }, [repSettingsQr.data?.settings.commissionModel]);
+  const navItems = isAdmin ? ADMIN_NAV : repNavItems;
   const homePath = user ? defaultPortalHome(user.role) : "/portal/pipeline";
   const pendingCount = usePendingActionsCountQuery(isAdmin);
   const pendingTotal = pendingCount.data?.total ?? 0;
@@ -105,7 +113,7 @@ export function SalesPortalLayout() {
           i.to === "/portal/reviews" ||
           i.to === "/portal/payments"
       )
-    : REP_NAV;
+    : repNavItems;
 
   const handleLogout = () => {
     logout.mutate(undefined, {

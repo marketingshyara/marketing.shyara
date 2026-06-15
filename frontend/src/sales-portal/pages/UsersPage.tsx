@@ -45,7 +45,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "../types";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../components/DataStaleToolbar";
-import { userRoleLabel } from "../lib/copy";
+import { userRoleLabel, commissionModelLabel } from "../lib/copy";
 import { passwordCopy } from "../lib/passwordCopy";
 import { TemporaryPasswordDialog } from "../components/auth/TemporaryPasswordDialog";
 import { PortalPageHeader } from "../components/PortalPageHeader";
@@ -86,7 +86,8 @@ export function UsersPage() {
       password: "",
       displayName: "",
       role: "SALES_REP" as const,
-      mustChangePassword: false
+      mustChangePassword: false,
+      commissionModel: undefined
     }
   });
 
@@ -99,7 +100,8 @@ export function UsersPage() {
       ? {
           displayName: editing.displayName ?? "",
           role: editing.role,
-          isActive: editing.isActive
+          isActive: editing.isActive,
+          commissionModel: editing.commissionModel ?? undefined
         }
       : undefined
   });
@@ -163,7 +165,10 @@ export function UsersPage() {
                       ...(v.password?.trim() ? { password: v.password.trim() } : {}),
                       ...(v.displayName?.trim() ? { displayName: v.displayName.trim() } : {}),
                       role: v.role,
-                      mustChangePassword: v.mustChangePassword
+                      mustChangePassword: v.mustChangePassword,
+                      ...(v.role === "SALES_REP" && v.commissionModel
+                        ? { commissionModel: v.commissionModel }
+                        : {})
                     },
                     {
                       onSuccess: (data) => {
@@ -172,7 +177,8 @@ export function UsersPage() {
                           password: "",
                           displayName: "",
                           role: "SALES_REP",
-                          mustChangePassword: false
+                          mustChangePassword: false,
+                          commissionModel: undefined
                         });
                         setCreateOpen(false);
                         const roleLabel = userRoleLabel(data.user.role);
@@ -258,6 +264,31 @@ export function UsersPage() {
                   </p>
                 ) : null}
               </div>
+              {createForm.watch("role") === "SALES_REP" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="create-user-commission-model">Commission model</Label>
+                  <Controller
+                    name="commissionModel"
+                    control={createForm.control}
+                    render={({ field }) => (
+                      <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                        <SelectTrigger id="create-user-commission-model" className="min-h-11 w-full">
+                          <SelectValue placeholder="Choose commission model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="MODEL_A">Model A (25% Commission)</SelectItem>
+                          <SelectItem value="MODEL_B">Model B (Milestone + Fixed)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {createForm.formState.errors.commissionModel ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {createForm.formState.errors.commissionModel.message}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="flex min-h-11 items-center gap-2">
                 <Switch
                   id="create-user-must-change-password"
@@ -332,6 +363,7 @@ export function UsersPage() {
                   <TableRow>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Commission</TableHead>
                     <TableHead>Lead finder</TableHead>
                     <TableHead>Active</TableHead>
                     <TableHead>{passwordCopy.mustSetNewPasswordColumn}</TableHead>
@@ -344,6 +376,13 @@ export function UsersPage() {
                       <TableCell className="font-medium">{u.email}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{userRoleLabel(u.role)}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {u.role === "SALES_REP" && u.commissionModel ? (
+                          <Badge variant="secondary">{commissionModelLabel(u.commissionModel)}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">
                         {u.role === "SALES_REP" && u.scraperQuota ? (
@@ -514,7 +553,13 @@ export function UsersPage() {
                     body: {
                       displayName: v.displayName.trim() === "" ? null : v.displayName.trim(),
                       role: v.role,
-                      isActive: v.isActive
+                      isActive: v.isActive,
+                      ...(v.role === "SALES_REP"
+                        ? {
+                            commissionModel:
+                              v.commissionModel ?? editing.commissionModel ?? undefined
+                          }
+                        : {})
                     }
                   },
                   { onSuccess: () => setEditOpen(false) }
@@ -543,6 +588,26 @@ export function UsersPage() {
                   )}
                 />
               </div>
+              {editForm.watch("role") === "SALES_REP" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-user-commission-model">Commission model</Label>
+                  <Controller
+                    name="commissionModel"
+                    control={editForm.control}
+                    render={({ field }) => (
+                      <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                        <SelectTrigger id="edit-user-commission-model" className="min-h-11 w-full">
+                          <SelectValue placeholder="Choose commission model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="MODEL_A">Model A (25% Commission)</SelectItem>
+                          <SelectItem value="MODEL_B">Model B (Milestone + Fixed)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              ) : null}
               <div className="flex items-center gap-2">
                 <Switch
                   id="edit-user-active"

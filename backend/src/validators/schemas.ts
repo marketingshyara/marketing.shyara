@@ -1,4 +1,5 @@
 import {
+  CommissionModel,
   LeadStatus,
   PaymentKind,
   PaymentVerificationStatus,
@@ -44,25 +45,54 @@ export const usersListQuerySchema = paginationQuerySchema.extend({
 const emptyToUndefined = (v: unknown) =>
   v === "" || v === null || v === undefined ? undefined : v;
 
-export const createUserBodySchema = z.object({
-  email: z.string().email().transform((e) => e.toLowerCase().trim()),
-  password: z.preprocess(
-    emptyToUndefined,
-    z.string().min(8).max(128).optional()
-  ),
-  displayName: z.preprocess(
-    emptyToUndefined,
-    z.string().min(1).max(120).optional()
-  ),
-  role: z.nativeEnum(UserRole),
-  mustChangePassword: z.boolean().optional()
-});
+export const createUserBodySchema = z
+  .object({
+    email: z.string().email().transform((e) => e.toLowerCase().trim()),
+    password: z.preprocess(
+      emptyToUndefined,
+      z.string().min(8).max(128).optional()
+    ),
+    displayName: z.preprocess(
+      emptyToUndefined,
+      z.string().min(1).max(120).optional()
+    ),
+    role: z.nativeEnum(UserRole),
+    mustChangePassword: z.boolean().optional(),
+    commissionModel: z.nativeEnum(CommissionModel).optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.role === UserRole.SALES_REP && data.commissionModel == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Commission model is required for sales reps.",
+        path: ["commissionModel"]
+      });
+    }
+    if (data.role === UserRole.ADMIN && data.commissionModel != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Commission model applies to sales reps only.",
+        path: ["commissionModel"]
+      });
+    }
+  });
 
-export const patchUserBodySchema = z.object({
-  isActive: z.boolean().optional(),
-  role: z.nativeEnum(UserRole).optional(),
-  displayName: z.union([z.string().min(1).max(120), z.null()]).optional()
-});
+export const patchUserBodySchema = z
+  .object({
+    isActive: z.boolean().optional(),
+    role: z.nativeEnum(UserRole).optional(),
+    displayName: z.union([z.string().min(1).max(120), z.null()]).optional(),
+    commissionModel: z.nativeEnum(CommissionModel).optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.role === UserRole.ADMIN && data.commissionModel != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Commission model applies to sales reps only.",
+        path: ["commissionModel"]
+      });
+    }
+  });
 
 export const resetPasswordBodySchema = z.object({
   temporaryPassword: z
@@ -337,7 +367,7 @@ export const repPainPointSchema = z.object({
 
 export const portalSettingsSchema = z
   .object({
-    commissionRateBps: z.number().int().min(0).max(10000).default(2000),
+    commissionRateBps: z.number().int().min(0).max(10000).default(2500),
     commissionBasis: z
       .enum(["VERIFIED_FINAL_PAYMENT", "FINAL_QUOTE", "AGREED_TOTAL"])
       .default("AGREED_TOTAL"),

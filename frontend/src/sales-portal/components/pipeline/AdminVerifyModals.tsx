@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Lead, LeadStatus, PipelineStageKey } from "../../types";
+import type { CommissionModel, Lead, LeadStatus, PipelineStageKey } from "../../types";
+import { modelBMilestoneDealHeadline, modelBMilestonePayCta } from "../../lib/copy";
 import { formatMinorUnits } from "../../lib/money";
 import { useAdminSettingsQuery } from "../../hooks/useSalesQueries";
 import { DealAmountField } from "./DealAmountField";
@@ -78,6 +79,9 @@ type Props = {
   transferredGithubRepoUrl?: string;
   onTransferredGithubRepoUrlChange?: (v: string) => void;
   transferredGithubRepoUrlError?: string | null;
+  repCommissionModel?: CommissionModel | null;
+  milestoneReadyForLead?: boolean;
+  onMilestonePayout?: () => void;
 };
 
 function VerifyFooter({
@@ -129,7 +133,10 @@ export function AdminVerifyModals({
   previewUrlError,
   transferredGithubRepoUrl = "",
   onTransferredGithubRepoUrlChange = () => {},
-  transferredGithubRepoUrlError = null
+  transferredGithubRepoUrlError = null,
+  repCommissionModel = null,
+  milestoneReadyForLead = false,
+  onMilestonePayout
 }: Props) {
   const templateLabel = lead.websiteTemplate
     ? formatTemplateOption(lead.websiteTemplate)
@@ -187,9 +194,32 @@ export function AdminVerifyModals({
         commissionStatusOk(lead.status)
     );
 
+  const isModelBRep = repCommissionModel === "MODEL_B";
+  const canMilestonePayout =
+    Boolean(
+      isModelBRep &&
+        !lead.commission &&
+        milestoneReadyForLead &&
+        deployVerified &&
+        commissionStatusOk(lead.status) &&
+        onMilestonePayout
+    );
+
   const commissionMarkDisabledReasons: string[] = [];
-  if (!lead.commission) {
-    commissionMarkDisabledReasons.push("Verify deployment first — commission is created after the site is live.");
+  if (isModelBRep && !lead.commission && milestoneReadyForLead) {
+    if (!deployVerified) {
+      commissionMarkDisabledReasons.push("Verify deployment first — milestone pays after the site is live.");
+    } else if (!commissionStatusOk(lead.status)) {
+      commissionMarkDisabledReasons.push("Complete due payment verification before paying the milestone.");
+    }
+  } else if (!lead.commission) {
+    if (isModelBRep) {
+      commissionMarkDisabledReasons.push(
+        "Model B creates no payout row until the 5th site-live deal (milestone) or deal 6+."
+      );
+    } else {
+      commissionMarkDisabledReasons.push("Verify deployment first — commission is created after the site is live.");
+    }
   } else if (lead.commission.isPaid) {
     commissionMarkDisabledReasons.push("Commission is already marked paid.");
   } else if (!deployVerified) {
@@ -199,9 +229,11 @@ export function AdminVerifyModals({
   }
 
   const estimatedCents =
-    portalSettings != null ? estimatedCommissionForLead(lead, portalSettings) : null;
+    portalSettings != null && !isModelBRep
+      ? estimatedCommissionForLead(lead, portalSettings)
+      : null;
   const performanceBonusHint =
-    portalSettings != null && lead.commission && !lead.commission.isPaid
+    portalSettings != null && lead.commission && !lead.commission.isPaid && !isModelBRep
       ? performanceBonusPayoutHint(lead, portalSettings)
       : null;
 
@@ -693,7 +725,21 @@ export function AdminVerifyModals({
         onOpenChange={(o) => !o && onClose()}
         title="Commission payout"
         footer={
-          lead.commission && !lead.commission.isPaid ? (
+          canMilestonePayout ? (
+            <>
+              <Button
+                type="button"
+                className="min-h-11 w-full sm:w-auto"
+                disabled={verify.isPending || !canMilestonePayout}
+                onClick={onMilestonePayout}
+              >
+                {modelBMilestonePayCta()}
+              </Button>
+              <ModalDisabledHints
+                reasons={!canMilestonePayout ? commissionMarkDisabledReasons : []}
+              />
+            </>
+          ) : lead.commission && !lead.commission.isPaid ? (
             <>
               <Button
                 type="button"
@@ -708,13 +754,28 @@ export function AdminVerifyModals({
               />
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">Commission already paid or not due yet.</p>
+            <p className="text-sm text-muted-foreground">
+              {milestoneReadyForLead && isModelBRep
+                ? "Milestone payout is available for this 5th site-live deal."
+                : "Commission already paid or not due yet."}
+            </p>
           )
         }
       >
-        {lead.commission ? (
+        {canMilestonePayout || (isModelBRep && milestoneReadyForLead && !lead.commission) ? (
           <div className="min-w-0 space-y-3 text-sm">
-            {portalSettings && !lead.commission.isPaid ? (
+            <p className="font-medium text-primary">
+              {modelBMilestoneDealHeadline()}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Model B reps earn a one-time milestone on their 5th verified deployment. This creates
+              the payout row and marks it paid in one step.
+            </p>
+            <ModalDisabledHints reasons={commissionMarkDisabledReasons} />
+          </div>
+        ) : lead.commission ? (
+          <div className="min-w-0 space-y-3 text-sm">
+            {portalSettings && !lead.commission.isPaid && !isModelBRep ? (
               <>
                 <PortalMetaGrid
                   items={[
@@ -747,12 +808,21 @@ export function AdminVerifyModals({
             ) : (
               <p>
                 Payout: {formatMinorUnits(lead.commission.amountCents)}
-                {formatPerformanceBonusSuffix(lead.commission.bonusCents, portalSettings)}
+                {!isModelBRep
+                  ? formatPerformanceBonusSuffix(lead.commission.bonusCents, portalSettings)
+                  : null}
+                {isModelBRep ? (
+                  <span className="block text-xs text-muted-foreground">Fixed per-deal payout</span>
+                ) : null}
               </p>
             )}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Commission is created after deployment verify.</p>
+          <p className="text-sm text-muted-foreground">
+            {isModelBRep
+              ? "No payout row yet. Deals 1–4 count toward the milestone; deal 6+ creates a row on deployment verify."
+              : "Commission is created after deployment verify."}
+          </p>
         )}
       </StageModalShell>
     </>

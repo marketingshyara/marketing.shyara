@@ -22,7 +22,7 @@ describe("parsePortalSettings", () => {
 
   it("parses empty object to defaults", () => {
     const settings = parsePortalSettings({});
-    expect(settings.commissionRateBps).toBe(2000);
+    expect(settings.commissionRateBps).toBe(2500);
     expect(settings.performanceBonusBps).toBe(500);
     expect(settings.advancePaymentShareBps).toBe(5000);
     expect(settings.paymentShareMethods).toHaveLength(5);

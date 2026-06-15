@@ -72,6 +72,22 @@ describe("commissionList", () => {
     expect(expectedCommissionCents(good, settings)).toBe(amount);
   });
 
+  it("skips Model A rate checks for Model B rows", () => {
+    const modelBSettings = { ...settings, commissionModel: "MODEL_B" as const };
+    const modelBRow = row({
+      amountCents: 200_000,
+      lead: {
+        id: "l1",
+        clientName: "b-rep",
+        status: "DEPLOYED",
+        agreedTotalCents: 100_00,
+        project: { deploymentVerifiedAt: "2026-05-01T00:00:00.000Z" }
+      },
+      rep: { id: "r1", displayName: "Rep", commissionModel: "MODEL_B" }
+    });
+    expect(commissionDataIssues(modelBRow, modelBSettings)).toEqual([]);
+  });
+
   it("derives row stage from deployment and paid flag", () => {
     expect(commissionRowStage(row())).toEqual({
       siteLive: true,

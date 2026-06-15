@@ -21,6 +21,8 @@ import {
   assertAgreedTotalMeetsMinimum,
   computeCommissionAmountCents
 } from "../services/commissionRules.js";
+import { CommissionModel } from "@prisma/client";
+import { getRepCommissionModel } from "../services/commissionModel.js";
 import { assertLeadAccess } from "../services/leadAccess.js";
 import {
   assertAdminLeadPatchBody,
@@ -871,16 +873,19 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
             wasPatchFieldSent(rawBody, "agreedTotalCents") &&
             body.agreedTotalCents !== undefined
           ) {
-            const amountCents = computeCommissionAmountCents(updated, settings);
-            if (commission.isPaid && amountCents !== commission.amountCents) {
-              throw new HttpError(
-                400,
-                "COMMISSION_INVALID",
-                "Cannot change agreed total: paid commission no longer matches portal settings."
-              );
-            }
-            if (amountCents !== commission.amountCents) {
-              commissionUpdate.amountCents = amountCents;
+            const repModel = await getRepCommissionModel(tx, commission.repUserId);
+            if (repModel === CommissionModel.MODEL_A) {
+              const amountCents = computeCommissionAmountCents(updated, settings);
+              if (commission.isPaid && amountCents !== commission.amountCents) {
+                throw new HttpError(
+                  400,
+                  "COMMISSION_INVALID",
+                  "Cannot change agreed total: paid commission no longer matches portal settings."
+                );
+              }
+              if (amountCents !== commission.amountCents) {
+                commissionUpdate.amountCents = amountCents;
+              }
             }
           }
           if (Object.keys(commissionUpdate).length > 0) {

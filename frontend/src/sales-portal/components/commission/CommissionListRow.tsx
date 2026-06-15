@@ -15,6 +15,10 @@ import {
   formatCommissionPaidAt,
   rowIntegrityIssues
 } from "../../lib/commissionList";
+import {
+  MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT,
+  MODEL_B_PER_DEAL_AFTER_CENTS_DEFAULT
+} from "../../lib/copy";
 import { formatMinorUnits } from "../../lib/money";
 
 type Props = {
@@ -55,9 +59,23 @@ function StageStrip({ row }: { row: CommissionListItem }) {
 }
 
 export function CommissionListRow({ row, settings, actorMode, rateLabel }: Props) {
-  const issues = rowIntegrityIssues(row, settings);
+  const rowModel =
+    row.rowCommissionModel ?? row.rep.commissionModel ?? settings.commissionModel ?? "MODEL_A";
+  const isModelB = rowModel === "MODEL_B";
+  const rowSettings = isModelB ? { ...settings, commissionModel: "MODEL_B" as const } : settings;
+  const issues = rowIntegrityIssues(row, rowSettings);
   const href = commissionDetailHref(row, actorMode);
   const paidLabel = formatCommissionPaidAt(row.paidAt);
+  const payoutTypeLabel = (() => {
+    if (!isModelB) return null;
+    const milestoneCents =
+      settings.milestoneAmountCents ?? MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT;
+    const perDealCents =
+      settings.perDealAfterCents ?? MODEL_B_PER_DEAL_AFTER_CENTS_DEFAULT;
+    if (row.amountCents === milestoneCents) return "Milestone payout";
+    if (row.amountCents === perDealCents) return "Fixed per-deal";
+    return "Fixed payout";
+  })();
   const dealAmount =
     row.lead.agreedTotalCents != null
       ? formatMinorUnits(row.lead.agreedTotalCents)
@@ -85,19 +103,28 @@ export function CommissionListRow({ row, settings, actorMode, rateLabel }: Props
           <StageStrip row={row} />
 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
+            {!isModelB ? (
+              <div>
+                <dt className="text-xs text-muted-foreground">Deal amount</dt>
+                <dd className="font-medium tabular-nums">{dealAmount}</dd>
+              </div>
+            ) : null}
+            {!isModelB ? (
+              <div>
+                <dt className="text-xs text-muted-foreground">Commission rate</dt>
+                <dd className="font-medium">{rateLabel}</dd>
+              </div>
+            ) : (
+              <div>
+                <dt className="text-xs text-muted-foreground">Payout type</dt>
+                <dd className="font-medium">{payoutTypeLabel}</dd>
+              </div>
+            )}
             <div>
-              <dt className="text-xs text-muted-foreground">Deal amount</dt>
-              <dd className="font-medium tabular-nums">{dealAmount}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Commission rate</dt>
-              <dd className="font-medium">{rateLabel}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Commission</dt>
+              <dt className="text-xs text-muted-foreground">Payout</dt>
               <dd className="font-semibold tabular-nums">
                 {formatMinorUnits(row.amountCents)}
-                {formatPerformanceBonusSuffix(row.bonusCents, settings)}
+                {!isModelB ? formatPerformanceBonusSuffix(row.bonusCents, settings) : null}
               </dd>
             </div>
             <div>
@@ -144,5 +171,6 @@ export function CommissionListRow({ row, settings, actorMode, rateLabel }: Props
 }
 
 export function commissionListRateLabel(settings: CommissionValidationSettings): string {
+  if (settings.commissionModel === "MODEL_B") return "Fixed payout";
   return commissionRateLabel(settings as Parameters<typeof commissionRateLabel>[0]);
 }

@@ -1,6 +1,12 @@
 import type { Lead, PortalSettingsValues, RepPortalSettings } from "../types";
 import { bpsToPercentLabel, estimateCommissionCents, formatMinorUnits } from "./money";
 
+function isModelBSettings(
+  settings: Pick<PortalSettingsValues, "commissionRateBps"> | RepPortalSettings
+): boolean {
+  return "commissionModel" in settings && settings.commissionModel === "MODEL_B";
+}
+
 export function commissionBasisLabel(): string {
   return "Agreed project total";
 }
@@ -33,6 +39,8 @@ export function commissionBreakdownHint(
   lead: Lead,
   settings: Pick<PortalSettingsValues, "commissionRateBps"> | RepPortalSettings
 ): string | null {
+  if (isModelBSettings(settings)) return null;
+  if (!("commissionRateBps" in settings) || settings.commissionRateBps == null) return null;
   const base = commissionBaseCents(lead);
   if (base == null) return null;
   return `${commissionRateLabel(settings)} of ${formatMinorUnits(base)} agreed total`;
@@ -60,6 +68,7 @@ export function estimatedPerformanceBonusCents(
 /** Admin copy when commission is not yet paid (threshold is rep-wide; exact eligibility checked on mark-paid). */
 /** Rep-facing summary of the performance bonus program (read-only). */
 export function performanceBonusProgramHint(settings: BonusDisplaySettings): string | null {
+  if ("commissionModel" in settings && settings.commissionModel === "MODEL_B") return null;
   if (settings.performanceBonusBps === 0) return null;
   const threshold = settings.performanceBonusAfterCompletedSales;
   const fromSale = threshold + 1;
@@ -70,6 +79,7 @@ export function performanceBonusPayoutHint(
   lead: Lead,
   settings: BonusDisplaySettings
 ): string | null {
+  if ("commissionModel" in settings && settings.commissionModel === "MODEL_B") return null;
   const bonus = estimatedPerformanceBonusCents(lead, settings);
   if (bonus == null || bonus === 0) return null;
   const threshold = settings.performanceBonusAfterCompletedSales;

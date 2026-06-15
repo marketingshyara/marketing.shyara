@@ -5,6 +5,7 @@ import type {
   PaymentVerificationStatus,
   UserRole
 } from "../types";
+import { formatMinorUnits } from "./money";
 
 const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   NEW: "New Lead",
@@ -32,8 +33,57 @@ const PAYMENT_STATUS_LABELS: Record<PaymentVerificationStatus, string> = {
   REJECTED: "Declined"
 };
 
+export const MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT = 1_000_000;
+export const MODEL_B_PER_DEAL_AFTER_CENTS_DEFAULT = 200_000;
+
+export function modelBMilestoneAmountLabel(
+  cents = MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT
+): string {
+  return formatMinorUnits(cents);
+}
+
+export function modelBPerDealAmountLabel(
+  cents = MODEL_B_PER_DEAL_AFTER_CENTS_DEFAULT
+): string {
+  return formatMinorUnits(cents);
+}
+
+export function modelBMilestonePayCta(
+  milestoneAmountCents = MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT
+): string {
+  return `Pay milestone (${modelBMilestoneAmountLabel(milestoneAmountCents)})`;
+}
+
+export function modelBMilestoneDealHeadline(
+  milestoneAmountCents = MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT
+): string {
+  return `5th site-live deal — pay ${modelBMilestoneAmountLabel(milestoneAmountCents)} milestone`;
+}
+
+export function modelBMilestoneReadyAdminHint(
+  milestoneAmountCents = MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT
+): string {
+  return `Milestone ready — pay ${modelBMilestoneAmountLabel(milestoneAmountCents)} on the 5th site-live deal.`;
+}
+
+export function modelBMilestonePaidToast(
+  milestoneAmountCents = MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT
+): string {
+  return `Milestone paid (${modelBMilestoneAmountLabel(milestoneAmountCents)}).`;
+}
+
+export function modelBMilestoneRecordedToast(
+  milestoneAmountCents = MODEL_B_MILESTONE_AMOUNT_CENTS_DEFAULT
+): string {
+  return `Milestone payout recorded (${modelBMilestoneAmountLabel(milestoneAmountCents)})`;
+}
+
 export function leadStatusLabel(status: LeadStatus): string {
   return LEAD_STATUS_LABELS[status];
+}
+
+export function commissionModelLabel(model: import("../types").CommissionModel): string {
+  return model === "MODEL_A" ? "Model A (25%)" : "Model B (Milestone)";
 }
 
 export function userRoleLabel(role: UserRole): string {

@@ -126,6 +126,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         displayName: true,
         role: true,
         mustChangePassword: true,
+        commissionModel: true,
         isActive: true,
         archivedAt: true
       }
@@ -140,7 +141,8 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         email: user.email,
         displayName: user.displayName,
         role: user.role,
-        mustChangePassword: user.mustChangePassword
+        mustChangePassword: user.mustChangePassword,
+        commissionModel: user.commissionModel
       }
     });
   });

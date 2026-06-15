@@ -7,6 +7,7 @@ import { HttpError } from "../errors/httpError.js";
 import { getPipelineStages, summarizePipelineStages } from "../services/pipeline.js";
 import { getPortalSettings } from "../services/settings.js";
 import { getRepDashboardStats } from "../services/teamStats.js";
+import { buildMilestoneProgress, repLeadAttributionWhere } from "../services/commissionModel.js";
 import { teamRepLeadsQuerySchema } from "../validators/schemas.js";
 
 function repLeadDisposition(lead: {
@@ -35,14 +36,19 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
       const reps = await app.prisma.user.findMany({
         where: { role: UserRole.SALES_REP, isActive: true, archivedAt: null },
         orderBy: [{ displayName: "asc" }, { email: "asc" }],
-        select: { id: true, email: true, displayName: true }
+        select: { id: true, email: true, displayName: true, commissionModel: true }
       });
       const items = await Promise.all(
         reps.map(async (r) => {
           const stats = await getRepDashboardStats(app.prisma, r.id);
+          const milestone =
+            r.commissionModel === "MODEL_B"
+              ? await buildMilestoneProgress(app.prisma, r.id)
+              : null;
           return {
             ...r,
             ...stats,
+            milestone,
             /** @deprecated use pendingPayments */
             pendingVerifications: stats.pendingPayments,
             activeLeads: stats.activeClients
@@ -69,6 +75,7 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
           id: true,
           email: true,
           displayName: true,
+          commissionModel: true,
           archivedAt: true,
           isActive: true
         }
@@ -79,6 +86,10 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
 
       const stats = await getRepDashboardStats(app.prisma, rep.id);
       const settings = await getPortalSettings(app.prisma);
+      const milestone =
+        rep.commissionModel === "MODEL_B"
+          ? await buildMilestoneProgress(app.prisma, rep.id)
+          : null;
 
       const statusFilter =
         query.status === "completed"
@@ -89,7 +100,7 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
 
       const leads = await app.prisma.lead.findMany({
         where: {
-          assignedToUserId: rep.id,
+          ...repLeadAttributionWhere(rep.id),
           convertedAt: { not: null },
           ...statusFilter
         },
@@ -122,6 +133,7 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
         rep: {
           ...rep,
           ...stats,
+          milestone,
           pendingVerifications: stats.pendingPayments,
           activeLeads: stats.activeClients
         },
@@ -159,7 +171,7 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
           : {};
 
       const where = {
-        assignedToUserId: rep.id,
+        ...repLeadAttributionWhere(rep.id),
         ...createdAtFilter,
         ...(search
           ? {

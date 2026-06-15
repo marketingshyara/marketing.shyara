@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import bcrypt from "bcryptjs";
-import { ActivityAction, Prisma, UserRole } from "@prisma/client";
+import { ActivityAction, Prisma, UserRole, CommissionModel } from "@prisma/client";
 import { randomBytes } from "node:crypto";
 import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
@@ -48,6 +48,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
           email: true,
           displayName: true,
           role: true,
+          commissionModel: true,
           isActive: true,
           mustChangePassword: true,
           archivedAt: true,
@@ -129,6 +130,8 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
             passwordHash,
             displayName: body.displayName ?? null,
             role: body.role,
+            commissionModel:
+              body.role === UserRole.SALES_REP ? body.commissionModel! : null,
             isActive: true,
             mustChangePassword
           },
@@ -137,6 +140,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
             email: true,
             displayName: true,
             role: true,
+            commissionModel: true,
             isActive: true,
             mustChangePassword: true,
             createdAt: true
@@ -153,7 +157,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
         action: ActivityAction.CREATE,
         entityType: "User",
         entityId: user.id,
-        after: { email: user.email, role: user.role },
+        after: { email: user.email, role: user.role, commissionModel: user.commissionModel },
         request
       });
 
@@ -204,6 +208,21 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
             }
           }
 
+          const nextRole = body.role ?? existing.role;
+          if (nextRole === UserRole.SALES_REP) {
+            const nextModel =
+              body.commissionModel !== undefined
+                ? body.commissionModel
+                : existing.commissionModel;
+            if (!nextModel) {
+              throw new HttpError(
+                400,
+                "COMMISSION_MODEL_REQUIRED",
+                "Commission model is required for sales reps."
+              );
+            }
+          }
+
           const claim = await tx.user.updateMany({
             where: {
               id,
@@ -212,7 +231,11 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
             data: {
               ...(body.isActive !== undefined ? { isActive: body.isActive } : {}),
               ...(body.role !== undefined ? { role: body.role } : {}),
-              ...(body.displayName !== undefined ? { displayName: body.displayName } : {})
+              ...(body.displayName !== undefined ? { displayName: body.displayName } : {}),
+              ...(body.commissionModel !== undefined
+                ? { commissionModel: body.commissionModel }
+                : {}),
+              ...(nextRole === UserRole.ADMIN ? { commissionModel: null } : {})
             }
           });
           if (claim.count === 0) {
@@ -232,6 +255,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
               role: true,
               isActive: true,
               mustChangePassword: true,
+              commissionModel: true,
               updatedAt: true
             }
           });
@@ -249,12 +273,14 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
         before: {
           isActive: existing.isActive,
           role: existing.role,
-          displayName: existing.displayName
+          displayName: existing.displayName,
+          commissionModel: existing.commissionModel
         },
         after: {
           isActive: updated.isActive,
           role: updated.role,
-          displayName: updated.displayName
+          displayName: updated.displayName,
+          commissionModel: updated.commissionModel
         },
         request
       });
@@ -307,6 +333,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
           email: true,
           displayName: true,
           role: true,
+          commissionModel: true,
           isActive: true,
           mustChangePassword: true,
           updatedAt: true

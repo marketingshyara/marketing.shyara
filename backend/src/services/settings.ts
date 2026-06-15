@@ -1,6 +1,12 @@
-import type { LeadStatus, Prisma, PrismaClient } from "@prisma/client";
+import type { LeadStatus, Prisma, PrismaClient, CommissionModel } from "@prisma/client";
+import { CommissionModel as CommissionModelEnum } from "@prisma/client";
 import { HttpError } from "../errors/httpError.js";
 import { resolvePaymentShareConfig } from "../data/paymentShareMethods.js";
+import {
+  MODEL_B_MILESTONE_AMOUNT_CENTS,
+  MODEL_B_MILESTONE_TARGET,
+  MODEL_B_PER_DEAL_AFTER_CENTS
+} from "./commissionModel.js";
 import {
   parsePortalSettings,
   patchPortalSettingsSchema,
@@ -103,19 +109,40 @@ export function toPublicSettings(values: PortalSettingsValues): PortalSettingsVa
 
 /** Rep-facing subset (no commission tuning or manual transitions). */
 export function toRepPortalSettings(values: PortalSettingsValues) {
-  return {
+  return toRepPortalSettingsForModel(CommissionModelEnum.MODEL_A, values);
+}
+
+export function toRepPortalSettingsForModel(
+  model: CommissionModel,
+  values: PortalSettingsValues
+) {
+  const base = {
     minAgreedTotalCents: values.minAgreedTotalCents,
     advancePaymentShareBps: values.advancePaymentShareBps,
-    commissionRateBps: values.commissionRateBps,
-    commissionRounding: values.commissionRounding,
-    performanceBonusBps: values.performanceBonusBps,
-    performanceBonusAfterCompletedSales: values.performanceBonusAfterCompletedSales,
     templatesCatalogUrl: values.templatesCatalogUrl,
     tutorialLinks: values.tutorialLinks,
     painPointsByCategory: values.painPointsByCategory,
     paymentShareMethods: values.paymentShareMethods.map((method) =>
       resolvePaymentShareConfig(values.paymentShareMethods, method.key)
-    )
+    ),
+    commissionModel: model
+  };
+
+  if (model === CommissionModelEnum.MODEL_B) {
+    return {
+      ...base,
+      milestoneTarget: MODEL_B_MILESTONE_TARGET,
+      milestoneAmountCents: MODEL_B_MILESTONE_AMOUNT_CENTS,
+      perDealAfterCents: MODEL_B_PER_DEAL_AFTER_CENTS
+    };
+  }
+
+  return {
+    ...base,
+    commissionRateBps: values.commissionRateBps,
+    commissionRounding: values.commissionRounding,
+    performanceBonusBps: values.performanceBonusBps,
+    performanceBonusAfterCompletedSales: values.performanceBonusAfterCompletedSales
   };
 }
 

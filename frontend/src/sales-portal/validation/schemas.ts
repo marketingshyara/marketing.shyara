@@ -10,6 +10,7 @@ import {
 } from "../lib/indianMobilePhone";
 
 export const userRoleSchema = z.enum(["ADMIN", "SALES_REP"]);
+export const commissionModelSchema = z.enum(["MODEL_A", "MODEL_B"]);
 export const leadStatusSchema = z.enum([
   "NEW",
   "ADVANCE_PAID",
@@ -55,27 +56,49 @@ export const paginationSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20)
 });
 
-export const createUserSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Enter a valid email address."),
-  password: z
-    .string()
-    .optional()
-    .refine((s) => !s || s.length === 0 || (s.length >= 8 && s.length <= 128), {
-      message: "Password must be 8–128 characters or empty"
-    }),
-  displayName: z.preprocess(
-    (v) => (v === "" || v === null || v === undefined ? undefined : v),
-    z.string().min(1).max(120).optional()
-  ),
-  role: userRoleSchema,
-  mustChangePassword: z.boolean().optional()
-});
+export const createUserSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email("Enter a valid email address."),
+    password: z
+      .string()
+      .optional()
+      .refine((s) => !s || s.length === 0 || (s.length >= 8 && s.length <= 128), {
+        message: "Password must be 8–128 characters or empty"
+      }),
+    displayName: z.preprocess(
+      (v) => (v === "" || v === null || v === undefined ? undefined : v),
+      z.string().min(1).max(120).optional()
+    ),
+    role: userRoleSchema,
+    mustChangePassword: z.boolean().optional(),
+    commissionModel: commissionModelSchema.optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.role === "SALES_REP" && !data.commissionModel) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose a commission model for sales reps.",
+        path: ["commissionModel"]
+      });
+    }
+  });
 
-export const patchUserSchema = z.object({
-  isActive: z.boolean().optional(),
-  role: userRoleSchema.optional(),
-  displayName: z.union([z.string().min(1).max(120), z.literal(""), z.null()]).optional()
-});
+export const patchUserSchema = z
+  .object({
+    isActive: z.boolean().optional(),
+    role: userRoleSchema.optional(),
+    displayName: z.union([z.string().min(1).max(120), z.literal(""), z.null()]).optional(),
+    commissionModel: commissionModelSchema.optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.role === "SALES_REP" && !data.commissionModel) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose a commission model for sales reps.",
+        path: ["commissionModel"]
+      });
+    }
+  });
 
 export const resetPasswordSchema = z.object({
   temporaryPassword: z

@@ -30,10 +30,12 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { MilestoneProgressCard } from "../../components/commission/MilestoneProgressCard";
 import {
   errToast,
   useLeadQuery,
   useMarkCommissionPaidMutation,
+  useMilestonePayoutMutation,
   usePatchLeadMutation,
   useRejectLeadStageMutation,
   useTeamRepQuery,
@@ -58,7 +60,7 @@ import type {
 } from "../../types";
 import { formatMinorUnits } from "../../lib/money";
 import { paymentReferenceFieldCopy } from "../../lib/paymentShareMethods";
-import { leadStatusLabel } from "../../lib/copy";
+import { leadStatusLabel, modelBMilestoneDealHeadline, modelBMilestonePaidToast, modelBMilestonePayCta } from "../../lib/copy";
 import { formatTemplateOption } from "../../lib/templateLabel";
 import { toastIfStageBlocked } from "../../lib/pipelineStageGuard";
 import { getPipelineFocus } from "../../lib/pipelineCopy";
@@ -83,28 +85,39 @@ const STAGE_REJECTABLE: Partial<Record<PipelineStageKey, PipelineStageVerifyKey>
   deployment_verify: "deployment"
 };
 
-function AdminCommissionSummary({ lead }: { lead: Lead }) {
-  const settingsQr = useAdminSettingsQuery(Boolean(lead.commission));
+function AdminCommissionSummary({
+  lead,
+  isModelBRep
+}: {
+  lead: Lead;
+  isModelBRep: boolean;
+}) {
+  const settingsQr = useAdminSettingsQuery(Boolean(lead.commission) && !isModelBRep);
   const portalSettings = settingsQr.data?.settings;
   const commission = lead.commission!;
-  const bonusHint =
-    portalSettings && !commission.isPaid
-      ? performanceBonusPayoutHint(lead, portalSettings)
-      : null;
 
   return (
     <div className="rounded-lg border p-4 text-sm space-y-2">
       <p>
-        Commission: {formatMinorUnits(commission.amountCents)}
-        {formatPerformanceBonusSuffix(commission.bonusCents, portalSettings)}
+        {isModelBRep ? "Payout" : "Commission"}: {formatMinorUnits(commission.amountCents)}
+        {!isModelBRep
+          ? formatPerformanceBonusSuffix(commission.bonusCents, portalSettings)
+          : null}
       </p>
-      {bonusHint ? (
+      {!isModelBRep && portalSettings && !commission.isPaid ? (
         <p className="text-xs text-muted-foreground" role="status">
-          {bonusHint}
+          {performanceBonusPayoutHint(lead, portalSettings)}
         </p>
       ) : null}
+      {isModelBRep ? (
+        <p className="text-xs text-muted-foreground">Fixed per-deal payout</p>
+      ) : null}
       <p className="text-muted-foreground">
-        {commission.isPaid ? "Paid" : "Pending payout after you verify deployment"}
+        {commission.isPaid
+          ? "Paid"
+          : isModelBRep
+            ? "Pending payout after you verify deployment"
+            : "Pending payout after you verify deployment"}
       </p>
     </div>
   );
@@ -131,7 +144,13 @@ export function AdminProjectPage() {
   const verifyStage = useVerifyLeadStageMutation(leadId ?? "", repId);
   const rejectStage = useRejectLeadStageMutation(leadId ?? "", repId);
   const markCommissionPaid = useMarkCommissionPaidMutation(leadId ?? "", repId);
+  const milestonePayout = useMilestonePayoutMutation(leadId ?? "", repId);
   const patch = usePatchLeadMutation(leadId ?? "", repId);
+
+  const repSummary = teamRepQr.data?.rep;
+  const isModelBRep = repSummary?.commissionModel === "MODEL_B";
+  const milestoneReadyForLead =
+    isModelBRep && repSummary?.milestone?.milestoneReadyLeadId === leadId;
 
   const lead = leadQr.data?.lead;
   const stages = leadQr.data?.pipelineStages ?? [];
@@ -255,8 +274,33 @@ export function AdminProjectPage() {
     });
   };
 
+  const runMilestonePayout = () => {
+    if (!lead || !milestoneReadyForLead) return;
+    if (!lead.project?.deploymentVerifiedAt) {
+      toast.error("Verify deployment before paying the milestone.");
+      return;
+    }
+    milestonePayout.mutate(undefined, {
+      meta: { skipSuccessToast: true },
+      onSuccess: (data) => {
+        closeModal();
+        const next = getPipelineFocus(data.pipelineStages, "admin");
+        if (next.headline && next.kind !== "idle") {
+          toast.success(`Milestone paid. Next: ${next.headline}`);
+        } else {
+          toast.success(modelBMilestonePaidToast());
+        }
+      },
+      onError: (e) => errToast(e, qc)
+    });
+  };
+
   const runVerify = () => {
     if (!activeStage) return;
+    if (activeStage === "commission" && isModelBRep && !lead?.commission && milestoneReadyForLead) {
+      runMilestonePayout();
+      return;
+    }
     if (activeStage === "commission" && lead?.commission) {
       if (!lead.project?.deploymentVerifiedAt) {
         toast.error("Verify deployment before marking commission paid.");
@@ -639,8 +683,34 @@ export function AdminProjectPage() {
         </div>
       )}
 
+      {isModelBRep && repSummary?.milestone ? (
+        <MilestoneProgressCard milestone={repSummary.milestone} variant="admin" />
+      ) : null}
+
+      {milestoneReadyForLead && !lead.commission ? (
+        <div className="rounded-lg border border-primary/40 bg-primary/5 p-4 text-sm space-y-3">
+          <p className="font-medium text-primary">{modelBMilestoneDealHeadline()}</p>
+          <p className="text-muted-foreground">
+            This rep completed five verified deployments. Pay the milestone to create and close the
+            payout in one step.
+          </p>
+          <Button
+            className="min-h-11"
+            disabled={milestonePayout.isPending || !lead.project?.deploymentVerifiedAt}
+            onClick={() =>
+              milestonePayout.mutate(undefined, {
+                onSuccess: () => toast.success(modelBMilestonePaidToast()),
+                onError: (e) => errToast(e, qc)
+              })
+            }
+          >
+            {milestonePayout.isPending ? "Paying…" : modelBMilestonePayCta()}
+          </Button>
+        </div>
+      ) : null}
+
       {lead.commission ? (
-        <AdminCommissionSummary lead={lead} />
+        <AdminCommissionSummary lead={lead} isModelBRep={isModelBRep} />
       ) : null}
 
       <AdminVerifyModals
@@ -658,7 +728,10 @@ export function AdminProjectPage() {
           onVerify: runVerify,
           onDecline: rejectable ? runDecline : undefined,
           isPending:
-            verifyStage.isPending || rejectStage.isPending || markCommissionPaid.isPending,
+            verifyStage.isPending ||
+            rejectStage.isPending ||
+            markCommissionPaid.isPending ||
+            milestonePayout.isPending,
           declineNote,
           onDeclineNoteChange: setDeclineNote
         }}
@@ -672,6 +745,9 @@ export function AdminProjectPage() {
           if (transferredGithubRepoUrlError) setTransferredGithubRepoUrlError(null);
         }}
         transferredGithubRepoUrlError={transferredGithubRepoUrlError}
+        repCommissionModel={repSummary?.commissionModel}
+        milestoneReadyForLead={milestoneReadyForLead}
+        onMilestonePayout={runMilestonePayout}
       />
 
       <PaymentVerifyDialog

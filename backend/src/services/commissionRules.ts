@@ -1,7 +1,9 @@
 import type { Commission, Lead } from "@prisma/client";
+import { CommissionModel } from "@prisma/client";
 import { HttpError } from "../errors/httpError.js";
 import { divideCentsWithRounding } from "../lib/money.js";
 import type { PortalSettingsValues } from "../validators/schemas.js";
+import { MODEL_B_MILESTONE_AMOUNT_CENTS, MODEL_B_MILESTONE_TARGET, MODEL_B_PER_DEAL_AFTER_CENTS } from "./commissionModel.js";
 
 export function assertAgreedTotalMeetsMinimum(
   agreedTotalCents: number | null | undefined,
@@ -113,6 +115,109 @@ export function commissionIntegrityIssues(
   }
 
   return issues;
+}
+
+export function expectedCommissionAmountCentsForModel(
+  lead: Pick<Lead, "agreedTotalCents">,
+  settings: PortalSettingsValues,
+  model: CommissionModel,
+  deployedOrdinal: number | null
+): number | null {
+  if (model === CommissionModel.MODEL_B) {
+    if (deployedOrdinal == null || deployedOrdinal < MODEL_B_MILESTONE_TARGET) return null;
+    if (deployedOrdinal === MODEL_B_MILESTONE_TARGET) return MODEL_B_MILESTONE_AMOUNT_CENTS;
+    return MODEL_B_PER_DEAL_AFTER_CENTS;
+  }
+  return expectedCommissionAmountCents(lead, settings);
+}
+
+export function commissionIntegrityIssuesForModel(
+  lead: Pick<Lead, "agreedTotalCents">,
+  commission: Pick<Commission, "amountCents">,
+  settings: PortalSettingsValues,
+  model: CommissionModel,
+  deployedOrdinal: number | null
+): string[] {
+  if (model === CommissionModel.MODEL_B) {
+    const issues: string[] = [];
+    if (
+      deployedOrdinal === MODEL_B_MILESTONE_TARGET &&
+      commission.amountCents === MODEL_B_MILESTONE_AMOUNT_CENTS
+    ) {
+      return issues;
+    }
+    if (deployedOrdinal == null || deployedOrdinal <= MODEL_B_MILESTONE_TARGET) {
+      issues.push("Commission row is unexpected for this Model B deployment ordinal.");
+      return issues;
+    }
+    if (commission.amountCents !== MODEL_B_PER_DEAL_AFTER_CENTS) {
+      issues.push(
+        `Payout amount does not match the Model B fixed rate (expected ₹${(MODEL_B_PER_DEAL_AFTER_CENTS / 100).toFixed(0)}).`
+      );
+    }
+    return issues;
+  }
+  return commissionIntegrityIssues(lead, commission, settings);
+}
+
+/** Model B rep may still have commission rows created under Model A before conversion. */
+export function isLegacyModelACommissionRow(
+  repModel: CommissionModel,
+  lead: Pick<Lead, "agreedTotalCents">,
+  commission: Pick<Commission, "amountCents">,
+  settings: PortalSettingsValues,
+  deployedOrdinal: number | null
+): boolean {
+  if (repModel !== CommissionModel.MODEL_B) return false;
+  if (commission.amountCents === MODEL_B_MILESTONE_AMOUNT_CENTS) return false;
+  if (
+    commission.amountCents === MODEL_B_PER_DEAL_AFTER_CENTS &&
+    deployedOrdinal != null &&
+    deployedOrdinal > MODEL_B_MILESTONE_TARGET
+  ) {
+    return false;
+  }
+  const expectedA = expectedCommissionAmountCents(lead, settings);
+  if (expectedA != null && commission.amountCents === expectedA) return true;
+  return deployedOrdinal != null && deployedOrdinal <= MODEL_B_MILESTONE_TARGET;
+}
+
+export function resolveEffectiveCommissionRowModel(
+  repModel: CommissionModel,
+  lead: Pick<Lead, "agreedTotalCents">,
+  commission: Pick<Commission, "amountCents">,
+  settings: PortalSettingsValues,
+  deployedOrdinal: number | null
+): CommissionModel {
+  if (isLegacyModelACommissionRow(repModel, lead, commission, settings, deployedOrdinal)) {
+    return CommissionModel.MODEL_A;
+  }
+  return repModel;
+}
+
+export function assertCommissionPayableForModel(
+  lead: Pick<Lead, "agreedTotalCents">,
+  commission: Pick<Commission, "amountCents" | "isPaid">,
+  settings: PortalSettingsValues,
+  model: CommissionModel,
+  deployedOrdinal: number | null
+): void {
+  if (commission.isPaid) {
+    return;
+  }
+  if (model === CommissionModel.MODEL_A) {
+    assertAgreedTotalMeetsMinimum(lead.agreedTotalCents, settings);
+  }
+  const issues = commissionIntegrityIssuesForModel(
+    lead,
+    commission,
+    settings,
+    model,
+    deployedOrdinal
+  );
+  if (issues.length > 0) {
+    throw new HttpError(400, "COMMISSION_INVALID", issues.join(" "));
+  }
 }
 
 export function assertCommissionPayable(

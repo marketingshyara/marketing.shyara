@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { ApiError } from "../api/client";
 import { salesApi, type VerifyPaymentRequestBody } from "../api/salesApi";
 import { qk } from "../queryKeys";
-import { applyLeadDetailToCache } from "../lib/applyLeadDetailToCache";
+import { modelBMilestoneRecordedToast } from "../lib/copy";
 import {
   invalidateAdminQueues,
   invalidateLeadAndRep,
@@ -361,7 +361,9 @@ export function usePatchUserMutation() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] });
       qc.invalidateQueries({ queryKey: qk.session });
-      invalidateQueryPrefixes(qc, ["leads", "commissions", "activity-logs"]);
+      qc.invalidateQueries({ queryKey: qk.settings });
+      qc.invalidateQueries({ queryKey: qk.teamReps });
+      invalidateQueryPrefixes(qc, ["team-rep", "leads", "commissions", "activity-logs"]);
       toast.success("User updated");
     },
     onError: (e) => errToast(e, qc)
@@ -724,6 +726,32 @@ export function useMarkCommissionPaidMutation(leadId: string, repId?: string | n
       invalidateQueryPrefixes(qc, ["activity-logs"]);
       const meta = context?.meta as { skipSuccessToast?: boolean } | undefined;
       if (!meta?.skipSuccessToast) toast.success("Commission marked paid");
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+export function useMilestonePayoutMutation(leadId: string, repId?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => salesApi.milestonePayout(leadId),
+    onSuccess: (data, _vars, _ctx, context) => {
+      applyLeadDetailToCache(qc, leadId, data);
+      const assignedRepId = repId ?? data.lead.assignedToUserId;
+      if (assignedRepId && data.lead.status === "COMMISSION_PAID") {
+        removeLeadFromTeamRepActiveCache(qc, assignedRepId, leadId);
+      }
+      invalidateLeadAndRep(qc, {
+        leadId,
+        repId: assignedRepId
+      });
+      qc.invalidateQueries({ queryKey: ["commissions"] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["team"] });
+      invalidateAdminQueues(qc);
+      invalidateQueryPrefixes(qc, ["activity-logs"]);
+      const meta = context?.meta as { skipSuccessToast?: boolean } | undefined;
+      if (!meta?.skipSuccessToast) toast.success(modelBMilestoneRecordedToast());
     },
     onError: (e) => errToast(e, qc)
   });

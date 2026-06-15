@@ -10,6 +10,7 @@ import { DataStaleToolbar } from "../components/DataStaleToolbar";
 import { PortalPageHeader } from "../components/PortalPageHeader";
 import { QueryErrorAlert } from "../components/QueryErrorAlert";
 import { CommissionSummaryBar } from "../components/commission/CommissionSummaryBar";
+import { MilestoneProgressCard } from "../components/commission/MilestoneProgressCard";
 import {
   CommissionListRow,
   commissionListRateLabel
@@ -49,7 +50,7 @@ export function CommissionPage() {
   const validationSettings: CommissionValidationSettings | null = useMemo(() => {
     if (actorMode === "admin" && adminSettingsQr.data?.settings) {
       const s = adminSettingsQr.data.settings;
-      return commissionValidationSettings(s, s);
+      return commissionValidationSettings({ ...s, commissionModel: "MODEL_A" }, s);
     }
     if (repSettingsQr.data?.settings) {
       return commissionValidationSettings(repSettingsQr.data.settings, null);
@@ -57,14 +58,13 @@ export function CommissionPage() {
     return null;
   }, [actorMode, repSettingsQr.data, adminSettingsQr.data]);
 
-  const settingsLoading =
-    actorMode === "admin"
-      ? adminSettingsQr.isLoading
-      : repSettingsQr.isLoading;
+  const isModelBRep =
+    actorMode === "rep" && repSettingsQr.data?.settings.commissionModel === "MODEL_B";
 
-  const rateLabel = validationSettings
-    ? commissionListRateLabel(validationSettings)
-    : "—";
+  const rateLabel =
+    validationSettings && !isModelBRep
+      ? commissionListRateLabel(validationSettings)
+      : null;
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
 
@@ -72,7 +72,14 @@ export function CommissionPage() {
   const pageDescription =
     actorMode === "admin"
       ? "All rep payouts with deal basis and payout status."
-      : "Your payouts after the client site goes live.";
+      : isModelBRep
+        ? "Track site-live deals toward your milestone payout."
+        : "Your payouts after the client site goes live.";
+
+  const settingsLoading =
+    actorMode === "admin"
+      ? adminSettingsQr.isLoading
+      : repSettingsQr.isLoading;
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
@@ -115,7 +122,16 @@ export function CommissionPage() {
         ))}
       </div>
 
-      {data?.summary ? <CommissionSummaryBar summary={data.summary} /> : null}
+      {data?.summary?.milestone ? (
+        <MilestoneProgressCard
+          milestone={data.summary.milestone}
+          variant={actorMode}
+        />
+      ) : null}
+
+      {data?.summary && !data.summary.milestone ? (
+        <CommissionSummaryBar summary={data.summary} />
+      ) : null}
 
       {isError ? (
         <QueryErrorAlert message="Could not load commission." onRetry={() => void refetch()} />
@@ -124,11 +140,13 @@ export function CommissionPage() {
       ) : (data?.items.length ?? 0) === 0 ? (
         <PortalEmptyState
           icon={IndianRupee}
-          title="No commission yet"
+          title={isModelBRep ? "No payouts yet" : "No commission yet"}
           description={
             actorMode === "admin"
               ? "Rows appear after deployment is verified and commission is calculated."
-              : "Appears after admin verifies your client's live site."
+              : isModelBRep
+                ? "Payouts appear after your 5th site-live deal (milestone) and for each deal after that."
+                : "Appears after admin verifies your client's live site."
           }
         />
       ) : (
@@ -139,7 +157,7 @@ export function CommissionPage() {
                 row={row}
                 settings={validationSettings}
                 actorMode={actorMode}
-                rateLabel={rateLabel}
+                rateLabel={rateLabel ?? "—"}
               />
             </li>
           ))}

@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { TeamRepSummary } from "../../types";
 import { PortalStatusChip } from "../ui/PortalStatusChip";
+import { Badge } from "@/components/ui/badge";
+import { commissionModelLabel } from "../../lib/copy";
 
 type Props = {
   rep: TeamRepSummary;
@@ -26,6 +28,19 @@ export function AdminRepCard({ rep }: Props) {
               label={`${rep.needsAdminAction} need approval`}
               className="mt-1"
             />
+          ) : null}
+          {rep.commissionModel === "MODEL_B" && rep.milestone ? (
+            rep.milestone.milestoneReady ? (
+              <PortalStatusChip kind="action" label="Milestone ready" className="mt-1" />
+            ) : (
+              <Badge variant="outline" className="mt-1 font-normal">
+                {rep.milestone.deployedCount} / {rep.milestone.milestoneTarget} site live
+              </Badge>
+            )
+          ) : rep.commissionModel ? (
+            <Badge variant="secondary" className="mt-1 font-normal">
+              {commissionModelLabel(rep.commissionModel)}
+            </Badge>
           ) : null}
         </div>
       </CardHeader>

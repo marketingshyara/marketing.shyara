@@ -12,6 +12,13 @@ import {
   assertAgreedTotalMeetsMinimum,
   computeCommissionAmountCents
 } from "../services/commissionRules.js";
+import {
+  countDeployedDealsForRep,
+  getRepCommissionModel,
+  shouldUpsertCommissionOnDeploymentVerify,
+  computeCommissionAmountForRep,
+  getDeployedOrdinalForLead
+} from "../services/commissionModel.js";
 import { assertLeadMutable } from "../services/leadGuards.js";
 import { getCommissionRepUserId } from "../services/commissionRep.js";
 import { logActivity } from "../services/activityLog.js";
@@ -230,13 +237,23 @@ export async function registerLeadStageRoutes(app: FastifyInstance): Promise<voi
               );
             }
             assertAgreedTotalMeetsMinimum(freshLead.agreedTotalCents, settings);
-            const amountCents = computeCommissionAmountCents(freshLead, settings);
             const repId = getCommissionRepUserId(freshLead);
-            await tx.commission.upsert({
-              where: { leadId: id },
-              create: { leadId: id, repUserId: repId, amountCents, bonusCents: 0 },
-              update: { repUserId: repId, amountCents }
-            });
+            const repModel = await getRepCommissionModel(tx, repId);
+            const deployedCountAfter = await countDeployedDealsForRep(tx, repId);
+            if (shouldUpsertCommissionOnDeploymentVerify(repModel, deployedCountAfter)) {
+              const deployedOrdinal = await getDeployedOrdinalForLead(tx, repId, id);
+              const amountCents = computeCommissionAmountForRep(
+                freshLead,
+                repModel,
+                settings,
+                deployedOrdinal
+              );
+              await tx.commission.upsert({
+                where: { leadId: id },
+                create: { leadId: id, repUserId: repId, amountCents, bonusCents: 0 },
+                update: { repUserId: repId, amountCents }
+              });
+            }
             await promoteLeadToDeployedIfEligible(tx, id, {
               deploymentVerifiedAt: now
             });

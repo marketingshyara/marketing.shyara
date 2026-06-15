@@ -1,5 +1,7 @@
 export type UserRole = "ADMIN" | "SALES_REP";
 
+export type CommissionModel = "MODEL_A" | "MODEL_B";
+
 export type LeadStatus =
   | "NEW"
   | "ADVANCE_PAID"
@@ -41,6 +43,7 @@ export interface SessionUser {
   displayName: string | null;
   role: UserRole;
   mustChangePassword: boolean;
+  commissionModel?: CommissionModel | null;
 }
 
 export interface User {
@@ -48,6 +51,7 @@ export interface User {
   email: string;
   displayName: string | null;
   role: UserRole;
+  commissionModel?: CommissionModel | null;
   isActive: boolean;
   mustChangePassword: boolean;
   archivedAt?: string | null;
@@ -205,9 +209,19 @@ export interface CommissionListLead {
 
 export interface CommissionListItem extends Commission {
   lead: CommissionListLead;
-  rep: Pick<SessionUser, "id" | "displayName">;
-  expectedAmountCents: number | null;
+  rep: Pick<SessionUser, "id" | "displayName"> & { commissionModel?: CommissionModel | null };
+  expectedAmountCents?: number | null;
+  rowCommissionModel?: CommissionModel;
   integrityIssues: string[];
+}
+
+export interface MilestoneProgress {
+  deployedCount: number;
+  milestoneTarget: number;
+  paidEarningsCents: number;
+  nextPayoutHint: string;
+  milestoneReady: boolean;
+  milestoneReadyLeadId: string | null;
 }
 
 export interface CommissionsListSummary {
@@ -215,6 +229,7 @@ export interface CommissionsListSummary {
   siteLive: number;
   calculated: number;
   paid: number;
+  milestone?: MilestoneProgress;
 }
 
 export interface CommissionsListResponse extends Paginated<CommissionListItem> {
@@ -346,6 +361,8 @@ export interface TeamRepSummary {
   id: string;
   email: string;
   displayName: string | null;
+  commissionModel?: CommissionModel | null;
+  milestone?: MilestoneProgress | null;
   archivedAt?: string | null;
   isActive?: boolean;
   totalLeads: number;
@@ -400,22 +417,31 @@ export interface TeamRepProject {
 }
 
 export interface RepPortalSettings {
+  commissionModel: CommissionModel;
   minAgreedTotalCents: number;
   advancePaymentShareBps: number;
-  commissionRateBps: number;
-  commissionRounding: "floor" | "round" | "bankers";
-  /** Extra payout rate (% of agreed total) after rep hits paid-sale threshold. */
-  performanceBonusBps: number;
-  performanceBonusAfterCompletedSales: number;
+  commissionRateBps?: number;
+  commissionRounding?: "floor" | "round" | "bankers";
+  performanceBonusBps?: number;
+  performanceBonusAfterCompletedSales?: number;
+  milestoneTarget?: number;
+  milestoneAmountCents?: number;
+  perDealAfterCents?: number;
   templatesCatalogUrl: string;
   tutorialLinks: RepTutorialLink[];
   painPointsByCategory: RepPainPoint[];
   paymentShareMethods: PaymentShareMethodConfig[];
 }
 
-export interface PortalSettingsValues extends RepPortalSettings {
-  commissionBasis: "VERIFIED_FINAL_PAYMENT" | "FINAL_QUOTE" | "AGREED_TOTAL";
+export interface PortalSettingsValues extends Omit<
+  RepPortalSettings,
+  "commissionModel" | "milestoneTarget" | "milestoneAmountCents" | "perDealAfterCents"
+> {
+  commissionRateBps: number;
   commissionRounding: "floor" | "round" | "bankers";
+  performanceBonusBps: number;
+  performanceBonusAfterCompletedSales: number;
+  commissionBasis: "VERIFIED_FINAL_PAYMENT" | "FINAL_QUOTE" | "AGREED_TOTAL";
   manualTransitions: ManualTransition[];
   advancePaymentRequiredLeadStatus: LeadStatus;
   finalPaymentRequiredLeadStatus: LeadStatus;
@@ -492,7 +518,8 @@ export type PendingActionType =
   | "BUILD_DEMO"
   | "REPO_TRANSFER"
   | "DEPLOYMENT"
-  | "COMMISSION";
+  | "COMMISSION"
+  | "MILESTONE_PAYOUT";
 
 export interface PendingActionItem {
   type: PendingActionType;

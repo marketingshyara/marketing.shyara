@@ -195,6 +195,10 @@ export function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Commission</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              These rates and bonus rules apply to <strong>Model A</strong> sales reps only. Model B
+              reps use fixed milestone payouts (₹10,000 at 5 site-live deals, then ₹2,000 per deal).
+            </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">

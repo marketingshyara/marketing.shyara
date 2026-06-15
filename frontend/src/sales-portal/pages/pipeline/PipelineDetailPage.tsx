@@ -53,9 +53,11 @@ import {
 import { PipelineStepsAccordion } from "../../components/pipeline/PipelineStepsAccordion";
 import { QueryErrorAlert } from "../../components/QueryErrorAlert";
 import { DataStaleToolbar } from "../../components/DataStaleToolbar";
+import { MilestoneProgressCard } from "../../components/commission/MilestoneProgressCard";
 import {
   errToast,
   useConvertLeadMutation,
+  useCommissionsQuery,
   useLeadQuery,
   useMarkPaymentMutation,
   usePatchLeadMutation,
@@ -99,6 +101,12 @@ export function PipelineDetailPage() {
   const navigate = useNavigate();
   const leadQr = useLeadQuery(id);
   const settingsQr = usePortalSettingsQuery();
+  const isModelBRep = settingsQr.data?.settings.commissionModel === "MODEL_B";
+  const commissionsQr = useCommissionsQuery({
+    page: 1,
+    pageSize: 1,
+    enabled: isModelBRep
+  });
   const tplQr = useWebsiteTemplatesQuery(true);
 
   const [activeStage, setActiveStage] = useState<PipelineStageKey | null>(null);
@@ -149,8 +157,10 @@ export function PipelineDetailPage() {
   const advanceShareBps = settings?.advancePaymentShareBps ?? 5000;
   const paymentShareMethods = usePaymentShareMethods();
   const commissionHint =
-    lead && settings ? commissionBreakdownHint(lead, settings) : null;
-  const performanceBonusHint = settings ? performanceBonusProgramHint(settings) : null;
+    lead && settings && !isModelBRep ? commissionBreakdownHint(lead, settings) : null;
+  const performanceBonusHint =
+    settings && !isModelBRep ? performanceBonusProgramHint(settings) : null;
+  const milestone = commissionsQr.data?.summary?.milestone;
   const agreedTotalCents = parseRupeeInputToCents(agreedRupees);
   const convertSplit = useMemo(() => {
     if (lead?.convertedAt) return null;
@@ -436,12 +446,23 @@ export function PipelineDetailPage() {
         repPreviewUrl={demoPreviewUrl}
       />
 
+      {isModelBRep && milestone ? (
+        <div className="space-y-2">
+          <MilestoneProgressCard milestone={milestone} />
+          {!lead.commission ? (
+            <p className="text-xs text-muted-foreground px-1">{milestone.nextPayoutHint}</p>
+          ) : null}
+        </div>
+      ) : null}
+
       {lead.commission && (
         <div className="rounded-lg border p-4 text-sm space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium">
-              Commission: {formatMinorUnits(lead.commission.amountCents)}
-              {formatPerformanceBonusSuffix(lead.commission.bonusCents, settings)}
+              {isModelBRep ? "Payout" : "Commission"}: {formatMinorUnits(lead.commission.amountCents)}
+              {!isModelBRep
+                ? formatPerformanceBonusSuffix(lead.commission.bonusCents, settings)
+                : null}
             </p>
             <Badge variant={lead.commission.isPaid ? "default" : "secondary"}>
               {lead.commission.isPaid ? "Paid" : "Pending payout"}
@@ -454,7 +475,9 @@ export function PipelineDetailPage() {
             <p className="text-xs text-muted-foreground">{performanceBonusHint}</p>
           ) : null}
           <Button variant="link" className="h-auto min-h-11 px-0 text-sm" asChild>
-            <Link to="/portal/commission">View all commission</Link>
+            <Link to="/portal/commission">
+              {isModelBRep ? "View all payouts" : "View all commission"}
+            </Link>
           </Button>
         </div>
       )}

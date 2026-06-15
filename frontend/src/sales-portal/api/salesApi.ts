@@ -268,6 +268,12 @@ export const salesApi = {
       `/commissions/${id}/mark-paid`
     ),
 
+  milestonePayout: (leadId: string) =>
+    apiJson<LeadDetailResponse & { commission: Commission }>(
+      "POST",
+      `/leads/${leadId}/commission/milestone-payout`
+    ),
+
   projects: (params: { page?: number; pageSize?: number }) => {
     const q = new URLSearchParams();
     if (params.page != null) q.set("page", String(params.page));

@@ -12,6 +12,11 @@ enum UserRole {
   SALES_REP
 }
 
+enum CommissionModel {
+  MODEL_A
+  MODEL_B
+}
+
 enum LeadStatus {
   NEW
   ADVANCE_PAID
@@ -75,6 +80,7 @@ model User {
   passwordHash         String
   displayName          String?
   role                 UserRole
+  commissionModel      CommissionModel?
   isActive             Boolean   @default(true)
   archivedAt           DateTime?
   mustChangePassword   Boolean   @default(false)

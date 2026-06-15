@@ -1,21 +1,27 @@
 import type { FastifyInstance } from "fastify";
-import { ActivityAction } from "@prisma/client";
+import { ActivityAction, UserRole } from "@prisma/client";
 import { requireAdmin } from "../auth/requireRole.js";
 import { requireUser } from "../auth/requireUser.js";
 import { logActivity } from "../services/activityLog.js";
 import {
   getPortalSettings,
   toPublicSettings,
-  toRepPortalSettings,
+  toRepPortalSettingsForModel,
   updatePortalSettingsValues
 } from "../services/settings.js";
+import { getRepCommissionModel } from "../services/commissionModel.js";
 export async function registerSettingsRoutes(app: FastifyInstance): Promise<void> {
   app.get(
     "/api/settings",
     { preHandler: [requireUser] },
     async (request, reply) => {
+      const user = request.currentUser!;
       const settings = await getPortalSettings(app.prisma);
-      return reply.send({ settings: toRepPortalSettings(settings) });
+      if (user.role === UserRole.SALES_REP) {
+        const model = await getRepCommissionModel(app.prisma, user.id);
+        return reply.send({ settings: toRepPortalSettingsForModel(model, settings) });
+      }
+      return reply.send({ settings: toRepPortalSettingsForModel("MODEL_A", settings) });
     }
   );
 

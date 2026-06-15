@@ -24,7 +24,8 @@ function actionTypeLabel(t: PendingActionType): string {
     BUILD_DEMO: "Build demo",
     REPO_TRANSFER: "Repo transfer",
     DEPLOYMENT: "Deployment",
-    COMMISSION: "Commission"
+    COMMISSION: "Commission",
+    MILESTONE_PAYOUT: "Milestone payout"
   };
   return map[t];
 }
@@ -37,7 +38,8 @@ const TYPE_ICONS: Record<PendingActionType, LucideIcon> = {
   BUILD_DEMO: Palette,
   REPO_TRANSFER: FolderGit2,
   DEPLOYMENT: Globe,
-  COMMISSION: Banknote
+  COMMISSION: Banknote,
+  MILESTONE_PAYOUT: Banknote
 };
 
 type Props = {

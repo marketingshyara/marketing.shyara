@@ -2,9 +2,15 @@ import {
   LeadStatus,
   PaymentKind,
   PaymentVerificationStatus,
+  UserRole,
   type Prisma,
   type PrismaClient
 } from "@prisma/client";
+import {
+  findMilestoneReadyLead,
+  MODEL_B_MILESTONE_AMOUNT_CENTS
+} from "./commissionModel.js";
+import { getCommissionRepUserId } from "./commissionRep.js";
 
 export type PendingActionType =
   | "PAYMENT"
@@ -15,7 +21,8 @@ export type PendingActionType =
   | "BUILD_DEMO"
   | "REPO_TRANSFER"
   | "DEPLOYMENT"
-  | "COMMISSION";
+  | "COMMISSION"
+  | "MILESTONE_PAYOUT";
 
 export type PendingActionItem = {
   type: PendingActionType;
@@ -185,6 +192,34 @@ export async function listPendingActions(
         summary: "Commission payout pending"
       });
     }
+  }
+
+  const modelBReps = await prisma.user.findMany({
+    where: {
+      role: UserRole.SALES_REP,
+      commissionModel: "MODEL_B",
+      isActive: true,
+      archivedAt: null
+    },
+    select: { id: true, displayName: true }
+  });
+  for (const rep of modelBReps) {
+    const milestoneLeadId = await findMilestoneReadyLead(prisma, rep.id);
+    if (!milestoneLeadId) continue;
+    const lead = await prisma.lead.findUnique({
+      where: { id: milestoneLeadId },
+      select: { clientName: true, project: { select: { deploymentVerifiedAt: true } } }
+    });
+    if (!lead?.project?.deploymentVerifiedAt) continue;
+    items.push({
+      type: "MILESTONE_PAYOUT",
+      leadId: milestoneLeadId,
+      repId: rep.id,
+      clientName: lead.clientName,
+      stageKey: "commission",
+      submittedAt: lead.project.deploymentVerifiedAt.toISOString(),
+      summary: `${rep.displayName ?? "Sales rep"} reached 5 site-live deals — pay ₹${MODEL_B_MILESTONE_AMOUNT_CENTS / 100} milestone`
+    });
   }
 
   const filtered = opts.type ? items.filter((i) => i.type === opts.type) : items;
