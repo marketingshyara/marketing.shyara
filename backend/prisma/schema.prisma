@@ -166,7 +166,7 @@ model Lead {
 
 model LeadScraperUserQuota {
   userId          String   @id
-  monthlyQuota    Int      @default(40)
+  monthlyQuota    Int      @default(150)
   searchesUsed    Int      @default(0)
   quotaResetMonth String
   createdAt       DateTime @default(now())

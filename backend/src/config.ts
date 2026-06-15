@@ -96,9 +96,9 @@ function loadLeadScraperConfig(): LeadScraperConfig {
 
   return {
     googlePlacesApiKey,
-    maxSearchesPerMonth: intEnv("LEAD_SCRAPER_MAX_SEARCHES_PER_MONTH", "150", 1),
+    maxSearchesPerMonth: intEnv("LEAD_SCRAPER_MAX_SEARCHES_PER_MONTH", "1050", 1),
     cacheTtlDays: intEnv("LEAD_SCRAPER_CACHE_TTL_DAYS", "30", 1),
-    repDefaultQuota: intEnv("LEAD_SCRAPER_REP_DEFAULT_QUOTA", "40", 1),
+    repDefaultQuota: intEnv("LEAD_SCRAPER_REP_DEFAULT_QUOTA", "150", 1),
     maxResultsSingle: intEnv("LEAD_SCRAPER_MAX_RESULTS_SINGLE", "10", 1),
     maxResultsSweep: intEnv("LEAD_SCRAPER_MAX_RESULTS_SWEEP", "10", 1)
   };

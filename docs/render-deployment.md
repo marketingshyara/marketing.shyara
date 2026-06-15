@@ -154,8 +154,8 @@ If both are subdomains of the **same** registrable domain (e.g. `app.example.com
 | `BOOTSTRAP_ADMIN_DISPLAY_NAME` | One-time first admin (optional) |
 | `BOOTSTRAP_ADMIN_ON_START` | Set to `true` so the web process **upserts** the bootstrap admin on every deploy/start (same as `seed:bootstrap`). Requires `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD`. Handy on Render so you do not need a one-off Shell seed; rotate or clear the password in env after first login if your policy requires. |
 | `GOOGLE_PLACES_API_KEY` | Google Places API key for **Find leads** (Lead Finder). Committed default in `backend/render.env`; override here or in Render dashboard if needed. |
-| `LEAD_SCRAPER_MAX_SEARCHES_PER_MONTH` | Org-wide monthly search pool (default **150** in `render.env`). |
-| `LEAD_SCRAPER_REP_DEFAULT_QUOTA` | Per-rep monthly search quota (default **40**). |
+| `LEAD_SCRAPER_MAX_SEARCHES_PER_MONTH` | Org-wide monthly search pool (default **1050** in `render.env`). |
+| `LEAD_SCRAPER_REP_DEFAULT_QUOTA` | Per-rep monthly search quota (default **150**). |
 
 #### Do not set unless you know why
 
