@@ -8,6 +8,7 @@ import { inject } from "../helpers/inject.js";
 import { ensureUserQuotaRow, reserveSearchQuota } from "../../src/services/leadScraper/leadScraperQuota.js";
 import { importScraperPlacesToPipeline } from "../../src/services/leadScraper/leadScraperImportService.js";
 import {
+  clearUnimportedScraperPastResults,
   persistSearchResultsForUser,
   tryClaimPlaceForUser
 } from "../../src/services/leadScraper/leadScraperPlacesStore.js";
@@ -25,6 +26,7 @@ d("integration: lead scraper", () => {
   const adminEmail = "it-scraper-admin@test.local";
   const testPlaceId = "places/ChIJ_scraper_test_place";
   const exclusivePlaceId = "places/ChIJ_scraper_exclusive_place";
+  const discardPlaceId = "places/ChIJ_scraper_discard_place";
 
   beforeAll(async () => {
     await prisma.user.deleteMany({
@@ -34,10 +36,10 @@ d("integration: lead scraper", () => {
       where: { googlePlaceId: { in: [testPlaceId, exclusivePlaceId] } }
     });
     await prisma.leadScraperPlaceView.deleteMany({
-      where: { placeId: { in: [testPlaceId, exclusivePlaceId] } }
+      where: { placeId: { in: [testPlaceId, exclusivePlaceId, discardPlaceId] } }
     });
     await prisma.leadScraperPlace.deleteMany({
-      where: { placeId: { in: [testPlaceId, exclusivePlaceId] } }
+      where: { placeId: { in: [testPlaceId, exclusivePlaceId, discardPlaceId] } }
     });
 
     const admin = await prisma.user.create({
@@ -91,10 +93,10 @@ d("integration: lead scraper", () => {
       where: { googlePlaceId: { in: [testPlaceId, exclusivePlaceId] } }
     });
     await prisma.leadScraperPlaceView.deleteMany({
-      where: { placeId: { in: [testPlaceId, exclusivePlaceId] } }
+      where: { placeId: { in: [testPlaceId, exclusivePlaceId, discardPlaceId] } }
     });
     await prisma.leadScraperPlace.deleteMany({
-      where: { placeId: { in: [testPlaceId, exclusivePlaceId] } }
+      where: { placeId: { in: [testPlaceId, exclusivePlaceId, discardPlaceId] } }
     });
     await prisma.leadScraperUserQuota.deleteMany({
       where: { userId: { in: [adminId, repId, otherRepId] } }
@@ -231,6 +233,48 @@ d("integration: lead scraper", () => {
     );
     expect(result.imported).toHaveLength(0);
     expect(result.failed.some((f) => f.placeId === exclusivePlaceId)).toBe(true);
+  });
+
+  it("clearUnimportedScraperPastResults removes past/cache but keeps pipeline place rows", async () => {
+    await prisma.leadScraperPlace.create({
+      data: {
+        placeId: discardPlaceId,
+        name: "Discard Cafe",
+        hasWebsite: false
+      }
+    });
+    await prisma.leadScraperPlaceView.create({
+      data: { userId: repId, placeId: discardPlaceId }
+    });
+    await prisma.leadScraperSearchCache.create({
+      data: {
+        locationKey: "it-scraper-test",
+        keyword: "business",
+        resultsJson: [],
+        resultCount: 0,
+        noWebsiteCount: 0
+      }
+    });
+
+    const result = await clearUnimportedScraperPastResults(prisma);
+    expect(result.viewsDeleted).toBeGreaterThanOrEqual(1);
+    expect(result.searchCacheDeleted).toBeGreaterThanOrEqual(1);
+    expect(result.placesDeleted).toBeGreaterThanOrEqual(1);
+
+    const discardedView = await prisma.leadScraperPlaceView.findUnique({
+      where: { placeId: discardPlaceId }
+    });
+    expect(discardedView).toBeNull();
+
+    const pipelinePlace = await prisma.leadScraperPlace.findUnique({
+      where: { placeId: testPlaceId }
+    });
+    expect(pipelinePlace).not.toBeNull();
+
+    const pipelineLead = await prisma.lead.findUnique({
+      where: { googlePlaceId: testPlaceId }
+    });
+    expect(pipelineLead).not.toBeNull();
   });
 
   it("reserveSearchQuota updates user and global usage atomically", async () => {

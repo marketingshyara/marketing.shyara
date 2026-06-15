@@ -246,6 +246,50 @@ export function csvEscape(val: string | null | undefined): string {
   return str;
 }
 
+export type ClearScraperPastResult = {
+  viewsDeleted: number;
+  searchCacheDeleted: number;
+  placesDeleted: number;
+  pipelinePlaceIdsPreserved: number;
+};
+
+/** Remove scraper past results and search cache; keep pipeline leads and their place rows. */
+export async function clearUnimportedScraperPastResults(
+  prisma: PrismaClient
+): Promise<ClearScraperPastResult> {
+  const pipelineRows = await prisma.lead.findMany({
+    where: { googlePlaceId: { not: null } },
+    select: { googlePlaceId: true }
+  });
+  const pipelinePlaceIds = [
+    ...new Set(
+      pipelineRows
+        .map((r) => r.googlePlaceId)
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+    )
+  ];
+
+  const notInPipeline =
+    pipelinePlaceIds.length > 0 ? { placeId: { notIn: pipelinePlaceIds } } : {};
+
+  return prisma.$transaction(async (tx) => {
+    const viewsDeleted = await tx.leadScraperPlaceView.deleteMany({
+      where: notInPipeline
+    });
+    const searchCacheDeleted = await tx.leadScraperSearchCache.deleteMany();
+    const placesDeleted = await tx.leadScraperPlace.deleteMany({
+      where: notInPipeline
+    });
+
+    return {
+      viewsDeleted: viewsDeleted.count,
+      searchCacheDeleted: searchCacheDeleted.count,
+      placesDeleted: placesDeleted.count,
+      pipelinePlaceIdsPreserved: pipelinePlaceIds.length
+    };
+  });
+}
+
 export async function exportPastPlacesCsv(
   prisma: PrismaClient,
   userId: string,

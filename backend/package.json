@@ -14,7 +14,8 @@
     "db:migrate": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "seed:bootstrap": "tsx src/seed/bootstrapAdmin.ts",
-    "portal:prepare-launch": "tsx src/scripts/preparePortalForLaunch.ts"
+    "portal:prepare-launch": "tsx src/scripts/preparePortalForLaunch.ts",
+    "portal:clear-scraper-past": "tsx src/scripts/clearLeadScraperPastResults.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
