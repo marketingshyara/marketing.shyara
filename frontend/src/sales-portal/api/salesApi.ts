@@ -20,7 +20,8 @@ import type {
   RepPortalSettings,
   SessionUser,
   User,
-  WebsiteTemplate
+  WebsiteTemplate,
+  ScraperQuotaSummary
 } from "../types";
 import type { LeadStatus } from "../types";
 
@@ -329,5 +330,46 @@ export const salesApi = {
   async exportXlsx(kind: "leads" | "commissions" | "users") {
     const { blob, filename } = await apiBlob(`/export/${kind}.xlsx`);
     downloadBlob(blob, filename ?? `${kind}.xlsx`);
-  }
+  },
+
+  leadScraperUsage: () =>
+    apiJson<import("../types").LeadScraperUsageResponse>("GET", "/lead-scraper/usage"),
+
+  leadScraperSearch: (body: { location: string; keyword?: string | null; radiusKm?: number }) =>
+    apiJson<import("../types").LeadScraperSearchResponse>("POST", "/lead-scraper/search", body),
+
+  leadScraperPlaces: (params: {
+    page?: number;
+    limit?: number;
+    noWebsiteOnly?: boolean;
+    search?: string;
+  }) => {
+    const q = new URLSearchParams();
+    if (params.page != null) q.set("page", String(params.page));
+    if (params.limit != null) q.set("limit", String(params.limit));
+    if (params.noWebsiteOnly) q.set("noWebsiteOnly", "true");
+    if (params.search) q.set("search", params.search);
+    const qs = q.toString();
+    return apiJson<import("../types").LeadScraperPlacesResponse>(
+      "GET",
+      `/lead-scraper/places${qs ? `?${qs}` : ""}`
+    );
+  },
+
+  async leadScraperExportPlaces(noWebsiteOnly = true) {
+    const q = new URLSearchParams();
+    q.set("noWebsiteOnly", noWebsiteOnly ? "true" : "false");
+    const { blob, filename } = await apiBlob(`/lead-scraper/places/export?${q.toString()}`);
+    downloadBlob(blob, filename ?? "leads.csv");
+  },
+
+  leadScraperImport: (body: { placeIds: string[] }) =>
+    apiJson<import("../types").LeadScraperImportResponse>("POST", "/lead-scraper/import", body),
+
+  grantScraperQuota: (userId: string, body: { amount: number }) =>
+    apiJson<{
+      granted: number;
+      newLimit: number;
+      quota: ScraperQuotaSummary | null;
+    }>("PATCH", `/users/${userId}/scraper-quota`, body)
 };

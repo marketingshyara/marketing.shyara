@@ -26,6 +26,7 @@ import { registerWebsiteTemplateRoutes } from "./routes/websiteTemplates.js";
 import { registerAdminPendingRoutes } from "./routes/adminPending.js";
 import { registerAdminProjectsRoutes } from "./routes/adminProjects.js";
 import { registerNotificationRoutes } from "./routes/notifications.js";
+import { registerLeadScraperRoutes } from "./routes/leadScraper.js";
 
 export type BuildAppOptions = {
   config: AppConfig;
@@ -157,6 +158,7 @@ export async function buildApp(options: BuildAppOptions) {
   await registerExportRoutes(app);
   await registerAdminPendingRoutes(app);
   await registerNotificationRoutes(app);
+  await registerLeadScraperRoutes(app);
 
   return app;
 }

@@ -62,7 +62,18 @@ export function errToast(e: unknown, qc?: QueryClient) {
         toast.error(e.message);
         return;
       }
+      if (/placeIds|import|scraper/i.test(e.message)) {
+        toast.error(e.message);
+        return;
+      }
       toast.error("Enter a valid link (e.g. https://example.com or example.com).");
+      return;
+    }
+    if (e.code === "QUOTA_EXCEEDED" || e.code === "GLOBAL_QUOTA_EXCEEDED") {
+      toast.error(e.message);
+      if (qc) {
+        void qc.invalidateQueries({ queryKey: qk.leadScraperUsage });
+      }
       return;
     }
     if (e.code === "INVALID_STATE") {
@@ -891,6 +902,73 @@ export function useExportMutation() {
   return useMutation({
     mutationFn: salesApi.exportXlsx,
     onSuccess: () => toast.success("Download started"),
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+export function useLeadScraperUsageQuery(enabled = true) {
+  return useQuery({
+    queryKey: qk.leadScraperUsage,
+    queryFn: () => salesApi.leadScraperUsage(),
+    enabled
+  });
+}
+
+export function useLeadScraperSearchMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: salesApi.leadScraperSearch,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.leadScraperUsage });
+      void qc.invalidateQueries({ queryKey: ["lead-scraper-places"] });
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+export function useLeadScraperPlacesQuery(params: {
+  page: number;
+  limit: number;
+  noWebsiteOnly?: boolean;
+  search?: string;
+  enabled?: boolean;
+}) {
+  const { enabled = true, ...rest } = params;
+  return useQuery({
+    queryKey: qk.leadScraperPlaces(rest),
+    queryFn: () => salesApi.leadScraperPlaces(rest),
+    enabled
+  });
+}
+
+export function useLeadScraperImportMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: salesApi.leadScraperImport,
+    onSuccess: (data) => {
+      invalidateQueryPrefixes(qc, ["leads", "lead"]);
+      void qc.invalidateQueries({ queryKey: ["lead-scraper-places"] });
+      const n = data.imported.length;
+      if (n > 0) {
+        toast.success(n === 1 ? "1 lead added to pipeline" : `${n} leads added to pipeline`);
+      }
+      if (data.failed.length === 0 && data.skipped.length === 0 && n === 0) {
+        toast.message("Nothing was imported.");
+      }
+    },
+    onError: (e) => errToast(e, qc)
+  });
+}
+
+export function useGrantScraperQuotaMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, amount }: { userId: string; amount: number }) =>
+      salesApi.grantScraperQuota(userId, { amount }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Scraper searches added");
+    },
     onError: (e) => errToast(e, qc)
   });
 }

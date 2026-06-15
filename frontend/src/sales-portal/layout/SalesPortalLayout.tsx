@@ -9,6 +9,7 @@ import {
   IndianRupee,
   LogOut,
   Menu,
+  Search,
   UserCircle,
   Settings,
   Users,
@@ -49,6 +50,7 @@ type NavItem = {
 
 const REP_NAV: NavItem[] = [
   { to: "/portal/pipeline", label: "Pipeline", icon: ClipboardList, end: true },
+  { to: "/portal/lead-scraper", label: "Find leads", icon: Search },
   { to: "/portal/commission", label: "Commission", icon: IndianRupee },
   { to: "/portal/resources", label: "Resources", icon: BookOpen }
 ];

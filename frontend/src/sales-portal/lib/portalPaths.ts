@@ -7,7 +7,7 @@ export function defaultPortalHome(role: UserRole): string {
   return role === "ADMIN" ? "/portal/team" : "/portal/pipeline";
 }
 
-const REP_ONLY_PREFIXES = ["/portal/pipeline", "/portal/resources"] as const;
+const REP_ONLY_PREFIXES = ["/portal/pipeline", "/portal/resources", "/portal/lead-scraper"] as const;
 
 const ADMIN_ONLY_PREFIXES = [
   "/portal/team",

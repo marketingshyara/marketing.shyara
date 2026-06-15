@@ -22,5 +22,7 @@ export const qk = {
   teamReps: ["team-reps"] as const,
   teamRep: (userId: string) => ["team-rep", userId] as const,
   teamRepLeads: (userId: string, params: Record<string, unknown>) =>
-    ["team-rep-leads", userId, params] as const
+    ["team-rep-leads", userId, params] as const,
+  leadScraperUsage: ["lead-scraper-usage"] as const,
+  leadScraperPlaces: (params: Record<string, unknown>) => ["lead-scraper-places", params] as const
 };

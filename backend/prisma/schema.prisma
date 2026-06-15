@@ -92,6 +92,9 @@ model User {
   commissionsPaid Commission[]   @relation("CommissionPaidBy")
   activityLogs   ActivityLog[]
   notifications  PortalNotification[]
+  leadScraperQuota LeadScraperUserQuota?
+  leadScraperPlaceViews LeadScraperPlaceView[]
+  leadScraperSearchCaches LeadScraperSearchCache[] @relation("LeadScraperSearchBy")
 
   @@index([role])
   @@index([role, isActive])
@@ -135,6 +138,9 @@ model Lead {
   prospectCategory     ProspectCategory @default(NEW_LEAD)
   callbackScheduledAt  DateTime?
   interestedSampleShared Boolean?
+  /** Google Places place_id when imported from lead scraper. */
+  googlePlaceId        String?   @unique
+  scraperImportedAt    DateTime?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
@@ -156,6 +162,74 @@ model Lead {
   @@index([prospectCategory])
   @@index([assignedToUserId, createdAt])
   @@index([assignedToUserId, prospectCategory])
+}
+
+model LeadScraperUserQuota {
+  userId          String   @id
+  monthlyQuota    Int      @default(40)
+  searchesUsed    Int      @default(0)
+  quotaResetMonth String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LeadScraperGlobalUsage {
+  yearMonth   String   @id
+  searchCount Int      @default(0)
+  lastUpdated DateTime @updatedAt
+}
+
+model LeadScraperSearchCache {
+  id               String   @id @default(cuid())
+  locationKey      String
+  keyword          String   @default("business")
+  resultsJson      Json
+  resultCount      Int      @default(0)
+  noWebsiteCount   Int      @default(0)
+  lat              Float?
+  lng              Float?
+  searchedByUserId String?
+  searchedAt       DateTime @default(now())
+
+  searchedBy User? @relation("LeadScraperSearchBy", fields: [searchedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([locationKey, keyword])
+  @@index([locationKey, keyword])
+}
+
+model LeadScraperPlace {
+  id                  String   @id @default(cuid())
+  placeId             String   @unique
+  name                String
+  address             String?
+  phone               String?
+  category            String?
+  hasWebsite          Boolean  @default(false)
+  websiteUrl          String?
+  mapsUrl             String?
+  lat                 Float?
+  lng                 Float?
+  sourceSearchCacheId String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  views LeadScraperPlaceView[]
+
+  @@index([hasWebsite])
+}
+
+model LeadScraperPlaceView {
+  userId    String
+  placeId   String
+  viewedAt  DateTime @default(now())
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place LeadScraperPlace @relation(fields: [placeId], references: [placeId], onDelete: Cascade)
+
+  @@id([userId, placeId])
+  @@index([userId, viewedAt])
 }
 
 model LeadProspectCategoryEvent {

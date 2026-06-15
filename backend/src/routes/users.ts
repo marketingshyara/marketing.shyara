@@ -11,10 +11,12 @@ import { logActivity } from "../services/activityLog.js";
 import { destroyPortalSessionsForUser } from "../services/userSessions.js";
 import {
   createUserBodySchema,
+  patchScraperQuotaBodySchema,
   patchUserBodySchema,
   resetPasswordBodySchema,
   usersListQuerySchema
 } from "../validators/schemas.js";
+import { grantScraperQuota, ensureUserQuotaRow, getScraperQuotaForUser } from "../services/leadScraper/leadScraperQuota.js";
 
 export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -50,11 +52,58 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
           mustChangePassword: true,
           archivedAt: true,
           createdAt: true,
-          updatedAt: true
+          updatedAt: true,
+          leadScraperQuota: {
+            select: {
+              monthlyQuota: true,
+              searchesUsed: true,
+              quotaResetMonth: true
+            }
+          }
         }
       });
 
-      return reply.send({ items, total, page, pageSize: query.pageSize });
+      const config = app.appConfig.leadScraper;
+      for (const u of items) {
+        if (u.role === UserRole.SALES_REP) {
+          await ensureUserQuotaRow(app.prisma, config, u.id);
+        }
+      }
+      const repIds = items.filter((u) => u.role === UserRole.SALES_REP).map((u) => u.id);
+      const freshQuotas =
+        repIds.length > 0
+          ? await app.prisma.leadScraperUserQuota.findMany({
+              where: { userId: { in: repIds } }
+            })
+          : [];
+      const quotaByUser = new Map(freshQuotas.map((q) => [q.userId, q]));
+
+      const enriched = items.map((u) => {
+        const quota = u.role === UserRole.SALES_REP ? quotaByUser.get(u.id) : null;
+        const monthlyQuota = quota?.monthlyQuota ?? config.repDefaultQuota;
+        const searchesUsed = quota?.searchesUsed ?? 0;
+        return {
+          id: u.id,
+          email: u.email,
+          displayName: u.displayName,
+          role: u.role,
+          isActive: u.isActive,
+          mustChangePassword: u.mustChangePassword,
+          archivedAt: u.archivedAt,
+          createdAt: u.createdAt,
+          updatedAt: u.updatedAt,
+          scraperQuota:
+            u.role === UserRole.SALES_REP
+              ? {
+                  monthlyQuota,
+                  searchesUsed,
+                  remaining: Math.max(0, monthlyQuota - searchesUsed)
+                }
+              : null
+        };
+      });
+
+      return reply.send({ items: enriched, total, page, pageSize: query.pageSize });
     }
   );
 
@@ -373,6 +422,51 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       });
 
       return reply.send({ user: updated });
+    }
+  );
+
+  app.patch(
+    "/api/users/:id/scraper-quota",
+    { preHandler: [requireUser] },
+    async (request, reply) => {
+      requireAdmin(request);
+      const { id } = request.params as { id: string };
+      const body = patchScraperQuotaBodySchema.parse(request.body);
+
+      const target = await app.prisma.user.findUnique({ where: { id } });
+      if (!target) {
+        throw new HttpError(404, "NOT_FOUND", "User not found.");
+      }
+      if (target.role !== UserRole.SALES_REP) {
+        throw new HttpError(400, "NOT_SALES_REP", "Scraper quota applies to sales reps only.");
+      }
+      if (!target.isActive || target.archivedAt) {
+        throw new HttpError(
+          400,
+          "INVALID_STATE",
+          "Cannot grant scraper quota to an inactive or archived user."
+        );
+      }
+
+      const config = app.appConfig.leadScraper;
+      const result = await grantScraperQuota(app.prisma, config, id, body.amount);
+      const quota = await getScraperQuotaForUser(app.prisma, config, id);
+
+      await logActivity({
+        prisma: app.prisma,
+        userId: request.currentUser!.id,
+        action: ActivityAction.UPDATE,
+        entityType: "User",
+        entityId: id,
+        after: { scraperQuotaGrant: body.amount, newLimit: result.newLimit },
+        request
+      });
+
+      return reply.send({
+        granted: result.granted,
+        newLimit: result.newLimit,
+        quota
+      });
     }
   );
 }

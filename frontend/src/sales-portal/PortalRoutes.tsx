@@ -25,6 +25,7 @@ import { AllProjectsPage } from "./pages/admin/AllProjectsPage";
 import { ActivityLogsPage } from "./pages/admin/ActivityLogsPage";
 import { PendingPaymentsPage } from "./pages/admin/PendingPaymentsPage";
 import { CommissionPage } from "./pages/CommissionPage";
+import { LeadScraperPage } from "./pages/lead-scraper/LeadScraperPage";
 import { BrutalButton } from "./components/brutalist";
 import { ShieldAlert, SearchX } from "lucide-react";
 import { useSessionQuery } from "./hooks/useSalesQueries";
@@ -101,6 +102,7 @@ export function PortalRoutes() {
               <Route path="pipeline" element={<PipelineListPage />} />
               <Route path="pipeline/not-interested" element={<NotInterestedLeadsPage />} />
               <Route path="pipeline/new" element={<PipelineNewLeadPage />} />
+              <Route path="lead-scraper" element={<LeadScraperPage />} />
               <Route path="resources" element={<ResourcesPage />} />
             </Route>
 

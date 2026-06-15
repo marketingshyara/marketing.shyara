@@ -75,7 +75,32 @@ export type AppConfig = {
   bootstrapAdminEmail: string | undefined;
   bootstrapAdminPassword: string | undefined;
   bootstrapAdminDisplayName: string | undefined;
+  leadScraper: LeadScraperConfig;
 };
+
+export type LeadScraperConfig = {
+  googlePlacesApiKey: string | undefined;
+  maxSearchesPerMonth: number;
+  cacheTtlDays: number;
+  repDefaultQuota: number;
+  maxResultsSingle: number;
+  maxResultsSweep: number;
+};
+
+function loadLeadScraperConfig(): LeadScraperConfig {
+  const rawKey = process.env.GOOGLE_PLACES_API_KEY?.trim();
+  const googlePlacesApiKey =
+    rawKey && rawKey !== "your_key_here" ? stripOuterQuotes(rawKey) : undefined;
+
+  return {
+    googlePlacesApiKey,
+    maxSearchesPerMonth: intEnv("LEAD_SCRAPER_MAX_SEARCHES_PER_MONTH", "180", 1),
+    cacheTtlDays: intEnv("LEAD_SCRAPER_CACHE_TTL_DAYS", "30", 1),
+    repDefaultQuota: intEnv("LEAD_SCRAPER_REP_DEFAULT_QUOTA", "40", 1),
+    maxResultsSingle: intEnv("LEAD_SCRAPER_MAX_RESULTS_SINGLE", "10", 1),
+    maxResultsSweep: intEnv("LEAD_SCRAPER_MAX_RESULTS_SWEEP", "10", 1)
+  };
+}
 
 export function loadConfig(): AppConfig {
   const nodeEnv = readOptionalEnv("NODE_ENV", "development");
@@ -130,6 +155,7 @@ export function loadConfig(): AppConfig {
     bcryptRounds: requiredIntEnv("BCRYPT_ROUNDS", "10", 4),
     bootstrapAdminEmail: process.env.BOOTSTRAP_ADMIN_EMAIL,
     bootstrapAdminPassword: process.env.BOOTSTRAP_ADMIN_PASSWORD,
-    bootstrapAdminDisplayName: process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME
+    bootstrapAdminDisplayName: process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME,
+    leadScraper: loadLeadScraperConfig()
   };
 }

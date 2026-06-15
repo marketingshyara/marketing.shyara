@@ -15,6 +15,7 @@ import {
 } from "../data/paymentShareMethods.js";
 import { optionalHttpUrlSchema, requiredHttpUrlSchema } from "../lib/httpUrl.js";
 import { githubRepoUrlSchema } from "../lib/githubRepoUrl.js";
+import { resolveScraperRadiusKm } from "../services/leadScraper/types.js";
 import {
   indianMobilePhoneSchema,
   optionalIndianMobilePhoneSchema
@@ -424,4 +425,45 @@ export const patchPortalSettingsSchema = portalSettingsSchema.partial();
 
 export const patchCommissionBodySchema = z.object({
   amountCents: z.number().int().min(0)
+});
+
+export const leadScraperPlacesExportQuerySchema = z.object({
+  noWebsiteOnly: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true")
+});
+
+export const leadScraperSearchBodySchema = z.object({
+  location: z.string().min(1).max(500),
+  keyword: z.string().max(200).optional().nullable(),
+  radiusKm: z
+    .number()
+    .int()
+    .optional()
+    .transform((v) => resolveScraperRadiusKm(v))
+});
+
+export const leadScraperPlacesQuerySchema = z.object({
+  noWebsiteOnly: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+  search: z.string().max(200).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50)
+});
+
+export const leadScraperCacheStatusQuerySchema = z.object({
+  location: z.string().min(1).max(500),
+  keyword: z.string().max(200).optional().nullable(),
+  radiusKm: z.coerce.number().int().optional()
+});
+
+export const leadScraperImportBodySchema = z.object({
+  placeIds: z.array(z.string().min(1).max(256)).min(1).max(100)
+});
+
+export const patchScraperQuotaBodySchema = z.object({
+  amount: z.number().int().min(1).max(500)
 });

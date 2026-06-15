@@ -53,7 +53,99 @@ export interface User {
   archivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  scraperQuota?: ScraperQuotaSummary | null;
 }
+
+export interface ScraperQuotaSummary {
+  monthlyQuota: number;
+  searchesUsed: number;
+  remaining: number;
+}
+
+export type ScraperPlaceResult = {
+  placeId: string;
+  name: string;
+  address: string;
+  phone: string;
+  businessStatus?: string;
+  category: string;
+  hasWebsite: boolean;
+  websiteUrl: string | null;
+  mapsUrl: string;
+  lat?: number;
+  lng?: number;
+};
+
+export type LeadScraperSearchResponse = {
+  source: "api" | "cache" | "api_sweep" | "cache_sweep";
+  location: string;
+  keyword: string;
+  rawResultCount: number;
+  totalResults: number;
+  duplicateCount?: number;
+  noWebsiteCount: number;
+  searchedAt?: string;
+  ageInDays?: number;
+  sweepPartial?: boolean;
+  categoriesCompleted?: number;
+  totalCategories?: number;
+  results: ScraperPlaceResult[];
+};
+
+export type LeadScraperUsageResponse = {
+  user: {
+    id: string;
+    name: string;
+    role: string;
+    used: number;
+    limit: number;
+    remaining: number;
+  };
+  global: {
+    used: number;
+    limit: number;
+    remaining: number;
+    resetsOn: string;
+    month: string;
+  };
+  resetsOn: string;
+};
+
+export type LeadScraperPastPlace = {
+  placeId: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  category: string | null;
+  hasWebsite: boolean;
+  websiteUrl: string | null;
+  mapsUrl: string | null;
+  lat: number | null;
+  lng: number | null;
+  viewedAt: string;
+  pipelineImported: boolean;
+};
+
+export type LeadScraperPlacesResponse = {
+  leads: LeadScraperPastPlace[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export type LeadScraperImportResponse = {
+  imported: Array<{
+    id: string;
+    clientName: string;
+    clientPhone: string | null;
+    googlePlaceId: string | null;
+    prospectCategory: ProspectCategory;
+    status: LeadStatus;
+  }>;
+  skipped: Array<{ placeId: string; reason: string }>;
+  failed: Array<{ placeId: string; reason: string }>;
+};
 
 export interface AdminProjectListItem {
   id: string;

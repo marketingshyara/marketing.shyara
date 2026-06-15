@@ -4,6 +4,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useCreateUserMutation,
+  useGrantScraperQuotaMutation,
   usePatchUserMutation,
   useResetPasswordMutation,
   useSessionQuery,
@@ -72,6 +73,11 @@ export function UsersPage() {
   const createUser = useCreateUserMutation();
   const patchUser = usePatchUserMutation();
   const resetPw = useResetPasswordMutation();
+  const grantQuota = useGrantScraperQuotaMutation();
+
+  const [grantOpen, setGrantOpen] = useState(false);
+  const [grantUser, setGrantUser] = useState<User | null>(null);
+  const [grantAmount, setGrantAmount] = useState("10");
 
   const createForm = useForm({
     resolver: zodResolver(createUserSchema),
@@ -311,6 +317,11 @@ export function UsersPage() {
                   setResetOpen(true);
                   resetForm.reset();
                 }}
+                onGrantQuota={() => {
+                  setGrantUser(u);
+                  setGrantAmount("10");
+                  setGrantOpen(true);
+                }}
               />
             ))}
           </div>
@@ -321,6 +332,7 @@ export function UsersPage() {
                   <TableRow>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Lead finder</TableHead>
                     <TableHead>Active</TableHead>
                     <TableHead>{passwordCopy.mustSetNewPasswordColumn}</TableHead>
                     <TableHead />
@@ -332,6 +344,15 @@ export function UsersPage() {
                       <TableCell className="font-medium">{u.email}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{userRoleLabel(u.role)}</Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {u.role === "SALES_REP" && u.scraperQuota ? (
+                          <span>
+                            {u.scraperQuota.searchesUsed}/{u.scraperQuota.monthlyQuota}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell>{u.isActive ? "Yes" : "No"}</TableCell>
                       <TableCell>{u.mustChangePassword ? "Yes" : "No"}</TableCell>
@@ -360,6 +381,20 @@ export function UsersPage() {
                           >
                             {passwordCopy.issueTemporaryPassword}
                           </Button>
+                          {u.role === "SALES_REP" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="min-h-11"
+                              onClick={() => {
+                                setGrantUser(u);
+                                setGrantAmount("10");
+                                setGrantOpen(true);
+                              }}
+                            >
+                              Add searches
+                            </Button>
+                          )}
                           <RemoveUserButton
                             userId={u.id}
                             email={u.email}
@@ -588,6 +623,59 @@ export function UsersPage() {
           if (!open) setIssuedTempPassword(null);
         }}
       />
+
+      <Dialog open={grantOpen} onOpenChange={setGrantOpen}>
+        <DialogContent aria-describedby="grant-scraper-quota-desc" className="max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add lead finder searches</DialogTitle>
+            <DialogDescription id="grant-scraper-quota-desc">
+              Increase monthly search quota for {grantUser?.email ?? "this rep"}.
+            </DialogDescription>
+          </DialogHeader>
+          {grantUser?.scraperQuota && (
+            <p className="text-sm text-muted-foreground">
+              Current usage: {grantUser.scraperQuota.searchesUsed} /{" "}
+              {grantUser.scraperQuota.monthlyQuota} (resets monthly)
+            </p>
+          )}
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const amount = Number.parseInt(grantAmount, 10);
+              if (!Number.isFinite(amount) || amount < 1) {
+                toast.error("Enter a valid number of searches");
+                return;
+              }
+              grantQuota.mutate(
+                { userId: grantUser!.id, amount },
+                {
+                  onSuccess: () => {
+                    setGrantOpen(false);
+                    setGrantUser(null);
+                  }
+                }
+              );
+            }}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="grant-quota-amount">Additional searches</Label>
+              <Input
+                id="grant-quota-amount"
+                type="number"
+                min={1}
+                max={500}
+                className="min-h-11"
+                value={grantAmount}
+                onChange={(e) => setGrantAmount(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="min-h-11 w-full" disabled={grantQuota.isPending}>
+              {grantQuota.isPending ? "Saving…" : "Add searches"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -596,12 +684,14 @@ function ActiveUserCard({
   user,
   currentUserId,
   onEdit,
-  onReset
+  onReset,
+  onGrantQuota
 }: {
   user: User;
   currentUserId?: string;
   onEdit: () => void;
   onReset: () => void;
+  onGrantQuota?: () => void;
 }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
@@ -611,6 +701,11 @@ function ActiveUserCard({
       </div>
       <dl className="mt-3 space-y-1 text-sm text-muted-foreground">
         <div>Active: {user.isActive ? "Yes" : "No"}</div>
+        {user.role === "SALES_REP" && user.scraperQuota && (
+          <div>
+            Lead finder: {user.scraperQuota.searchesUsed}/{user.scraperQuota.monthlyQuota}
+          </div>
+        )}
         <div>
           {passwordCopy.mustSetNewPasswordColumn}:{" "}
           {user.mustChangePassword
@@ -625,6 +720,11 @@ function ActiveUserCard({
         <Button variant="ghost" className="min-h-11 w-full" onClick={onReset}>
           {passwordCopy.issueTemporaryPassword}
         </Button>
+        {user.role === "SALES_REP" && onGrantQuota && (
+          <Button variant="ghost" className="min-h-11 w-full" onClick={onGrantQuota}>
+            Add lead finder searches
+          </Button>
+        )}
         <RemoveUserButton
           userId={user.id}
           email={user.email}
