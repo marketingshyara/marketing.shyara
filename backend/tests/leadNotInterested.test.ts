@@ -5,6 +5,7 @@ import {
   ProspectCategory
 } from "@prisma/client";
 import {
+  assertLeadDeletable,
   assertLeadMutable,
   assertLeadNotInterestedEligible
 } from "../src/services/leadGuards.js";
@@ -60,6 +61,26 @@ describe("assertLeadNotInterestedEligible", () => {
     } catch (e) {
       expect((e as HttpError).code).toBe("LEAD_HAS_PROJECT");
     }
+  });
+});
+
+describe("assertLeadDeletable", () => {
+  const base = {
+    convertedAt: null,
+    status: LeadStatus.NEW,
+    payments: [] as { verificationStatus: PaymentVerificationStatus }[],
+    project: null
+  };
+
+  it("allows not-interested archived prospects", () => {
+    expect(() =>
+      assertLeadDeletable({
+        ...base,
+        prospectCategory: ProspectCategory.NOT_INTERESTED
+      } as Parameters<typeof assertLeadDeletable>[0] & {
+        prospectCategory: ProspectCategory;
+      })
+    ).not.toThrow();
   });
 });
 

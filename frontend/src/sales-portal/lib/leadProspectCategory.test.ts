@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canChangeProspectCategory,
+  canDeleteLead,
   canMarkNotInterested,
   interestedSampleLabel,
   isProspectArchived,
@@ -44,6 +45,36 @@ describe("leadProspectCategory", () => {
     expect(
       canMarkNotInterested({
         prospectCategory: "NEW_LEAD",
+        convertedAt: "2026-01-01T00:00:00.000Z",
+        status: "ADVANCE_PAID",
+        payments: [],
+        project: null
+      })
+    ).toBe(false);
+  });
+
+  it("canDeleteLead allows not-interested archived prospects", () => {
+    expect(
+      canDeleteLead({
+        prospectCategory: "NOT_INTERESTED",
+        convertedAt: null,
+        status: "NEW",
+        payments: [],
+        project: null
+      })
+    ).toBe(true);
+    expect(
+      canDeleteLead({
+        prospectCategory: "NEW_LEAD",
+        convertedAt: null,
+        status: "NEW",
+        payments: [],
+        project: null
+      })
+    ).toBe(true);
+    expect(
+      canDeleteLead({
+        prospectCategory: "NOT_INTERESTED",
         convertedAt: "2026-01-01T00:00:00.000Z",
         status: "ADVANCE_PAID",
         payments: [],

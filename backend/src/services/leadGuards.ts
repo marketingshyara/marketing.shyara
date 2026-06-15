@@ -95,5 +95,5 @@ export function assertLeadNotInterestedEligible(lead: LeadProspectDispositionChe
   }
 }
 
-/** Same eligibility as marking not interested — unconverted, no verified payment, no project. */
+/** Unconverted prospects with no verified payments and no project may be deleted (any category). */
 export const assertLeadDeletable = assertLeadNotInterestedEligible;

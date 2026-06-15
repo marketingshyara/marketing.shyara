@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { LeadStatus, UserRole } from "@prisma/client";
+import { LeadStatus, ProspectCategory, UserRole } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApp } from "../../src/app.js";
 import { loadConfig } from "../../src/config.js";
@@ -180,6 +180,31 @@ d("integration: not interested prospects", () => {
     };
     expect(eventsBody.items[0]?.note).toBe("No budget");
 
+    await app.close();
+  });
+
+  it("rep can delete not-interested prospect", async () => {
+    const archived = await prisma.lead.create({
+      data: {
+        clientName: "Delete Not Interested",
+        status: LeadStatus.NEW,
+        prospectCategory: ProspectCategory.NOT_INTERESTED,
+        createdByUserId: repId,
+        assignedToUserId: repId
+      }
+    });
+
+    const app = await buildApp({ config });
+    const cookie = await repCookie();
+    const del = await inject(app, {
+      method: "DELETE",
+      url: `/api/leads/${archived.id}`,
+      headers: { cookie: `${config.cookieName}=${cookie}` }
+    });
+    expect(del.statusCode).toBe(200);
+
+    const gone = await prisma.lead.findUnique({ where: { id: archived.id } });
+    expect(gone).toBeNull();
     await app.close();
   });
 

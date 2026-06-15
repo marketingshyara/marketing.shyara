@@ -229,6 +229,17 @@ export function PipelineDetailPage() {
             void leadQr.refetch();
           }}
         />
+        {canDeleteLead(lead) ? (
+          <DeleteLeadsDialog
+            leadIds={[lead.id]}
+            clientNames={[lead.clientName]}
+            variant="destructive"
+            triggerLabel="Delete prospect"
+            onDeleted={() =>
+              navigate("/portal/pipeline?view=leads&prospectCategory=NOT_INTERESTED")
+            }
+          />
+        ) : null}
         <section className="space-y-2">
           <h2 className="text-sm font-bold uppercase tracking-wide">Category history</h2>
           <ProspectCategoryTimeline leadId={lead.id} />

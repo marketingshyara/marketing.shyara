@@ -50,6 +50,11 @@ export function isProspectArchived(lead: Pick<Lead, "convertedAt" | "prospectCat
 /** Mirrors server assertLeadNotInterestedEligible for NOT_INTERESTED transitions. */
 export function canMarkNotInterested(lead: LeadProspectShape): boolean {
   if (lead.prospectCategory === "NOT_INTERESTED") return false;
+  return canDeleteLead(lead);
+}
+
+/** Mirrors server assertLeadDeletable — unconverted, no verified payment, no project (any category). */
+export function canDeleteLead(lead: LeadProspectShape): boolean {
   if (lead.convertedAt != null) return false;
   if (lead.status === "COMMISSION_PAID") return false;
   if (
@@ -60,9 +65,6 @@ export function canMarkNotInterested(lead: LeadProspectShape): boolean {
   if (lead.project != null) return false;
   return true;
 }
-
-/** Mirrors server assertLeadDeletable — same rules as not-interested eligibility. */
-export const canDeleteLead = canMarkNotInterested;
 
 export function canChangeProspectCategory(lead: LeadProspectShape): boolean {
   if (lead.convertedAt != null) return false;
