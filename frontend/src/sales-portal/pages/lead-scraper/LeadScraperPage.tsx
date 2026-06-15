@@ -74,29 +74,29 @@ export function LeadScraperPage() {
     enabled: tab === "past"
   });
 
+  const resetPastList = useCallback(() => {
+    setPastPage(1);
+    setPastAccumulated([]);
+    setPastSelected(emptySet());
+    pastFetchSeq.current += 1;
+  }, []);
+
   useEffect(() => {
-    if (!pastQuery.data) return;
-    const seq = ++pastFetchSeq.current;
+    if (!pastQuery.data || pastQuery.isFetching) return;
     if (pastPage === 1) {
       setPastAccumulated(pastQuery.data.leads);
       return;
     }
+    const seq = pastFetchSeq.current;
     setPastAccumulated((prev) => {
-      if (seq !== pastFetchSeq.current) return prev;
       const ids = new Set(prev.map((p) => p.placeId));
       const next = [...prev];
       for (const lead of pastQuery.data!.leads) {
         if (!ids.has(lead.placeId)) next.push(lead);
       }
-      return next;
+      return seq === pastFetchSeq.current ? next : prev;
     });
-  }, [pastQuery.data, pastPage]);
-
-  useEffect(() => {
-    setPastPage(1);
-    setPastAccumulated([]);
-    pastFetchSeq.current += 1;
-  }, [pastSearch, pastNoWebsite]);
+  }, [pastQuery.data, pastQuery.isFetching, pastPage]);
 
   useEffect(() => {
     if (tab === "past") {
@@ -263,8 +263,6 @@ export function LeadScraperPage() {
 
   const quotaWarning =
     usage && !quotaBlocked && usage.user.remaining > 0 && usage.user.remaining <= 5;
-
-  const pastPageRows = pastQuery.data?.leads ?? [];
 
   return (
     <div className="mx-auto flex min-w-0 max-w-6xl flex-col gap-4 pb-24 lg:pb-8">
@@ -534,13 +532,19 @@ export function LeadScraperPage() {
                     className="min-h-11"
                     placeholder="Name, address, category…"
                     value={pastSearch}
-                    onChange={(e) => setPastSearch(e.target.value)}
+                    onChange={(e) => {
+                      setPastSearch(e.target.value);
+                      resetPastList();
+                    }}
                   />
                 </div>
                 <label className="flex min-h-11 items-center gap-2 text-sm">
                   <Checkbox
                     checked={pastNoWebsite}
-                    onCheckedChange={(c) => setPastNoWebsite(c === true)}
+                    onCheckedChange={(c) => {
+                      setPastNoWebsite(c === true);
+                      resetPastList();
+                    }}
                   />
                   No website only
                 </label>
@@ -560,7 +564,8 @@ export function LeadScraperPage() {
                 </Button>
               </div>
 
-              {pastQuery.isLoading && pastPage === 1 && <Skeleton className="h-48 w-full" />}
+              {(pastQuery.isLoading || (pastQuery.isFetching && pastAccumulated.length === 0)) &&
+                pastPage === 1 && <Skeleton className="h-48 w-full" />}
 
               {pastQuery.isError && (
                 <QueryErrorAlert
@@ -588,15 +593,20 @@ export function LeadScraperPage() {
                     rows={pastAccumulated}
                     selected={pastSelected}
                     onToggle={togglePastSelect}
-                    onToggleAll={(c) => togglePastAll(c, pastPageRows)}
+                    onToggleAll={(c) => togglePastAll(c, pastAccumulated)}
                     showImported
                   />
                 </>
               )}
 
-              {!pastQuery.isLoading && pastAccumulated.length === 0 && !pastQuery.isError && (
+              {!pastQuery.isLoading &&
+                !pastQuery.isFetching &&
+                pastAccumulated.length === 0 &&
+                !pastQuery.isError && (
                 <p className="text-sm text-muted-foreground">
-                  No past results yet. Run a search on the Scrape tab.
+                  {pastNoWebsite
+                    ? "No past results without a website. Try turning off the filter."
+                    : "No past results yet. Run a search on the Scrape tab."}
                 </p>
               )}
 

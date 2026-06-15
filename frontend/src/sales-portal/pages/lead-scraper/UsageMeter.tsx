@@ -22,18 +22,22 @@ export function UsageMeter({
         className
       )}
     >
-      <div className="flex items-end justify-between gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A0A0A]/60">
+      <div className="space-y-2">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-[#0A0A0A]/60">
           Your searches this month
-        </span>
-        <span
-          className={cn(
-            "font-mono text-xs font-bold",
-            userLow ? "text-[#FF3333]" : "text-[#0A0A0A]"
-          )}
-        >
-          {usage.user.used} / {usage.user.limit}
-        </span>
+        </p>
+        <div className="flex items-baseline justify-between gap-3">
+          <span
+            className={cn(
+              "whitespace-nowrap font-mono text-sm font-bold tabular-nums",
+              userLow ? "text-[#FF3333]" : "text-[#0A0A0A]"
+            )}
+          >
+            {usage.user.used}
+            <span className="text-[#0A0A0A]/50"> / </span>
+            {usage.user.limit}
+          </span>
+        </div>
       </div>
       <Progress value={pct} className="mt-2 h-1.5" aria-label="Your monthly search usage" />
       <p className="mt-2 text-xs text-[#0A0A0A]/60">Resets {usage.resetsOn}.</p>

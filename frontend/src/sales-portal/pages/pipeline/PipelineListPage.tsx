@@ -366,12 +366,12 @@ export function PipelineListPage() {
                   <ProspectCategoryBadge lead={lead} />
                   <div className="flex min-w-0 items-stretch gap-2">
                     {deletable ? (
-                      <div className="flex shrink-0 items-center px-1">
+                      <div className="flex shrink-0 items-center self-center px-0.5">
                         <Checkbox
                           checked={selectedLeadIds.has(lead.id)}
                           onCheckedChange={() => toggleLeadSelection(lead.id)}
                           aria-label={`Select ${lead.clientName}`}
-                          className="min-h-11 min-w-11"
+                          className="size-[1.125rem]"
                         />
                       </div>
                     ) : null}
