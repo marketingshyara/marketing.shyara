@@ -1,4 +1,6 @@
-import "dotenv/config";
+import { loadBackendEnv } from "./loadEnv.js";
+
+loadBackendEnv();
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { ensureBootstrapAdminFromEnv } from "./lib/ensureBootstrapAdmin.js";

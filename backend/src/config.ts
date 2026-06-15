@@ -1,4 +1,6 @@
-import "dotenv/config";
+import { loadBackendEnv } from "./loadEnv.js";
+
+loadBackendEnv();
 
 function readEnv(name: string, fallback?: string): string {
   const value = process.env[name] ?? fallback;
@@ -94,7 +96,7 @@ function loadLeadScraperConfig(): LeadScraperConfig {
 
   return {
     googlePlacesApiKey,
-    maxSearchesPerMonth: intEnv("LEAD_SCRAPER_MAX_SEARCHES_PER_MONTH", "180", 1),
+    maxSearchesPerMonth: intEnv("LEAD_SCRAPER_MAX_SEARCHES_PER_MONTH", "150", 1),
     cacheTtlDays: intEnv("LEAD_SCRAPER_CACHE_TTL_DAYS", "30", 1),
     repDefaultQuota: intEnv("LEAD_SCRAPER_REP_DEFAULT_QUOTA", "40", 1),
     maxResultsSingle: intEnv("LEAD_SCRAPER_MAX_RESULTS_SINGLE", "10", 1),
