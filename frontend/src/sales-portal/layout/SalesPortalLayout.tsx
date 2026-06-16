@@ -41,6 +41,7 @@ import { userRoleLabel } from "../lib/copy";
 import { isModelBRepUser } from "../lib/modelBRepUi";
 import { defaultPortalHome } from "../lib/portalPaths";
 import { passwordCopy } from "../lib/passwordCopy";
+import { portalSheetBottomSurfaceClass, portalPopoverSurfaceClass } from "../components/ui/portalDialogStyles";
 
 type NavItem = {
   to: string;
@@ -85,8 +86,16 @@ const mobileTabNavClass = ({ isActive }: { isActive: boolean }) =>
 const sheetNavClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     "flex min-h-11 w-full flex-row items-center justify-start gap-3 border-2 border-transparent px-3 py-2 text-sm font-bold uppercase tracking-wide transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#FF3333]",
-    isActive ? "portal-nav-active" : "text-[#0A0A0A] hover:bg-[#FAFAFA]"
+    isActive
+      ? "portal-nav-active text-[#0A0A0A]"
+      : "text-[#0A0A0A] hover:bg-[#FAFAFA] active:bg-[#FAFAFA]"
   );
+
+const sheetSectionLabelClass =
+  "px-3 pb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#0A0A0A]/50";
+
+const sheetActionButtonClass =
+  "min-h-11 justify-start text-[#0A0A0A] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]";
 
 export function SalesPortalLayout() {
   const { data } = useSessionQuery();
@@ -221,7 +230,7 @@ export function SalesPortalLayout() {
                 <span className="sr-only md:not-sr-only md:inline">Account</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuContent align="end" className={cn(portalPopoverSurfaceClass, "w-52")}>
               <DropdownMenuItem asChild>
                 <Link to="/portal/change-password" className="flex flex-col items-start gap-0.5">
                   <span>{passwordCopy.changePassword}</span>
@@ -262,14 +271,20 @@ export function SalesPortalLayout() {
                 <span className="text-[10px] font-medium leading-tight">More</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="pb-[env(safe-area-inset-bottom,0px)]">
+            <SheetContent
+              side="bottom"
+              className={cn(
+                portalSheetBottomSurfaceClass,
+                "pb-[env(safe-area-inset-bottom,0px)] pt-2"
+              )}
+            >
               <SheetHeader>
-                <SheetTitle>Menu</SheetTitle>
+                <SheetTitle className="text-left font-heading text-lg uppercase tracking-wide text-[#0A0A0A]">
+                  Menu
+                </SheetTitle>
               </SheetHeader>
               <div className="mt-4 flex flex-col gap-1">
-                <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Work
-                </p>
+                <p className={sheetSectionLabelClass}>Work</p>
                 {ADMIN_NAV.filter((i) =>
                   i.to === "/portal/commission" || i.to === "/portal/payments"
                 ).map((item) => (
@@ -283,9 +298,7 @@ export function SalesPortalLayout() {
                     <span>{item.label}</span>
                   </NavLink>
                 ))}
-                <p className="mt-2 px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Admin
-                </p>
+                <p className={cn(sheetSectionLabelClass, "mt-2")}>Admin</p>
                 {ADMIN_NAV.filter((i) =>
                   ["/portal/activity", "/portal/users", "/portal/settings"].includes(i.to)
                 ).map((item) => (
@@ -299,15 +312,15 @@ export function SalesPortalLayout() {
                     <span>{item.label}</span>
                   </NavLink>
                 ))}
-                <Separator className="my-2" />
-                <Button variant="ghost" className="min-h-11 justify-start" asChild>
+                <Separator className="my-2 bg-[#0A0A0A]/15" />
+                <Button variant="ghost" className={sheetActionButtonClass} asChild>
                   <Link to="/portal/change-password" onClick={() => setMoreOpen(false)}>
                     {passwordCopy.changePassword}
                   </Link>
                 </Button>
                 <Button
                   variant="ghost"
-                  className="min-h-11 justify-start text-destructive"
+                  className={cn(sheetActionButtonClass, "text-destructive hover:text-destructive")}
                   onClick={() => {
                     setMoreOpen(false);
                     handleLogout();

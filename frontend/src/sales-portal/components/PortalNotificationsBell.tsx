@@ -20,6 +20,7 @@ import { defaultPortalHome } from "../lib/portalPaths";
 import { stageShortTitle } from "../lib/pipelineCopy";
 import type { PipelineStageKey } from "../types";
 import { cn } from "@/lib/utils";
+import { portalPopoverSurfaceClass } from "./ui/portalDialogStyles";
 
 type Props = {
   user: SessionUser;
@@ -76,7 +77,10 @@ export function PortalNotificationsBell({ user }: Props) {
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="flex w-[min(calc(100vw-1.5rem),20rem)] max-h-[min(24rem,70dvh)] flex-col overflow-hidden p-0 touch-manipulation sm:w-80"
+        className={cn(
+          portalPopoverSurfaceClass,
+          "flex w-[min(calc(100vw-1.5rem),20rem)] max-h-[min(24rem,70dvh)] flex-col overflow-hidden p-0 touch-manipulation sm:w-80"
+        )}
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2.5">
