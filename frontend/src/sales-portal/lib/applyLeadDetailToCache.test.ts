@@ -1,7 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { qk } from "../queryKeys";
-import { applyLeadDetailToCache } from "./applyLeadDetailToCache";
+import { applyLeadDetailToCache, applyProjectToLeadCache } from "./applyLeadDetailToCache";
 import type { Lead, LeadDetailResponse } from "../types";
 
 const baseLead: Lead = {
@@ -135,5 +135,40 @@ describe("applyLeadDetailToCache", () => {
     const cached = qc.getQueryData<LeadDetailResponse>(qk.lead("lead-1"));
     expect(cached?.pipelineStages).toHaveLength(1);
     expect(cached?.lead.payments?.[0]?.adminNote).toBe("Mismatch");
+  });
+});
+
+describe("applyProjectToLeadCache", () => {
+  it("updates nested project on cached lead detail", () => {
+    const qc = new QueryClient();
+    const existing: LeadDetailResponse = {
+      lead: {
+        ...baseLead,
+        project: {
+          id: "proj-1",
+          leadId: "lead-1",
+          title: "Site",
+          metadata: null,
+          previewUrl: "https://old.example.com",
+          deployedUrl: null,
+          deploymentSubmittedAt: null,
+          deploymentVerifiedAt: null,
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z"
+        }
+      },
+      pipelineStages: []
+    };
+    qc.setQueryData(qk.lead("lead-1"), existing);
+
+    applyProjectToLeadCache(qc, "lead-1", {
+      ...existing.lead.project!,
+      previewUrl: "https://new.example.com",
+      updatedAt: "2026-02-01T00:00:00.000Z"
+    });
+
+    const cached = qc.getQueryData<LeadDetailResponse>(qk.lead("lead-1"));
+    expect(cached?.lead.project?.previewUrl).toBe("https://new.example.com");
+    expect(cached?.pipelineStages).toEqual([]);
   });
 });

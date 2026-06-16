@@ -6,6 +6,8 @@ import { salesApi, type VerifyPaymentRequestBody } from "../api/salesApi";
 import { qk } from "../queryKeys";
 import { modelBMilestoneRecordedToast } from "../lib/copy";
 import {
+  applyLeadDetailToCache,
+  applyProjectToLeadCache,
   invalidateAdminQueues,
   invalidateLeadAndRep,
   removeLeadFromTeamRepActiveCache
@@ -578,6 +580,7 @@ export function useConvertLeadMutation(leadId: string, repId?: string | null) {
       repNote: PaymentShareMethodKey;
     }) => salesApi.convertLead(leadId, body),
     onSuccess: (data) => {
+      applyLeadDetailToCache(qc, leadId, data);
       invalidateLeadAndRep(qc, {
         leadId,
         repId: repId ?? data.lead.assignedToUserId
@@ -798,10 +801,11 @@ export function usePatchProjectMutation(leadId?: string, repId?: string | null) 
       projectId: string;
       body: Record<string, unknown>;
     }) => salesApi.patchProject(projectId, body),
-    onSuccess: (_data, { projectId }) => {
+    onSuccess: (data, { projectId }) => {
       qc.invalidateQueries({ queryKey: qk.project(projectId) });
       qc.invalidateQueries({ queryKey: ["projects"] });
       if (leadId) {
+        applyProjectToLeadCache(qc, leadId, data.project);
         invalidateLeadAndRep(qc, { leadId, repId: repId ?? undefined });
       }
       qc.invalidateQueries({ queryKey: ["leads"] });

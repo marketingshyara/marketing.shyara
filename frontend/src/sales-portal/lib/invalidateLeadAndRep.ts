@@ -2,7 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { TeamRepSummary } from "../types";
 import { qk } from "../queryKeys";
 
-export { applyLeadDetailToCache } from "./applyLeadDetailToCache";
+export { applyLeadDetailToCache, applyProjectToLeadCache } from "./applyLeadDetailToCache";
 
 export type TeamRepQueryData = {
   rep: TeamRepSummary;

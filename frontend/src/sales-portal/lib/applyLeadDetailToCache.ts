@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { Commission, LeadDetailResponse } from "../types";
+import type { Commission, LeadDetailResponse, Project } from "../types";
 import { qk } from "../queryKeys";
 
 type LeadDetailCacheInput = LeadDetailResponse & {
@@ -31,4 +31,18 @@ export function applyLeadDetailToCache(
     pipelineStages: data.pipelineStages ?? existing?.pipelineStages ?? []
   };
   qc.setQueryData(qk.lead(leadId), normalized);
+}
+
+/** Merge a project PATCH response into the cached lead detail without a full refetch. */
+export function applyProjectToLeadCache(
+  qc: QueryClient,
+  leadId: string,
+  project: Project
+): void {
+  const existing = qc.getQueryData<LeadDetailResponse>(qk.lead(leadId));
+  if (!existing) return;
+  qc.setQueryData(qk.lead(leadId), {
+    ...existing,
+    lead: { ...existing.lead, project }
+  });
 }
