@@ -45,6 +45,17 @@ export function downloadPlacesCsv(
   URL.revokeObjectURL(url);
 }
 
+/** Google Search URL so reps can double-check website presence beyond Places data. */
+export function buildGoogleSearchVerifyUrl(
+  name: string,
+  address?: string | null
+): string {
+  const trimmedName = name.trim();
+  const trimmedAddress = address?.trim() ?? "";
+  const query = trimmedAddress ? `${trimmedName} ${trimmedAddress}` : trimmedName;
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+}
+
 export function sourceLabel(source: string): string {
   switch (source) {
     case "cache":

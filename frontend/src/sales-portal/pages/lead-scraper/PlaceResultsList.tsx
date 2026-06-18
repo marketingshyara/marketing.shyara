@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { LeadScraperPastPlace, ScraperPlaceResult } from "../../types";
+import { buildGoogleSearchVerifyUrl } from "./leadScraperUtils";
 
 type PlaceRow = ScraperPlaceResult | LeadScraperPastPlace;
 
@@ -25,6 +26,33 @@ function isSelectable(row: PlaceRow): boolean {
 
 function mapsHref(row: PlaceRow): string {
   return row.mapsUrl ?? "#";
+}
+
+const desktopExternalLinkClass =
+  "inline-flex min-h-11 items-center justify-end gap-1 text-sm font-medium text-[#FF3333] hover:underline";
+
+const mobileExternalLinkClass =
+  "inline-flex items-center gap-1 text-sm font-medium text-[#0A0A0A] underline underline-offset-2";
+
+function PlaceVerifyLink({
+  row,
+  className
+}: {
+  row: PlaceRow;
+  className: string;
+}) {
+  return (
+    <a
+      href={buildGoogleSearchVerifyUrl(row.name, row.address)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+      aria-label={`Verify ${row.name} on Google Search`}
+    >
+      Verify
+      <Search className="h-3.5 w-3.5 shrink-0" aria-hidden />
+    </a>
+  );
 }
 
 export function PlaceResultsList({
@@ -91,29 +119,26 @@ export function PlaceResultsList({
                   {row.category && (
                     <p className="text-xs uppercase tracking-wide text-[#0A0A0A]/60">{row.category}</p>
                   )}
-                  {(row.phone || row.mapsUrl) && (
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                      {row.phone && (
-                        <a
-                          href={`tel:${row.phone}`}
-                          className="text-sm font-medium text-[#FF3333]"
-                        >
-                          {row.phone}
-                        </a>
-                      )}
-                      {row.mapsUrl && (
-                        <a
-                          href={mapsHref(row)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sm font-medium text-[#0A0A0A] underline underline-offset-2"
-                        >
-                          Open in Maps
-                          <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                        </a>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    {row.phone && (
+                      <a href={`tel:${row.phone}`} className="text-sm font-medium text-[#FF3333]">
+                        {row.phone}
+                      </a>
+                    )}
+                    {row.mapsUrl && (
+                      <a
+                        href={mapsHref(row)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={mobileExternalLinkClass}
+                        aria-label={`Open ${row.name} in Google Maps`}
+                      >
+                        Open in Maps
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      </a>
+                    )}
+                    <PlaceVerifyLink row={row} className={mobileExternalLinkClass} />
+                  </div>
                 </div>
               </div>
             </article>
@@ -139,6 +164,7 @@ export function PlaceResultsList({
                 <TableHead>Phone</TableHead>
                 <TableHead>Website</TableHead>
                 <TableHead className="text-right">Maps</TableHead>
+                <TableHead className="text-right">Verify</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -177,7 +203,8 @@ export function PlaceResultsList({
                           href={mapsHref(row)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex min-h-11 items-center justify-end gap-1 text-sm font-medium text-[#FF3333]"
+                          className={desktopExternalLinkClass}
+                          aria-label={`Open ${row.name} in Google Maps`}
                         >
                           Maps
                           <ExternalLink className="h-3.5 w-3.5" aria-hidden />
@@ -185,6 +212,9 @@ export function PlaceResultsList({
                       ) : (
                         "—"
                       )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <PlaceVerifyLink row={row} className={desktopExternalLinkClass} />
                     </TableCell>
                   </TableRow>
                 );
