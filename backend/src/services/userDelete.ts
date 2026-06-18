@@ -101,15 +101,17 @@ export async function deleteUserForAdmin(
 
   await destroyPortalSessionsForUser(prisma, targetUserId);
 
-  await logActivity({
-    prisma,
-    userId: actorId,
-    action: ActivityAction.DELETE,
-    entityType: "User",
-    entityId: targetUserId,
-    after: { email: deleted.email, role: deleted.role, deleted: true },
-    request
-  });
+  if (request) {
+    await logActivity({
+      prisma,
+      userId: actorId,
+      action: ActivityAction.DELETE,
+      entityType: "User",
+      entityId: targetUserId,
+      after: { email: deleted.email, role: deleted.role, deleted: true },
+      request
+    });
+  }
 
   return { email: deleted.email };
 }
