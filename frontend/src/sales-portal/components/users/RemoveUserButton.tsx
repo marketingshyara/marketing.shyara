@@ -37,9 +37,9 @@ export function RemoveUserButton({ userId, email, disabled, disabledReason }: Pr
         title: "Remove this user?",
         description: (
           <>
-            You are about to remove{" "}
-            <span className="font-semibold text-foreground">{email}</span>. They will move to Past
-            users and will no longer be able to sign in.
+            You are about to permanently delete{" "}
+            <span className="font-semibold text-foreground">{email}</span>. They will be removed
+            from the portal and their email can be used to create a new account later.
           </>
         )
       }}
@@ -47,9 +47,9 @@ export function RemoveUserButton({ userId, email, disabled, disabledReason }: Pr
         title: "Confirm user removal?",
         description: (
           <>
-            Last chance: remove{" "}
-            <span className="font-semibold text-foreground">{email}</span>? Their clients,
-            commissions, and project history stay in the system.
+            Last chance: permanently delete{" "}
+            <span className="font-semibold text-foreground">{email}</span>? Their leads stay in
+            the system (reassigned to you); their commission rows for payout are removed.
           </>
         )
       }}

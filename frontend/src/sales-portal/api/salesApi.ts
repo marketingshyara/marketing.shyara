@@ -57,7 +57,7 @@ export const salesApi = {
     return apiJson<Paginated<User>>("GET", `/users${qs ? `?${qs}` : ""}`);
   },
 
-  archiveUser: (id: string) => apiJson<{ user: User }>("POST", `/users/${id}/archive`),
+  archiveUser: (id: string) => apiJson<{ deleted: true; email: string }>("POST", `/users/${id}/archive`),
 
   adminProjects: (params: {
     page?: number;

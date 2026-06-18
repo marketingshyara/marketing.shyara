@@ -195,12 +195,8 @@ export function errToast(e: unknown, qc?: QueryClient) {
       toast.error(e.message || "Cannot remove or change the last active admin.");
       return;
     }
-    if (e.code === "SELF_ARCHIVE") {
+    if (e.code === "SELF_ARCHIVE" || e.code === "SELF_DELETE") {
       toast.error(e.message || "You cannot remove your own account.");
-      return;
-    }
-    if (e.code === "ALREADY_ARCHIVED") {
-      toast.error(e.message || "This user is already in Past users.");
       return;
     }
     if (e.code === "USER_ARCHIVED") {
@@ -322,7 +318,7 @@ export function useArchiveUserMutation() {
       qc.invalidateQueries({ queryKey: ["users"] });
       qc.invalidateQueries({ queryKey: qk.teamReps });
       invalidateQueryPrefixes(qc, ["activity-logs", "team-rep", "admin-projects"]);
-      toast.success("User moved to Past users. They can no longer sign in.");
+      toast.success("User deleted. Their email can be used to create a new account.");
     },
     onError: (e) => errToast(e, qc)
   });

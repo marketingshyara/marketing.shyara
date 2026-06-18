@@ -451,12 +451,16 @@ export function UsersPage() {
         </TabsContent>
 
         <TabsContent value="past" className="mt-0 space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Legacy removed users (archived before permanent delete). Use Delete to remove them from
+            the database and free their email for a new account.
+          </p>
           {data?.items.length === 0 && !isLoading ? (
-            <p className="text-sm text-muted-foreground">No removed users yet.</p>
+            <p className="text-sm text-muted-foreground">No removed users.</p>
           ) : null}
           <div className="space-y-3 md:hidden">
             {data?.items.map((u) => (
-              <PastUserCard key={u.id} user={u} />
+              <PastUserCard key={u.id} user={u} currentUserId={currentUserId} />
             ))}
           </div>
           <div className="hidden md:block">
@@ -468,6 +472,7 @@ export function UsersPage() {
                     <TableHead>Role</TableHead>
                     <TableHead>Removed on</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -491,6 +496,14 @@ export function UsersPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">Removed · Cannot sign in</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <RemoveUserButton
+                          userId={u.id}
+                          email={u.email}
+                          disabled={u.id === currentUserId}
+                          disabledReason="You cannot remove your own account"
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -801,7 +814,7 @@ function ActiveUserCard({
   );
 }
 
-function PastUserCard({ user }: { user: User }) {
+function PastUserCard({ user, currentUserId }: { user: User; currentUserId?: string }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
       <p className="break-words font-medium">{user.email}</p>
@@ -815,6 +828,14 @@ function PastUserCard({ user }: { user: User }) {
       <p className="mt-2 text-sm text-muted-foreground">
         Removed on: {user.archivedAt ? formatRemovedOn(user.archivedAt) : "—"}
       </p>
+      <div className="mt-3">
+        <RemoveUserButton
+          userId={user.id}
+          email={user.email}
+          disabled={user.id === currentUserId}
+          disabledReason="You cannot remove your own account"
+        />
+      </div>
     </div>
   );
 }

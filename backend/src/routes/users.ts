@@ -8,7 +8,6 @@ import { HttpError } from "../errors/httpError.js";
 import { clampPage } from "../lib/pagination.js";
 import { mapUserCreateError } from "../lib/prismaErrors.js";
 import { logActivity } from "../services/activityLog.js";
-import { destroyPortalSessionsForUser } from "../services/userSessions.js";
 import {
   createUserBodySchema,
   patchScraperQuotaBodySchema,
@@ -17,6 +16,7 @@ import {
   usersListQuerySchema
 } from "../validators/schemas.js";
 import { grantScraperQuota, ensureUserQuotaRow, getScraperQuotaForUser } from "../services/leadScraper/leadScraperQuota.js";
+import { deleteUserForAdmin } from "../services/userDelete.js";
 
 export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -364,91 +364,14 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       requireAdmin(request);
       const { id } = request.params as { id: string };
 
-      if (id === request.currentUser!.id) {
-        throw new HttpError(400, "SELF_ARCHIVE", "You cannot remove your own account.");
-      }
-
-      const { existing, updated } = await app.prisma.$transaction(
-        async (tx) => {
-          const existing = await tx.user.findUnique({ where: { id } });
-          if (!existing) {
-            throw new HttpError(404, "NOT_FOUND", "User not found.");
-          }
-          if (existing.archivedAt != null) {
-            throw new HttpError(409, "ALREADY_ARCHIVED", "This user is already in Past users.");
-          }
-
-          if (existing.role === UserRole.ADMIN) {
-            const adminCount = await tx.user.count({
-              where: { role: UserRole.ADMIN, isActive: true, archivedAt: null }
-            });
-            if (adminCount <= 1) {
-              throw new HttpError(
-                400,
-                "LAST_ADMIN",
-                "Cannot remove the last active admin."
-              );
-            }
-          }
-
-          const claim = await tx.user.updateMany({
-            where: {
-              id,
-              updatedAt: existing.updatedAt,
-              archivedAt: null
-            },
-            data: {
-              archivedAt: new Date(),
-              isActive: false
-            }
-          });
-          if (claim.count === 0) {
-            throw new HttpError(
-              409,
-              "CONCURRENT_MODIFICATION",
-              "User was modified concurrently; refresh and retry."
-            );
-          }
-
-          const updated = await tx.user.findUniqueOrThrow({
-            where: { id },
-            select: {
-              id: true,
-              email: true,
-              displayName: true,
-              role: true,
-              isActive: true,
-              mustChangePassword: true,
-              archivedAt: true,
-              updatedAt: true
-            }
-          });
-          return { existing, updated };
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+      const result = await deleteUserForAdmin(
+        app.prisma,
+        request.currentUser!.id,
+        id,
+        request
       );
 
-      await destroyPortalSessionsForUser(app.prisma, id);
-
-      await logActivity({
-        prisma: app.prisma,
-        userId: request.currentUser!.id,
-        action: ActivityAction.UPDATE,
-        entityType: "User",
-        entityId: id,
-        before: {
-          isActive: existing.isActive,
-          archivedAt: existing.archivedAt
-        },
-        after: {
-          isActive: updated.isActive,
-          archived: true,
-          archivedAt: updated.archivedAt
-        },
-        request
-      });
-
-      return reply.send({ user: updated });
+      return reply.send({ deleted: true, email: result.email });
     }
   );
 
