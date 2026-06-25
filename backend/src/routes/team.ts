@@ -8,6 +8,7 @@ import { getPipelineStages, summarizePipelineStages } from "../services/pipeline
 import { getPortalSettings } from "../services/settings.js";
 import { getRepDashboardStats } from "../services/teamStats.js";
 import { buildMilestoneProgress, repLeadAttributionWhere } from "../services/commissionModel.js";
+import { buildLeadListFilters } from "../services/leadListFilters.js";
 import { teamRepLeadsQuerySchema } from "../validators/schemas.js";
 
 function repLeadDisposition(lead: {
@@ -159,29 +160,9 @@ export async function registerTeamRoutes(app: FastifyInstance): Promise<void> {
       }
 
       const settings = await getPortalSettings(app.prisma);
-      const search = query.search?.trim();
-      const createdAtFilter =
-        query.from || query.to
-          ? {
-              createdAt: {
-                ...(query.from ? { gte: query.from } : {}),
-                ...(query.to ? { lte: query.to } : {})
-              }
-            }
-          : {};
-
       const where = {
         ...repLeadAttributionWhere(rep.id),
-        ...createdAtFilter,
-        ...(search
-          ? {
-              OR: [
-                { clientName: { contains: search, mode: "insensitive" as const } },
-                { clientEmail: { contains: search, mode: "insensitive" as const } },
-                { clientPhone: { contains: search, mode: "insensitive" as const } }
-              ]
-            }
-          : {})
+        ...buildLeadListFilters(query)
       };
 
       const [total, leads] = await Promise.all([

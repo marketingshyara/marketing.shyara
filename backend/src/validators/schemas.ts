@@ -185,6 +185,8 @@ export const bulkDeleteLeadsBodySchema = z.object({
 
 export const teamRepLeadsQuerySchema = paginationQuerySchema
   .extend({
+    view: z.enum(["leads", "not_interested", "clients", "completed"]).optional(),
+    prospectCategory: z.nativeEnum(ProspectCategory).optional(),
     search: z.preprocess(
       (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
       z.string().min(2).max(200).optional()
@@ -194,7 +196,15 @@ export const teamRepLeadsQuerySchema = paginationQuerySchema
   })
   .refine((q) => !q.from || !q.to || q.from <= q.to, {
     message: "Query parameter 'from' must be on or before 'to'."
-  });
+  })
+  .refine(
+    (q) =>
+      !q.prospectCategory ||
+      !q.view ||
+      q.view === "leads" ||
+      q.view === "not_interested",
+    { message: "prospectCategory is only supported with view=leads or view=not_interested." }
+  );
 
 /** Omit key = no change; null/"" = clear; string = validate (must not map missing keys to null). */
 const optionalLeadEmail = z.preprocess(

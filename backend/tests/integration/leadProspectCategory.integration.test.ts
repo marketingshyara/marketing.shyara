@@ -222,4 +222,36 @@ d("integration: prospect category", () => {
 
     await app.close();
   });
+
+  it("admin rep leads list filters by prospect category", async () => {
+    const app = await buildApp({ config });
+    const repCk = await repCookie();
+    const adminCk = await adminCookie();
+
+    await inject(app, {
+      method: "POST",
+      url: `/api/leads/${leadId}/prospect-category`,
+      headers: { cookie: `${config.cookieName}=${repCk}` },
+      payload: { category: "INTERESTED", sampleShared: true }
+    });
+
+    const filtered = await inject(app, {
+      method: "GET",
+      url: `/api/team/reps/${repId}/leads?view=leads&prospectCategory=INTERESTED&page=1&pageSize=50`,
+      headers: { cookie: `${config.cookieName}=${adminCk}` }
+    });
+    expect(filtered.statusCode).toBe(200);
+    const body = filtered.json() as { items: { id: string }[] };
+    expect(body.items.some((i) => i.id === leadId)).toBe(true);
+
+    const other = await inject(app, {
+      method: "GET",
+      url: `/api/team/reps/${repId}/leads?view=leads&prospectCategory=NEW_LEAD&page=1&pageSize=50`,
+      headers: { cookie: `${config.cookieName}=${adminCk}` }
+    });
+    const otherBody = other.json() as { items: { id: string }[] };
+    expect(otherBody.items.some((i) => i.id === leadId)).toBe(false);
+
+    await app.close();
+  });
 });

@@ -306,11 +306,21 @@ export const salesApi = {
 
   teamRepLeads: (
     userId: string,
-    params: { page?: number; pageSize?: number; search?: string; from?: Date; to?: Date }
+    params: {
+      page?: number;
+      pageSize?: number;
+      view?: "leads" | "not_interested" | "clients" | "completed";
+      prospectCategory?: import("../types").ProspectCategory;
+      search?: string;
+      from?: Date;
+      to?: Date;
+    }
   ) => {
     const q = new URLSearchParams();
     if (params.page != null) q.set("page", String(params.page));
     if (params.pageSize != null) q.set("pageSize", String(params.pageSize));
+    if (params.view) q.set("view", params.view);
+    if (params.prospectCategory) q.set("prospectCategory", params.prospectCategory);
     if (params.search) q.set("search", params.search);
     if (params.from) q.set("from", params.from.toISOString());
     if (params.to) q.set("to", params.to.toISOString());

@@ -34,6 +34,7 @@ import {
   assertLeadMutable,
   assertMarkedPaymentAmountMatchesLead
 } from "../services/leadGuards.js";
+import { buildLeadListFilters } from "../services/leadListFilters.js";
 import { logActivity } from "../services/activityLog.js";
 import { getPortalSettings, getRequiredLeadStatusForPaymentKind } from "../services/settings.js";
 import { getPipelineStages, summarizePipelineStages } from "../services/pipeline.js";
@@ -110,56 +111,9 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
         throw new HttpError(403, "FORBIDDEN", "Only admins can filter leads by assignee.");
       }
 
-      const viewStatusFilter =
-        query.view === "clients"
-          ? { status: { not: LeadStatus.COMMISSION_PAID } }
-          : query.view === "completed"
-            ? { status: LeadStatus.COMMISSION_PAID }
-            : query.status
-              ? { status: query.status }
-              : {};
-
-      const effectiveCategory =
-        query.view === "not_interested"
-          ? ProspectCategory.NOT_INTERESTED
-          : query.prospectCategory;
-
       const filters = {
-        ...(query.view === "leads" || query.view === "not_interested"
-          ? {
-              convertedAt: null,
-              ...(effectiveCategory
-                ? { prospectCategory: effectiveCategory }
-                : query.view === "leads"
-                  ? { prospectCategory: { not: ProspectCategory.NOT_INTERESTED } }
-                  : {})
-            }
-          : {}),
-        ...(query.view === undefined
-          ? { prospectCategory: { not: ProspectCategory.NOT_INTERESTED } }
-          : {}),
-        ...(query.view === "clients" || query.view === "completed"
-          ? { convertedAt: { not: null } }
-          : {}),
-        ...viewStatusFilter,
-        ...(query.assignedToUserId ? { assignedToUserId: query.assignedToUserId } : {}),
-        ...(query.search
-          ? {
-              OR: [
-                { clientName: { contains: query.search, mode: "insensitive" as const } },
-                { clientEmail: { contains: query.search, mode: "insensitive" as const } },
-                { clientPhone: { contains: query.search, mode: "insensitive" as const } }
-              ]
-            }
-          : {}),
-        ...(query.from || query.to
-          ? {
-              createdAt: {
-                ...(query.from ? { gte: query.from } : {}),
-                ...(query.to ? { lte: query.to } : {})
-              }
-            }
-          : {})
+        ...buildLeadListFilters(query, { applyLegacyDefaultWhenNoView: true }),
+        ...(query.assignedToUserId ? { assignedToUserId: query.assignedToUserId } : {})
       };
 
       const where =

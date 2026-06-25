@@ -849,6 +849,8 @@ export function useTeamRepLeadsQuery(
   params: {
     page: number;
     pageSize: number;
+    view?: "leads" | "not_interested" | "clients" | "completed";
+    prospectCategory?: import("../types").ProspectCategory;
     search?: string;
     from?: Date;
     to?: Date;
