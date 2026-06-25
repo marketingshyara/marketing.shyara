@@ -22,6 +22,10 @@
       "destination": "/samples/websites/realestate-verdant-heights-website/index.html"
     },
     {
+      "source": "/samples/websites/toy-store-playhouse-website/**",
+      "destination": "/samples/websites/toy-store-playhouse-website/index.html"
+    },
+    {
       "source": "/samples/websites/restaurant-fire-town-website/**",
       "destination": "/samples/websites/restaurant-fire-town-website/index.html"
     },

@@ -242,6 +242,16 @@
       "file": "index.html",
       "category": "real-estate",
       "posterUrl": "/samples/websites/realestate-verdant-heights-website/poster.jpg"
+    },
+    {
+      "id": "toy-store-playhouse-website",
+      "displayCode": "RET/002",
+      "name": "Playhouse Toys Website",
+      "description": "A boutique toy store website with curated collections, shop highlights, visit details, and WhatsApp-first contact.",
+      "folder": "toy-store-playhouse-website",
+      "file": "index.html",
+      "category": "retail",
+      "posterUrl": "/samples/websites/toy-store-playhouse-website/poster.jpg"
     }
   ]
 }

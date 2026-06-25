@@ -128,6 +128,21 @@ test.describe("website samples page", () => {
     });
   });
 
+  test("toy store playhouse sample SPA routes serve index shell", async ({ page, request }) => {
+    const base = "/samples/websites/toy-store-playhouse-website";
+    for (const path of ["/shop", "/about", "/visit"]) {
+      const res = await request.get(`${base}${path}`);
+      expect(res.status(), path).toBe(200);
+      const html = await res.text();
+      expect(html, path).toContain(`${base}/assets/index-`);
+    }
+
+    await page.goto(`${base}/shop`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: /all playthings/i }).first()).toBeVisible({
+      timeout: 60_000,
+    });
+  });
+
   test("real estate verdant heights sample SPA routes serve index shell", async ({ page, request }) => {
     const base = "/samples/websites/realestate-verdant-heights-website";
     for (const path of ["/residences", "/amenities", "/location", "/gallery", "/contact"]) {

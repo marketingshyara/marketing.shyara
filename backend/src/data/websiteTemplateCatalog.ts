@@ -94,6 +94,11 @@ const RAW_SAMPLES: { sampleSlug: string; name: string; categoryId: string }[] = 
     sampleSlug: "realestate-verdant-heights-website",
     name: "Verdant Heights Real Estate Website",
     categoryId: "real-estate"
+  },
+  {
+    sampleSlug: "toy-store-playhouse-website",
+    name: "Playhouse Toys Website",
+    categoryId: "retail"
   }
 ];
 

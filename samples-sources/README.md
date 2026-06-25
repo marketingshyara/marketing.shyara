@@ -9,6 +9,7 @@ Editable TanStack Start projects used to build static previews under `frontend/p
 | `yoga-ananda` | `yoga-ananda-website` | `E:\Websites\Templates for Marketing-Shyara\Yoga\flow-motion-pages-main` |
 | `florist-bloom-vine` | `florist-bloom-vine-website` | Bloom & Vine florist (formerly `bloom-whispers-animate-main`) |
 | `realestate-verdant-heights` | `realestate-verdant-heights-website` | Verdant Heights real estate (formerly `serene-nest-showcase-main`) |
+| `toy-store-playhouse` | `toy-store-playhouse-website` | `E:\Websites\Templates for Marketing-Shyara\Toy Stores\bandra-toy-wonderland-main` (Playhouse Toys) |
 
 ## Build
 

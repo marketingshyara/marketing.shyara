@@ -39,6 +39,10 @@ const SAMPLES = [
     sourceDir: "realestate-verdant-heights",
     slug: "realestate-verdant-heights-website",
   },
+  {
+    sourceDir: "toy-store-playhouse",
+    slug: "toy-store-playhouse-website",
+  },
 ];
 
 function run(cmd, args, cwd) {
