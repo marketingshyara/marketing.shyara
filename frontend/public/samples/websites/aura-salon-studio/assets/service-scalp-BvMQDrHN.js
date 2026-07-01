@@ -1,1 +1,0 @@
-var e=`/assets/service-cut-CUNX8wPF.jpg`,t=`/assets/service-color-CsJAjJcm.jpg`,n=`/assets/service-scalp-3xtkYiTn.jpg`;export{t as n,e as r,n as t};

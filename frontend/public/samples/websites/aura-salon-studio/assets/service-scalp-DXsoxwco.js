@@ -1,0 +1,1 @@
+var e=``+new URL(`service-cut-CUNX8wPF.jpg`,import.meta.url).href,t=``+new URL(`service-color-CsJAjJcm.jpg`,import.meta.url).href,n=``+new URL(`service-scalp-3xtkYiTn.jpg`,import.meta.url).href;export{t as n,e as r,n as t};

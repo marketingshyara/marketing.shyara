@@ -1,0 +1,1 @@
+var e=``+new URL(`journal-texture-CojyhYPz.jpg`,import.meta.url).href;export{e as t};

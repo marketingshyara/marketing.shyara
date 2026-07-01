@@ -1,0 +1,1 @@
+var e=`/samples/websites/aura-salon-studio/assets/service-cut-CUNX8wPF.jpg`,t=`/samples/websites/aura-salon-studio/assets/service-color-CsJAjJcm.jpg`,n=`/samples/websites/aura-salon-studio/assets/service-scalp-3xtkYiTn.jpg`;export{t as n,e as r,n as t};

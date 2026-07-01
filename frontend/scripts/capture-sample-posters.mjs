@@ -26,6 +26,14 @@ const manifestPath = resolve(root, "public/samples/websites/manifest.json");
 const previewPort = Number(process.env.PREVIEW_PORT ?? 4173);
 const distDir = resolve(root, "dist");
 
+const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+const samples = manifest.samples ?? [];
+
+if (samples.length === 0) {
+  console.error("No samples in manifest.json");
+  process.exit(1);
+}
+
 async function waitForServer(url, attempts = 60) {
   for (let i = 0; i < attempts; i += 1) {
     try {
@@ -66,7 +74,8 @@ async function withPreviewServer(run) {
     const onData = (chunk) => {
       const text = chunk.toString();
       process.stdout.write(text);
-      const match = text.match(/Local:\s+(https?:\/\/[^\s]+)/i);
+      const cleanText = text.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+      const match = cleanText.match(/Local:\s+(https?:\/\/[^\s]+)/i);
       if (match) {
         clearTimeout(timeout);
         child.stdout?.off("data", onData);
@@ -84,19 +93,12 @@ async function withPreviewServer(run) {
   });
 
   try {
-    await waitForServer(`${resolvedBase}/samples/websites/restaurant-classic-website/`);
+    const firstSlug = samples[0]?.slug ?? "yoga-ananda-website";
+    await waitForServer(`${resolvedBase}/samples/websites/${firstSlug}/`);
     return await run(resolvedBase);
   } finally {
     child.kill("SIGTERM");
   }
-}
-
-const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-const samples = manifest.samples ?? [];
-
-if (samples.length === 0) {
-  console.error("No samples in manifest.json");
-  process.exit(1);
 }
 
 const VIEWPORT = { width: 1280, height: 720 };

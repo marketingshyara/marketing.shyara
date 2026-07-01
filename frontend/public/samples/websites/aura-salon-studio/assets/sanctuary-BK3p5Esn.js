@@ -1,0 +1,1 @@
+var e=`/samples/websites/aura-salon-studio/assets/sanctuary-Dgqur4ep.jpg`;export{e as t};

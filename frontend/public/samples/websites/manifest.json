@@ -58,26 +58,6 @@
       "posterUrl": "/samples/websites/astrology-consultant-website/poster.jpg"
     },
     {
-      "id": "restaurant-journey-of-taste-website",
-      "displayCode": "RES/001",
-      "name": "Journey Of Taste Website",
-      "description": "A cinematic restaurant website with immersive storytelling, signature dishes, and modern dining visuals.",
-      "folder": "restaurant-journey-of-taste-website",
-      "file": "index.html",
-      "category": "restaurants",
-      "posterUrl": "/samples/websites/restaurant-journey-of-taste-website/poster.jpg"
-    },
-    {
-      "id": "restaurant-fire-town-website",
-      "displayCode": "RES/002",
-      "name": "Fire Town Cafe Website",
-      "description": "A premium cafe website with slow brew menu, botanical drinks, gallery, and reservation-focused contact flow.",
-      "folder": "restaurant-fire-town-website",
-      "file": "index.html",
-      "category": "restaurants",
-      "posterUrl": "/samples/websites/restaurant-fire-town-website/poster.jpg"
-    },
-    {
       "id": "clinic-dental-waiting-room-classic",
       "displayCode": "CLI/001",
       "name": "Dental Clinic Website (Classic)",
@@ -240,7 +220,7 @@
     },
     {
       "id": "tasteful-tales-art",
-      "displayCode": "RES/003",
+      "displayCode": "RES/001",
       "name": "Tasteful Tales Restaurant",
       "description": "A beautiful culinary experience with modern storytelling.",
       "folder": "tasteful-tales-art",

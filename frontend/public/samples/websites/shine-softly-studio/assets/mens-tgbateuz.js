@@ -1,0 +1,1 @@
+const s="/samples/websites/shine-softly-studio/assets/cut-ruLiSBrg.jpg",t="/samples/websites/shine-softly-studio/assets/color-BlX90VFS.jpg",e="/samples/websites/shine-softly-studio/assets/styling-C8BgqHvl.jpg",o="/samples/websites/shine-softly-studio/assets/mens-D8iPPQ8M.jpg";export{t as a,s as c,o as m,e as s};

@@ -1,0 +1,1 @@
+var e=`/samples/websites/aura-salon-studio/assets/journal-texture-CojyhYPz.jpg`;export{e as t};
