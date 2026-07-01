@@ -1,0 +1,1 @@
+var e=`/assets/journal-texture-CojyhYPz.jpg`;export{e as t};

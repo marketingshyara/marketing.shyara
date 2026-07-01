@@ -5,13 +5,13 @@ import type { WebsiteTemplate } from "../../types";
 import { CUSTOM_WEBSITE_TEMPLATE_ID } from "../../lib/websiteTemplate";
 
 const catalogTemplate: WebsiteTemplate = {
-  id: "wt-restaurant-classic-website",
-  slug: "restaurant-classic-website",
+  id: "wt-restaurant-journey-of-taste-website",
+  slug: "restaurant-journey-of-taste-website",
   name: "Restaurant Website",
   displayCode: "RES/001",
   categoryId: "restaurants",
-  sampleSlug: "restaurant-classic-website",
-  samplePath: "/samples/websites/restaurant-classic-website/",
+  sampleSlug: "restaurant-journey-of-taste-website",
+  samplePath: "/samples/websites/restaurant-journey-of-taste-website/",
   sortOrder: 10
 };
 

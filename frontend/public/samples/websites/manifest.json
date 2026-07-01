@@ -39,19 +39,14 @@
       "id": "real-estate",
       "name": "Real Estate",
       "icon": "Building2"
+    },
+    {
+      "id": "salons",
+      "name": "Salons & Barber",
+      "icon": "Scissors"
     }
   ],
   "samples": [
-    {
-      "id": "restaurant-classic-website",
-      "displayCode": "RES/001",
-      "name": "Restaurant Website",
-      "description": "A premium restaurant website with animated sections, gallery, menu, and contact form.",
-      "folder": "restaurant-classic-website",
-      "file": "index.html",
-      "category": "restaurants",
-      "posterUrl": "/samples/websites/restaurant-classic-website/poster.jpg"
-    },
     {
       "id": "astrology-consultant-website",
       "displayCode": "AST/001",
@@ -63,18 +58,8 @@
       "posterUrl": "/samples/websites/astrology-consultant-website/poster.jpg"
     },
     {
-      "id": "restaurant-botanical-website",
-      "displayCode": "RES/002",
-      "name": "Botanical Restaurant Website",
-      "description": "A nature-inspired restaurant website with botanical design, seasonal menu, and organic dining experience.",
-      "folder": "restaurant-botanical-website",
-      "file": "index.html",
-      "category": "restaurants",
-      "posterUrl": "/samples/websites/restaurant-botanical-website/poster.jpg"
-    },
-    {
       "id": "restaurant-journey-of-taste-website",
-      "displayCode": "RES/003",
+      "displayCode": "RES/001",
       "name": "Journey Of Taste Website",
       "description": "A cinematic restaurant website with immersive storytelling, signature dishes, and modern dining visuals.",
       "folder": "restaurant-journey-of-taste-website",
@@ -84,7 +69,7 @@
     },
     {
       "id": "restaurant-fire-town-website",
-      "displayCode": "RES/004",
+      "displayCode": "RES/002",
       "name": "Fire Town Cafe Website",
       "description": "A premium cafe website with slow brew menu, botanical drinks, gallery, and reservation-focused contact flow.",
       "folder": "restaurant-fire-town-website",
@@ -252,6 +237,46 @@
       "file": "index.html",
       "category": "retail",
       "posterUrl": "/samples/websites/toy-store-playhouse-website/poster.jpg"
+    },
+    {
+      "id": "tasteful-tales-art",
+      "displayCode": "RES/003",
+      "name": "Tasteful Tales Restaurant",
+      "description": "A beautiful culinary experience with modern storytelling.",
+      "folder": "tasteful-tales-art",
+      "file": "index.html",
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/tasteful-tales-art/poster.jpg"
+    },
+    {
+      "id": "slick-cuts-style",
+      "displayCode": "SAL/001",
+      "name": "Slick Cuts Salon",
+      "description": "A modern barbershop and salon website with service booking.",
+      "folder": "slick-cuts-style",
+      "file": "index.html",
+      "category": "salons",
+      "posterUrl": "/samples/websites/slick-cuts-style/poster.jpg"
+    },
+    {
+      "id": "shine-softly-studio",
+      "displayCode": "SAL/002",
+      "name": "Shine Softly Studio",
+      "description": "A soft and elegant studio website for beauty and wellness.",
+      "folder": "shine-softly-studio",
+      "file": "index.html",
+      "category": "salons",
+      "posterUrl": "/samples/websites/shine-softly-studio/poster.jpg"
+    },
+    {
+      "id": "aura-salon-studio",
+      "displayCode": "SAL/003",
+      "name": "Aura Salon Studio",
+      "description": "A premium salon template with dark, stylish aesthetics.",
+      "folder": "aura-salon-studio",
+      "file": "index.html",
+      "category": "salons",
+      "posterUrl": "/samples/websites/aura-salon-studio/poster.jpg"
     }
   ]
 }

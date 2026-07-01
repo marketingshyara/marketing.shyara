@@ -1,0 +1,1 @@
+import{r as n}from"./index-SOOauD2y.js";function a(o=".reveal"){n.useEffect(()=>{const s=document.querySelectorAll(o),e=new IntersectionObserver(r=>{r.forEach(t=>{t.isIntersecting&&(t.target.classList.add("in-view"),e.unobserve(t.target))})},{threshold:.12,rootMargin:"0px 0px -60px 0px"});return s.forEach(r=>e.observe(r)),()=>e.disconnect()},[o])}export{a as u};

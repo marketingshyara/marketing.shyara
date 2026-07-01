@@ -229,8 +229,7 @@ test.describe("website samples page", () => {
   const MOJIBAKE_SNIPPETS = ["â€", "Â°", "â€™", "â€œ", "Ã©"];
 
   for (const sample of [
-    { path: "/samples/websites/restaurant-classic-website/", heading: /fire meets flavor/i },
-    { path: "/samples/websites/restaurant-botanical-website/", heading: /nature meets flavor/i },
+    { path: "/samples/websites/restaurant-journey-of-taste-website/", heading: /fire meets flavor/i },
     { path: "/samples/websites/restaurant-fire-town-website/", heading: /fire town|coffee|caf/i },
     { path: "/samples/websites/astrology-consultant-website/", heading: /celestia|astrology|stars/i },
     { path: "/samples/websites/clinic-multispeciality-waiting-room/", heading: /clinic|health|multispecial/i },
