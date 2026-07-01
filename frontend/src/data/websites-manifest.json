@@ -58,6 +58,16 @@
       "posterUrl": "/samples/websites/astrology-consultant-website/poster.jpg"
     },
     {
+      "id": "car-wash-auto-care-website",
+      "displayCode": "CAR/001",
+      "name": "Car Wash & Auto Care Website",
+      "description": "An auto care website with wash packages, detailing services, gallery, and booking-focused contact flow.",
+      "folder": "car-wash-auto-care-website",
+      "file": "index.html",
+      "category": "automotive",
+      "posterUrl": "/samples/websites/car-wash-auto-care-website/poster.jpg"
+    },
+    {
       "id": "clinic-dental-waiting-room-classic",
       "displayCode": "CLI/001",
       "name": "Dental Clinic Website (Classic)",
@@ -179,14 +189,44 @@
       "posterUrl": "/samples/websites/yoga-ananda-website/poster.jpg"
     },
     {
-      "id": "car-wash-auto-care-website",
-      "displayCode": "CAR/001",
-      "name": "Car Wash & Auto Care Website",
-      "description": "An auto care website with wash packages, detailing services, gallery, and booking-focused contact flow.",
-      "folder": "car-wash-auto-care-website",
+      "id": "realestate-verdant-heights-website",
+      "displayCode": "REA/001",
+      "name": "Verdant Heights Real Estate Website",
+      "description": "A premium residential project website with residence plans, amenities, location highlights, and site-visit booking.",
+      "folder": "realestate-verdant-heights-website",
       "file": "index.html",
-      "category": "automotive",
-      "posterUrl": "/samples/websites/car-wash-auto-care-website/poster.jpg"
+      "category": "real-estate",
+      "posterUrl": "/samples/websites/realestate-verdant-heights-website/poster.jpg"
+    },
+    {
+      "id": "restaurant-journey-of-taste-website",
+      "displayCode": "RES/001",
+      "name": "Namaste Rasoi Website",
+      "description": "A cinematic restaurant website with immersive storytelling, signature dishes, and modern dining visuals.",
+      "folder": "restaurant-journey-of-taste-website",
+      "file": "index.html",
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/restaurant-journey-of-taste-website/poster.jpg"
+    },
+    {
+      "id": "restaurant-fire-town-website",
+      "displayCode": "RES/002",
+      "name": "Fire Town Cafe Website",
+      "description": "A premium cafe website with slow brew menu, botanical drinks, gallery, and reservation-focused contact flow.",
+      "folder": "restaurant-fire-town-website",
+      "file": "index.html",
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/restaurant-fire-town-website/poster.jpg"
+    },
+    {
+      "id": "tasteful-tales-art",
+      "displayCode": "RES/003",
+      "name": "Tasteful Tales Restaurant",
+      "description": "A beautiful culinary experience with modern storytelling.",
+      "folder": "tasteful-tales-art",
+      "file": "index.html",
+      "category": "restaurants",
+      "posterUrl": "/samples/websites/tasteful-tales-art/poster.jpg"
     },
     {
       "id": "florist-bloom-vine-website",
@@ -199,16 +239,6 @@
       "posterUrl": "/samples/websites/florist-bloom-vine-website/poster.jpg"
     },
     {
-      "id": "realestate-verdant-heights-website",
-      "displayCode": "REA/001",
-      "name": "Verdant Heights Real Estate Website",
-      "description": "A premium residential project website with residence plans, amenities, location highlights, and site-visit booking.",
-      "folder": "realestate-verdant-heights-website",
-      "file": "index.html",
-      "category": "real-estate",
-      "posterUrl": "/samples/websites/realestate-verdant-heights-website/poster.jpg"
-    },
-    {
       "id": "toy-store-playhouse-website",
       "displayCode": "RET/002",
       "name": "Playhouse Toys Website",
@@ -217,16 +247,6 @@
       "file": "index.html",
       "category": "retail",
       "posterUrl": "/samples/websites/toy-store-playhouse-website/poster.jpg"
-    },
-    {
-      "id": "tasteful-tales-art",
-      "displayCode": "RES/001",
-      "name": "Tasteful Tales Restaurant",
-      "description": "A beautiful culinary experience with modern storytelling.",
-      "folder": "tasteful-tales-art",
-      "file": "index.html",
-      "category": "restaurants",
-      "posterUrl": "/samples/websites/tasteful-tales-art/poster.jpg"
     },
     {
       "id": "slick-cuts-style",
