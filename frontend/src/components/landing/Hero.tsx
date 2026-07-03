@@ -68,6 +68,13 @@ export const Hero = () => {
 
   return (
     <section className="relative flex min-h-[100dvh] min-h-[100svh] flex-col overflow-hidden">
+      {/* MSME Logo - Top Right Desktop Only */}
+      <img
+        src="/msme-logo.png"
+        alt="MSME Registered"
+        className="absolute right-8 top-20 z-50 hidden max-h-[80px] w-auto object-contain opacity-90 drop-shadow-sm transition-all hover:scale-105 hover:opacity-100 md:block lg:right-12 lg:top-24"
+      />
+
       <div className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-14 px-6 pb-12 pt-28 md:grid-cols-12 md:px-12 md:pb-16 md:pt-32">
         <div className="md:col-span-7">
           <motion.p

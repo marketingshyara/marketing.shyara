@@ -20,9 +20,9 @@ export const Footer = () => (
           Websites that work, marketing that scales. Built for businesses across India.
         </p>
         <img 
-          src="/msme-logo.jpeg" 
+          src="/msme-logo.png" 
           alt="MSME Registered" 
-          className="mt-6 max-h-[40px] w-auto object-contain grayscale opacity-60 transition-all hover:grayscale-0 hover:opacity-100" 
+          className="mt-6 max-h-[40px] w-auto object-contain grayscale invert opacity-70 transition-all hover:opacity-100" 
         />
       </div>
 
