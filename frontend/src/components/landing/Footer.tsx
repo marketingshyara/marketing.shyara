@@ -19,6 +19,11 @@ export const Footer = () => (
         <p className="mt-2 max-w-xs text-sm text-white/50">
           Websites that work, marketing that scales. Built for businesses across India.
         </p>
+        <img 
+          src="/msme-logo.jpeg" 
+          alt="MSME Registered" 
+          className="mt-6 max-h-[40px] w-auto object-contain grayscale opacity-60 transition-all hover:grayscale-0 hover:opacity-100" 
+        />
       </div>
 
       <div className="flex flex-col gap-3 text-sm">
@@ -73,8 +78,9 @@ export const Footer = () => (
         ))}
       </div>
     </div>
-    <div className="mx-auto mt-10 max-w-7xl border-t border-white/10 px-6 pt-6 text-xs uppercase tracking-widest text-white/30 md:px-12">
-      © {new Date().getFullYear()} Shyara Marketing. All rights reserved.
+    <div className="mx-auto mt-10 max-w-7xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-white/10 px-6 pt-6 pb-6 text-xs uppercase tracking-widest text-white/30 md:px-12">
+      <span>© {new Date().getFullYear()} Shyara Marketing. All rights reserved.</span>
+      <span className="select-all">GSTIN:10ABSCS1802N1Z8</span>
     </div>
   </footer>
 );
